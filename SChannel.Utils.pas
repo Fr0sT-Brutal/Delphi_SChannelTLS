@@ -1,0 +1,982 @@
+{
+  Helper functions for easy implementation of TLS communication by means of
+  Windows SChannel.
+  The functions are transport-agnostic so they could be applied to any socket
+  implementation or even other transport.
+
+  Inspired by TLS-Sample from http://www.coastrd.com/c-schannel-smtp
+
+  Uses JEDI API units from https://jedi-apilib.sourceforge.net
+
+  (c) Fr0sT-Brutal
+  License MIT
+}
+
+unit SChannel.Utils;
+
+interface
+{$IFDEF MSWINDOWS}
+
+uses
+  Windows, SysUtils,
+  JwaBaseTypes, JwaWinError, JwaWinCrypt, JwaSspi, JwaSChannel;
+
+const
+  LogPrefix = '[SChannel]: '; // Just a suggested prefix for log output
+  IO_BUFFER_SIZE = $1000;     // Size of handshake buffer
+  USED_PROTOCOLS = SP_PROT_TLS1_1 or SP_PROT_TLS1_2; // TLS 1.0 is not used by default, add `SP_PROT_TLS1_0` if needed
+
+type
+  // Stage of handshake
+  THandShakeStage = (
+    // Initial stage
+    hssNotStarted,
+    // Sending client hello
+    hssSendCliHello,
+    // Reading server hello - general
+    hssReadSrvHello,
+    // Reading server hello - repeat call without reading
+    hssReadSrvHelloNoRead,
+    // Reading server hello - in process, send token
+    hssReadSrvHelloContNeed,
+    // Reading server hello - success, send token
+    hssReadSrvHelloOK,
+    // Final stage
+    hssDone
+  );
+
+  // State of secure channel
+  TChannelState = (
+    // Initial stage
+    chsNotStarted,
+    // Handshaking with server
+    chsHandshake,
+    // Channel established successfully
+    chsEstablished,
+    // Sending shutdown signal and closing connection
+    chsShutdown
+  );
+
+  // United state and data for TLS handshake
+  THandShakeData = record
+    // Current stage
+    Stage: THandShakeStage;
+    // Name of domain we're connecting to.
+    // IN at hssNotStarted
+    ServerName: string;
+    // Handle of security context.
+    // OUT after hssSendCliHello, IN at hssReadSrvHello*
+    hContext: CtxtHandle;
+    // Buffer with data from server.
+    // IN at hssReadSrvHello*
+    IoBuffer: TBytes;
+    // Size of data in buffer.
+    cbIoBuffer: DWORD;
+    // Array of SChannel-allocated buffers that must be disposed with `g_pSSPI.FreeContextBuffer`.
+    // OUT after hssSendCliHello, hssReadSrvHelloContNeed, hssReadSrvHelloOK
+    OutBuffers: array of SecBuffer;
+  end;
+
+  // Data related to a session. Using a variable of this type allows thread-safe
+  // usage
+  TSessionData = record
+    // Handle of credentials, mainly for internal use
+    hCreds: CredHandle;
+    // SChannel credentials, mainly for internal use
+    SchannelCred: SCHANNEL_CRED;
+  end;
+
+  // Specific exception class. Could be created on WinAPI error, SChannel error
+  // or general internal error.
+  ESSPIError = class(Exception)
+  public
+    // If not zero, reason of exception is WinAPI and this field contains code of
+    // an error returned by GetLastError
+    WinAPIErr: DWORD;
+    // If not zero, reason of exception is SChannel and this field contains
+    // security status returned by last function call
+    SecStatus: SECURITY_STATUS;
+
+    // Create WinAPI exception based on Err code
+    constructor CreateWinAPI(const Msg, Func: string; Err: DWORD);
+    // Create security status exception
+    constructor CreateSecStatus(const Msg, Func: string; Status: SECURITY_STATUS);
+  end;
+
+var
+  // ~~ Globals that are set by internal functions ~~
+  hMYCertStore: HCERTSTORE = nil;
+  g_pSSPI: PSecurityFunctionTable;
+
+// ~~ Init utils - usually not to be called by user ~~
+
+// Mainly for internal use
+// @raises ESSPIError on error
+procedure LoadSecurityLibrary;
+// Mainly for internal use
+// @raises ESSPIError on error
+procedure CreateCredentials(const User: string; out hCreds: CredHandle; out SchannelCred: SCHANNEL_CRED);
+
+// ~~ Global init and fin ~~
+// Load global stuff. Must be called before any other function called.
+// Could be called many times
+// @raises ESSPIError on error
+procedure Init;
+// Dispose and null global stuff
+procedure Fin;
+
+// ~~ Session init and fin ~~
+
+// Init session, return data record to be used in calling other functions.
+// Could be called many times (nothing will be done on already init-ed record)
+//   @param SessionData - [IN, OUT] record that receives values. On first call must be zeroed.
+// @raises ESSPIError on error
+procedure InitSession(var SessionData: TSessionData);
+// Finalize session
+procedure FinSession(var SessionData: TSessionData);
+
+// ~~ Start/close connection ~~
+
+// Function to prepare all necessary handshake data. No transport level actions.
+// @raises ESSPIError on error
+function DoClientHandshake(const SessionData: TSessionData; var HandShakeData: THandShakeData): SECURITY_STATUS;
+// Generate data to send to a server on connection shutdown
+// @raises ESSPIError on error
+procedure GetShutdownData(const SessionData: TSessionData; const hContext: CtxtHandle;
+  out OutBuffer: SecBuffer);
+// Check server cert
+// @raises ESSPIError on error
+procedure CheckServerCert(const SessionData: TSessionData; const hContext: CtxtHandle);
+// Dispose and null security context
+procedure DeleteContext(var hContext: CtxtHandle);
+
+// ~~ Data exchange ~~
+
+// Receive size values for current session and init buffer length to contain
+// full message including header and trailer
+// @raises ESSPIError on error
+procedure InitBuffers(const hContext: CtxtHandle; out pbIoBuffer: TBytes;
+  out Sizes: SecPkgContext_StreamSizes);
+// Encrypt data (prepare for sending to server).
+//   @param hContext - current session context
+//   @param Sizes - current session sizes
+//   @param pbMessage - input data to encrypt
+//   @param cbMessage - length of input data
+//   @param pbIoBuffer - buffer to receive encrypted data
+//   @param pbIoBufferLength - size of buffer
+//   @param cbWritten - [OUT] size of encrypted data written to buffer
+// @raises ESSPIError on error
+procedure EncryptData(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes;
+  pbMessage: PByte; cbMessage: DWORD; pbIoBuffer: PByte; pbIoBufferLength: DWORD;
+  out cbWritten: DWORD);
+// Decrypt data received from server
+//   @param hContext - current session context
+//   @param Sizes - current session sizes
+//   @param pbIoBuffer - input encrypted data to decrypt
+//   @param cbEncData - [IN/OUT] length of encrypted data in buffer.    \
+//     After function call it is set to amount of unprocessed data that \
+//     is placed from the beginning of the buffer
+//   @param pbDecData - buffer to receive decrypted data
+//   @param cbDecDataLength - size of buffer
+//   @param cbWritten - [OUT] size of decrypted data written to buffer
+// @returns                                                                    \
+//   * `SEC_I_CONTEXT_EXPIRED` - server signaled end of session                \
+//   * `SEC_E_OK` - message processed fully                                    \
+//   * `SEC_E_INCOMPLETE_MESSAGE` - need more data                             \
+//   * `SEC_I_RENEGOTIATE` - server wants to perform another handshake sequence
+// @raises ESSPIError on error
+function DecryptData(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes;
+  pbIoBuffer: PByte; var cbEncData: DWORD;
+  pbDecData: PByte; cbDecDataLength: DWORD; out cbWritten: DWORD): SECURITY_STATUS;
+
+// ~~ Misc ~~
+
+// Returns string representaion of given security status
+function SecStatusErrStr(scRet: SECURITY_STATUS): string;
+
+{$ENDIF MSWINDOWS}
+
+implementation
+{$IFDEF MSWINDOWS}
+
+const
+  S_E_WinAPIErrPatt = 'Error %s calling WinAPI method "%s": [%d] %s';
+  S_E_SecStatusErrPatt = 'Error %s calling method "%s": %s';
+
+// ~~ Utils ~~
+
+function SecStatusErrStr(scRet: SECURITY_STATUS): string;
+begin
+  case scRet of
+    SEC_E_INSUFFICIENT_MEMORY           : Result := 'SEC_E_INSUFFICIENT_MEMORY';
+    SEC_E_INVALID_HANDLE                : Result := 'SEC_E_INVALID_HANDLE';
+    SEC_E_UNSUPPORTED_FUNCTION          : Result := 'SEC_E_UNSUPPORTED_FUNCTION';
+    SEC_E_TARGET_UNKNOWN                : Result := 'SEC_E_TARGET_UNKNOWN';
+    SEC_E_INTERNAL_ERROR                : Result := 'SEC_E_INTERNAL_ERROR';
+    SEC_E_SECPKG_NOT_FOUND              : Result := 'SEC_E_SECPKG_NOT_FOUND';
+    SEC_E_NOT_OWNER                     : Result := 'SEC_E_NOT_OWNER';
+    SEC_E_CANNOT_INSTALL                : Result := 'SEC_E_CANNOT_INSTALL';
+    SEC_E_INVALID_TOKEN                 : Result := 'SEC_E_INVALID_TOKEN';
+    SEC_E_CANNOT_PACK                   : Result := 'SEC_E_CANNOT_PACK';
+    SEC_E_QOP_NOT_SUPPORTED             : Result := 'SEC_E_QOP_NOT_SUPPORTED';
+    SEC_E_NO_IMPERSONATION              : Result := 'SEC_E_NO_IMPERSONATION';
+    SEC_E_LOGON_DENIED                  : Result := 'SEC_E_LOGON_DENIED';
+    SEC_E_UNKNOWN_CREDENTIALS           : Result := 'SEC_E_UNKNOWN_CREDENTIALS';
+    SEC_E_NO_CREDENTIALS                : Result := 'SEC_E_NO_CREDENTIALS';
+    SEC_E_MESSAGE_ALTERED               : Result := 'SEC_E_MESSAGE_ALTERED';
+    SEC_E_OUT_OF_SEQUENCE               : Result := 'SEC_E_OUT_OF_SEQUENCE';
+    SEC_E_NO_AUTHENTICATING_AUTHORITY   : Result := 'SEC_E_NO_AUTHENTICATING_AUTHORITY';
+    SEC_I_CONTINUE_NEEDED               : Result := 'SEC_I_CONTINUE_NEEDED';
+    SEC_I_COMPLETE_NEEDED               : Result := 'SEC_I_COMPLETE_NEEDED';
+    SEC_I_COMPLETE_AND_CONTINUE         : Result := 'SEC_I_COMPLETE_AND_CONTINUE';
+    SEC_I_LOCAL_LOGON                   : Result := 'SEC_I_LOCAL_LOGON';
+    SEC_E_BAD_PKGID                     : Result := 'SEC_E_BAD_PKGID';
+    SEC_E_CONTEXT_EXPIRED               : Result := 'SEC_E_CONTEXT_EXPIRED';
+    SEC_I_CONTEXT_EXPIRED               : Result := 'SEC_I_CONTEXT_EXPIRED';
+    SEC_E_INCOMPLETE_MESSAGE            : Result := 'SEC_E_INCOMPLETE_MESSAGE';
+    SEC_E_INCOMPLETE_CREDENTIALS        : Result := 'SEC_E_INCOMPLETE_CREDENTIALS';
+    SEC_E_BUFFER_TOO_SMALL              : Result := 'SEC_E_BUFFER_TOO_SMALL';
+    SEC_I_INCOMPLETE_CREDENTIALS        : Result := 'SEC_I_INCOMPLETE_CREDENTIALS';
+    SEC_I_RENEGOTIATE                   : Result := 'SEC_I_RENEGOTIATE';
+    SEC_E_WRONG_PRINCIPAL               : Result := 'SEC_E_WRONG_PRINCIPAL';
+    SEC_I_NO_LSA_CONTEXT                : Result := 'SEC_I_NO_LSA_CONTEXT';
+    SEC_E_TIME_SKEW                     : Result := 'SEC_E_TIME_SKEW';
+    SEC_E_UNTRUSTED_ROOT                : Result := 'SEC_E_UNTRUSTED_ROOT';
+    SEC_E_ILLEGAL_MESSAGE               : Result := 'SEC_E_ILLEGAL_MESSAGE';
+    SEC_E_CERT_UNKNOWN                  : Result := 'SEC_E_CERT_UNKNOWN';
+    SEC_E_CERT_EXPIRED                  : Result := 'SEC_E_CERT_EXPIRED';
+    SEC_E_ENCRYPT_FAILURE               : Result := 'SEC_E_ENCRYPT_FAILURE';
+    SEC_E_DECRYPT_FAILURE               : Result := 'SEC_E_DECRYPT_FAILURE';
+    SEC_E_ALGORITHM_MISMATCH            : Result := 'SEC_E_ALGORITHM_MISMATCH';
+    SEC_E_SECURITY_QOS_FAILED           : Result := 'SEC_E_SECURITY_QOS_FAILED';
+    SEC_E_UNFINISHED_CONTEXT_DELETED    : Result := 'SEC_E_UNFINISHED_CONTEXT_DELETED';
+    SEC_E_NO_TGT_REPLY                  : Result := 'SEC_E_NO_TGT_REPLY';
+    SEC_E_NO_IP_ADDRESSES               : Result := 'SEC_E_NO_IP_ADDRESSES';
+    SEC_E_WRONG_CREDENTIAL_HANDLE       : Result := 'SEC_E_WRONG_CREDENTIAL_HANDLE';
+    SEC_E_CRYPTO_SYSTEM_INVALID         : Result := 'SEC_E_CRYPTO_SYSTEM_INVALID';
+    SEC_E_MAX_REFERRALS_EXCEEDED        : Result := 'SEC_E_MAX_REFERRALS_EXCEEDED';
+    SEC_E_MUST_BE_KDC                   : Result := 'SEC_E_MUST_BE_KDC';
+    SEC_E_STRONG_CRYPTO_NOT_SUPPORTED   : Result := 'SEC_E_STRONG_CRYPTO_NOT_SUPPORTED';
+    SEC_E_TOO_MANY_PRINCIPALS           : Result := 'SEC_E_TOO_MANY_PRINCIPALS';
+    SEC_E_NO_PA_DATA                    : Result := 'SEC_E_NO_PA_DATA';
+    SEC_E_PKINIT_NAME_MISMATCH          : Result := 'SEC_E_PKINIT_NAME_MISMATCH';
+    SEC_E_SMARTCARD_LOGON_REQUIRED      : Result := 'SEC_E_SMARTCARD_LOGON_REQUIRED';
+    SEC_E_SHUTDOWN_IN_PROGRESS          : Result := 'SEC_E_SHUTDOWN_IN_PROGRESS';
+    SEC_E_KDC_INVALID_REQUEST           : Result := 'SEC_E_KDC_INVALID_REQUEST';
+    SEC_E_KDC_UNABLE_TO_REFER           : Result := 'SEC_E_KDC_UNABLE_TO_REFER';
+    SEC_E_KDC_UNKNOWN_ETYPE             : Result := 'SEC_E_KDC_UNKNOWN_ETYPE';
+    SEC_E_UNSUPPORTED_PREAUTH           : Result := 'SEC_E_UNSUPPORTED_PREAUTH';
+    SEC_E_DELEGATION_REQUIRED           : Result := 'SEC_E_DELEGATION_REQUIRED';
+    SEC_E_BAD_BINDINGS                  : Result := 'SEC_E_BAD_BINDINGS';
+    SEC_E_MULTIPLE_ACCOUNTS             : Result := 'SEC_E_MULTIPLE_ACCOUNTS';
+    SEC_E_NO_KERB_KEY                   : Result := 'SEC_E_NO_KERB_KEY';
+    SEC_E_CERT_WRONG_USAGE              : Result := 'SEC_E_CERT_WRONG_USAGE';
+    SEC_E_DOWNGRADE_DETECTED            : Result := 'SEC_E_DOWNGRADE_DETECTED';
+    SEC_E_SMARTCARD_CERT_REVOKED        : Result := 'SEC_E_SMARTCARD_CERT_REVOKED';
+    SEC_E_ISSUING_CA_UNTRUSTED          : Result := 'SEC_E_ISSUING_CA_UNTRUSTED';
+    SEC_E_REVOCATION_OFFLINE_C          : Result := 'SEC_E_REVOCATION_OFFLINE_C';
+    SEC_E_PKINIT_CLIENT_FAILURE         : Result := 'SEC_E_PKINIT_CLIENT_FAILURE';
+    SEC_E_SMARTCARD_CERT_EXPIRED        : Result := 'SEC_E_SMARTCARD_CERT_EXPIRED';
+    SEC_E_NO_S4U_PROT_SUPPORT           : Result := 'SEC_E_NO_S4U_PROT_SUPPORT';
+    SEC_E_CROSSREALM_DELEGATION_FAILURE : Result := 'SEC_E_CROSSREALM_DELEGATION_FAILURE';
+    SEC_E_REVOCATION_OFFLINE_KDC        : Result := 'SEC_E_REVOCATION_OFFLINE_KDC';
+    SEC_E_ISSUING_CA_UNTRUSTED_KDC      : Result := 'SEC_E_ISSUING_CA_UNTRUSTED_KDC';
+    SEC_E_KDC_CERT_EXPIRED              : Result := 'SEC_E_KDC_CERT_EXPIRED';
+    SEC_E_KDC_CERT_REVOKED              : Result := 'SEC_E_KDC_CERT_REVOKED';
+    else Result := 'Unknown ' + IntToStr(scRet);
+  end;
+end;
+
+{ ESSPIError }
+
+constructor ESSPIError.CreateWinAPI(const Msg, Func: string; Err: DWORD);
+begin
+  inherited CreateFmt(S_E_WinAPIErrPatt, [Msg, Func, Err, SysErrorMessage(Err)]);
+  Self.WinAPIErr := Err;
+end;
+
+constructor ESSPIError.CreateSecStatus(const Msg, Func: string;
+  Status: SECURITY_STATUS);
+begin
+  inherited CreateFmt(S_E_SecStatusErrPatt, [Msg, Func, SecStatusErrStr(Status)]);
+  Self.SecStatus := Status;
+end;
+
+// Create general exception
+function Error(const Msg: string; const Args: array of const): ESSPIError; overload;
+begin
+  Result := ESSPIError.CreateFmt(Msg, Args);
+end;
+
+function Error(const Msg: string): ESSPIError; overload;
+begin
+  Result := ESSPIError.Create(Msg);
+end;
+
+// Create security status exception
+function ErrSecStatus(const Msg, Fn: string; Status: SECURITY_STATUS): ESSPIError;
+begin
+  Result := ESSPIError.CreateSecStatus(Msg, Fn, Status);
+end;
+
+// Create WinAPI exception based on GetLastError
+function ErrWinAPI(const Msg, Fn: string): ESSPIError;
+begin
+  Result := ESSPIError.CreateWinAPI(Msg, Fn, GetLastError);
+end;
+
+procedure Debug(const Msg: string);
+begin
+  OutputDebugString(PChar(Msg));
+end;
+
+// ~~ Init & fin ~~
+
+procedure LoadSecurityLibrary;
+begin
+  g_pSSPI := InitSecurityInterface;
+  if g_pSSPI = nil then
+    raise ErrWinAPI('at LoadSecurityLibrary reading security interface', 'InitSecurityInterface');
+end;
+
+procedure CreateCredentials(const User: string; out hCreds: CredHandle; out SchannelCred: SCHANNEL_CRED);
+var
+  tsExpiry: TimeStamp;
+  cSupportedAlgs: DWORD;
+  rgbSupportedAlgs: array[0..15] of ALG_ID;
+  pCertContext: PCCERT_CONTEXT;
+  Status: SECURITY_STATUS;
+begin
+  // If a user name is specified, then attempt to find a client
+  // certificate. Otherwise, just create a NULL credential.
+  if User <> '' then
+  begin
+    // Find client certificate. Note that this sample just searches for a
+    // certificate that contains the user name somewhere in the subject name.
+    // A real application should be a bit less casual.
+    pCertContext := CertFindCertificateInStore(hMyCertStore,                     // hCertStore
+                                               X509_ASN_ENCODING,             // dwCertEncodingType
+                                               0,                                             // dwFindFlags
+                                               CERT_FIND_SUBJECT_STR_A,// dwFindType
+                                               Pointer(User),                         // *pvFindPara
+                                               nil);                                 // pPrevCertContext
+
+    if pCertContext = nil then
+      raise ErrWinAPI('at CreateCredentials', 'CertFindCertificateInStore');
+  end
+  else
+    pCertContext := nil;
+
+  // Build Schannel credential structure. Currently, this sample only
+  // specifies the protocol to be used (and optionally the certificate,
+  // of course). Real applications may wish to specify other parameters as well.
+  SchannelCred := Default(SCHANNEL_CRED);
+
+  SchannelCred.dwVersion := SCHANNEL_CRED_VERSION;
+  if pCertContext <> nil then
+  begin
+    SchannelCred.cCreds := 1;
+    SchannelCred.paCred := @pCertContext;
+  end;
+  SchannelCred.grbitEnabledProtocols := USED_PROTOCOLS;
+
+  cSupportedAlgs := 0;
+{  if aiKeyExch <> 0 then
+  begin
+    rgbSupportedAlgs[cSupportedAlgs] := aiKeyExch;
+    Inc(cSupportedAlgs);
+  end;
+}
+  if cSupportedAlgs <> 0 then
+  begin
+    SchannelCred.cSupportedAlgs    := cSupportedAlgs;
+    SchannelCred.palgSupportedAlgs := @rgbSupportedAlgs;
+  end;
+
+  SchannelCred.dwFlags := SCH_CRED_NO_DEFAULT_CREDS;
+
+  // Create an SSPI credential with SChannel security package
+  Status := g_pSSPI.AcquireCredentialsHandleW(nil,         // Name of principal
+                                              PSecWChar(PChar(UNISP_NAME)),     // Name of package
+                                              SECPKG_CRED_OUTBOUND, // Flags indicating use
+                                              nil,         // Pointer to logon ID
+                                              @SchannelCred,        // Package specific data
+                                              nil,         // Pointer to GetKey() func
+                                              nil,         // Value to pass to GetKey()
+                                              @hCreds,        // (out) Cred Handle
+                                              @tsExpiry);      // (out) Lifetime (optional)
+
+  // cleanup: Free the certificate context. Schannel has already made its own copy.
+  if pCertContext <> nil then
+    CertFreeCertificateContext(pCertContext);
+
+  if Status <> SEC_E_OK then
+    raise ErrSecStatus('at CreateCredentials', 'AcquireCredentialsHandle', Status);
+end;
+
+// Load global stuff. Must be called before any other function called.
+procedure Init;
+begin
+  if g_pSSPI = nil then
+    LoadSecurityLibrary;
+  // Open the "MY" certificate store, where IE stores client certificates.
+  // Windows maintains 4 stores -- MY, CA, ROOT, SPC.
+  if hMYCertStore = nil then
+  begin
+    hMYCertStore := CertOpenSystemStore(0, 'MY');
+    if hMYCertStore = nil then
+      raise ErrWinAPI('at Init', 'CertOpenSystemStore');
+  end;
+end;
+
+// Dispose and null global stuff
+procedure Fin;
+begin
+  // Close "MY" certificate store.
+  if hMYCertStore <> nil then
+    CertCloseStore(hMYCertStore, 0);
+  hMYCertStore := nil;
+  g_pSSPI := nil;
+end;
+
+procedure InitSession(var SessionData: TSessionData);
+begin
+  if PUInt64(@SessionData.hCreds)^ = 0 then
+  begin
+    // Create credentials
+    CreateCredentials('', SessionData.hCreds, SessionData.SchannelCred);
+  end;
+end;
+
+procedure FinSession(var SessionData: TSessionData);
+begin
+  if PUInt64(@SessionData.hCreds)^ <> 0 then
+  begin
+    // Free SSPI credentials handle.
+    g_pSSPI.FreeCredentialsHandle(@SessionData.hCreds);
+    SessionData.hCreds := Default(CredHandle);
+    SessionData.SchannelCred := Default(SCHANNEL_CRED);
+  end;
+end;
+
+// ~~ Connect & close ~~
+
+{}procedure GetNewClientCredentials(const SessionData: TSessionData; const hContext: CtxtHandle);
+begin
+  Debug(LogPrefix + 'GetNewClientCredentials TODO');
+(*
+  CredHandle                      hCreds;
+  SecPkgContext_IssuerListInfoEx  IssuerListInfo;
+  PCCERT_CHAIN_CONTEXT            pChainContext;
+  CERT_CHAIN_FIND_BY_ISSUER_PARA  FindByIssuerPara;
+  PCCERT_CONTEXT                  pCertContext;
+  TimeStamp                        tsExpiry;
+  SECURITY_STATUS                  Status;
+
+  // Read list of trusted issuers from schannel.
+  Status = g_pSSPI->QueryContextAttributes( phContext, SECPKG_ATTR_ISSUER_LIST_EX, (PVOID)&IssuerListInfo );
+  if(Status != SEC_E_OK) { printf("Error 0x%x querying issuer list info\n", Status); return; }
+
+  // Enumerate the client certificates.
+  ZeroMemory(&FindByIssuerPara, sizeof(FindByIssuerPara));
+
+  FindByIssuerPara.cbSize = sizeof(FindByIssuerPara);
+  FindByIssuerPara.pszUsageIdentifier = szOID_PKIX_KP_CLIENT_AUTH;
+  FindByIssuerPara.dwKeySpec = 0;
+  FindByIssuerPara.cIssuer   = IssuerListInfo.cIssuers;
+  FindByIssuerPara.rgIssuer  = IssuerListInfo.aIssuers;
+
+  pChainContext = NULL;
+
+  while(TRUE)
+  {   // Find a certificate chain.
+    pChainContext = CertFindChainInStore( hMyCertStore,
+                        X509_ASN_ENCODING,
+                        0,
+                        CERT_CHAIN_FIND_BY_ISSUER,
+                        &FindByIssuerPara,
+                        pChainContext );
+    if(pChainContext == NULL) { printf("Error 0x%x finding cert chain\n", GetLastError()); break; }
+
+    printf("\ncertificate chain found\n");
+
+    // Get pointer to leaf certificate context.
+    pCertContext = pChainContext->rgpChain[0]->rgpElement[0]->pCertContext;
+
+    Status = g_pSSPI->AcquireCredentialsHandleA(  NULL,           // Name of principal
+                                                      UNISP_NAME_A,       // Name of package
+                                                      SECPKG_CRED_OUTBOUND,   // Flags indicating use
+                                                      NULL,           // Pointer to logon ID
+                                                      NULL,         // Package specific data
+                                                      NULL,           // Pointer to GetKey() func
+                                                      NULL,           // Value to pass to GetKey()
+                                                      &hCreds,        // (out) Cred Handle
+                                                      &tsExpiry );      // (out) Lifetime (optional)
+
+    if(Status != SEC_E_OK) {printf("**** Error 0x%x returned by AcquireCredentialsHandle\n", Status); continue;}
+
+    printf("\nnew schannel credential created\n");
+
+    g_pSSPI->FreeCredentialsHandle(phCreds); // Destroy the old credentials.
+
+    *phCreds = hCreds;
+  }
+
+
+*)
+end;
+
+{
+ Function to prepare all necessary handshake data. No transport level actions.
+ @raises ESSPIError on error
+ Function actions and returning data depending on input stage:
+  - `HandShakeData.Stage` = hssNotStarted. Generate client hello. @br
+     *Output stage*: hssSendCliHello. @br
+     *Caller action*: send returned data (client hello) to server @br
+     *Input data*:
+       - ServerName - host we're connecting to
+
+     *Output data*:
+       - hContext - handle to secure context
+       - OutBuffers - array with single item that must be finally disposed
+         with `g_pSSPI.FreeContextBuffer`
+
+  - `HandShakeData.Stage` = hssSendCliHello. **Not** handled by @name @br
+
+  - `HandShakeData.Stage` = hssReadSrvHello, hssReadSrvHelloNoRead,
+       hssReadSrvHelloContNeed. Handle server hello
+
+     *Output stage*: hssReadSrvHello, hssReadSrvHelloNoRead,
+       hssReadSrvHelloContNeed, hssReadSrvHelloOK. @br
+     *Caller action*:
+       - hssReadSrvHello: read data from server and call @name again
+       - hssReadSrvHelloNoRead: call @name again without reading
+       - hssReadSrvHelloContNeed: send token returned in `OutBuffers` and call @name again
+       - hssReadSrvHelloOK: send token returned in `OutBuffers` and finish
+
+     *Input data*:
+       - ServerName - host we're connecting to
+       - IoBuffer - buffer with data from server
+       - cbIoBuffer - size of data in buffer
+
+     *Output data*:
+       - cbIoBuffer - length of unprocessed data in input buffer
+       - OutBuffers - array with single item that must be finally disposed
+         with `g_pSSPI.FreeContextBuffer` (hssReadSrvHelloContNeed, hssReadSrvHelloOK)
+
+  - `HandShakeData.Stage` = hssReadSrvHelloOK. **Not** handled by @name @br
+
+  - `HandShakeData.Stage` = hssDone. **Not** handled by @name @br
+}
+function DoClientHandshake(const SessionData: TSessionData; var HandShakeData: THandShakeData): SECURITY_STATUS;
+
+  // Process "extra" buffer and modify HandShakeData.cbIoBuffer accordingly.
+  // After the call HandShakeData.IoBuffer will contain HandShakeData.cbIoBuffer
+  // (including zero!) unprocessed data.
+  procedure HandleBuffers(const InBuffer: SecBuffer);
+  begin
+    if InBuffer.BufferType = SECBUFFER_EXTRA then
+    begin
+      MoveMemory(HandShakeData.IoBuffer,
+        PByte(HandShakeData.IoBuffer) + (HandShakeData.cbIoBuffer - InBuffer.cbBuffer), InBuffer.cbBuffer);
+      HandShakeData.cbIoBuffer := InBuffer.cbBuffer;
+    end
+    else
+      HandShakeData.cbIoBuffer := 0; // Prepare for the next recv
+  end;
+
+var
+  dwSSPIFlags, dwSSPIOutFlags: DWORD;
+  tsExpiry: TimeStamp;
+  InBuffers: array [0..1] of SecBuffer;
+  OutBuffer, InBuffer: SecBufferDesc;
+begin
+  case HandShakeData.Stage of
+    hssNotStarted:
+      begin
+        dwSSPIFlags :=
+          ISC_REQ_SEQUENCE_DETECT or ISC_REQ_REPLAY_DETECT or ISC_REQ_CONFIDENTIALITY or
+          ISC_RET_EXTENDED_ERROR or ISC_REQ_ALLOCATE_MEMORY or ISC_REQ_STREAM;
+
+        //  Initiate a ClientHello message and generate a token.
+        SetLength(HandShakeData.OutBuffers, 1);
+        HandShakeData.OutBuffers[0].pvBuffer   := nil;
+        HandShakeData.OutBuffers[0].BufferType := SECBUFFER_TOKEN;
+        HandShakeData.OutBuffers[0].cbBuffer   := 0;
+
+        OutBuffer.cBuffers  := 1;
+        OutBuffer.pBuffers  := PSecBuffer(HandShakeData.OutBuffers);
+        OutBuffer.ulVersion := SECBUFFER_VERSION;
+
+        Result := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
+                                                     nil,
+                                                     PSecWChar(PChar(HandShakeData.ServerName)),
+                                                     dwSSPIFlags,
+                                                     0,
+                                                     SECURITY_NATIVE_DREP,
+                                                     nil,
+                                                     0,
+                                                     @HandShakeData.hContext,
+                                                     @OutBuffer,
+                                                     dwSSPIOutFlags,
+                                                     @tsExpiry);
+
+        if Result <> SEC_I_CONTINUE_NEEDED then
+          raise ErrSecStatus('at DoClientHandshake on client hello', 'InitializeSecurityContext', Result);
+        if (HandShakeData.OutBuffers[0].cbBuffer = 0) or (HandShakeData.OutBuffers[0].pvBuffer = nil) then
+          raise Error('Error at DoClientHandshake on client hello: InitializeSecurityContext generated empty buffer');
+
+        HandShakeData.Stage := hssSendCliHello;
+      end;
+
+    hssReadSrvHello,
+    hssReadSrvHelloNoRead,
+    hssReadSrvHelloContNeed:
+      begin
+        dwSSPIFlags :=
+          ISC_REQ_SEQUENCE_DETECT or ISC_REQ_REPLAY_DETECT or ISC_REQ_CONFIDENTIALITY or
+          ISC_RET_EXTENDED_ERROR or ISC_REQ_ALLOCATE_MEMORY or ISC_REQ_STREAM;
+        // Set up the input buffers. Buffer 0 is used to pass in data
+        // received from the server. Schannel will consume some or all
+        // of this. Leftover data (if any) will be placed in buffer 1 and
+        // given a buffer type of SECBUFFER_EXTRA.
+        InBuffers[0].pvBuffer   := HandShakeData.IoBuffer;
+        InBuffers[0].cbBuffer   := HandShakeData.cbIoBuffer;
+        InBuffers[0].BufferType := SECBUFFER_TOKEN;
+
+        InBuffers[1].pvBuffer   := nil;
+        InBuffers[1].cbBuffer   := 0;
+        InBuffers[1].BufferType := SECBUFFER_EMPTY;
+
+        InBuffer.cBuffers  := 2;
+        InBuffer.pBuffers  := @InBuffers;
+        InBuffer.ulVersion := SECBUFFER_VERSION;
+
+        // Set up the output buffers. These are initialized to NULL
+        // so as to make it less likely we'll attempt to free random
+        // garbage later.
+        SetLength(HandShakeData.OutBuffers, 1);
+        HandShakeData.OutBuffers[0].pvBuffer   := nil;
+        HandShakeData.OutBuffers[0].BufferType := SECBUFFER_TOKEN;
+        HandShakeData.OutBuffers[0].cbBuffer   := 0;
+
+        OutBuffer.cBuffers  := 1;
+        OutBuffer.pBuffers  := PSecBuffer(HandShakeData.OutBuffers);
+        OutBuffer.ulVersion := SECBUFFER_VERSION;
+
+        Result := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
+                                                     @HandShakeData.hContext,
+                                                     PSecWChar(PChar(HandShakeData.ServerName)),
+                                                     dwSSPIFlags,
+                                                     0,
+                                                     SECURITY_NATIVE_DREP,
+                                                     @InBuffer,
+                                                     0,
+                                                     nil,
+                                                     @OutBuffer,
+                                                     dwSSPIOutFlags,
+                                                     @tsExpiry);
+
+        // If InitializeSecurityContext returned SEC_E_INCOMPLETE_MESSAGE,
+        // then we need to read more data from the server and try again.
+        if Result = SEC_E_INCOMPLETE_MESSAGE then Exit;
+
+        // Check for fatal error.
+        if Failed(Result) then
+          raise ErrSecStatus('at DoClientHandshake on server hello', 'InitializeSecurityContext', Result);
+
+        case Result of
+          // SEC_I_CONTINUE_NEEDED:
+          //   - Not enough data provided (seems it should be SEC_E_INCOMPLETE_MESSAGE
+          //     but SChannel returns SEC_I_CONTINUE_NEEDED):
+          //       * InBuffers[1] contains length of unread buffer that should be
+          //         feed to InitializeSecurityContext next time
+          //       * OutBuffers contain nothing
+          //   - Token must be sent to server
+          //       * OutBuffers[1] contains token to be sent
+          SEC_I_CONTINUE_NEEDED:
+            begin
+              HandShakeData.Stage := hssReadSrvHelloContNeed;
+            end;
+          // SEC_I_INCOMPLETE_CREDENTIALS:
+          // the server just requested client authentication.
+          SEC_I_INCOMPLETE_CREDENTIALS:
+            begin
+              Debug(LogPrefix + '!! SEC_I_INCOMPLETE_CREDENTIALS !!');
+              // Busted. The server has requested client authentication and
+              // the credential we supplied didn't contain a client certificate.
+              // This function will read the list of trusted certificate
+              // authorities ("issuers") that was received from the server
+              // and attempt to find a suitable client certificate that
+              // was issued by one of these. If this function is successful,
+              // then we will connect using the new certificate. Otherwise,
+              // we will attempt to connect anonymously (using our current credentials).
+              GetNewClientCredentials(SessionData, HandShakeData.hContext);
+              // Go around again
+              HandShakeData.Stage := hssReadSrvHelloNoRead;
+            end;
+          // SEC_E_OK:
+          // handshake completed successfully.
+          // handle extra data if present and finish the process
+          SEC_E_OK:
+            begin
+              HandShakeData.Stage := hssReadSrvHelloOK;
+            end;
+          else  // SEC_I_COMPLETE_AND_CONTINUE, SEC_I_COMPLETE_NEEDED
+            raise ErrSecStatus('at DoClientHandshake on server hello - don''t know how to handle this', 'InitializeSecurityContext', Result);
+        end; // case
+
+        HandleBuffers(InBuffers[1]);
+      end; // hssReadServerHello*
+    else
+      raise Error('Error at DoClientHandshake: Stage not handled');
+  end; // case
+end;
+
+procedure GetShutdownData(const SessionData: TSessionData; const hContext: CtxtHandle;
+  out OutBuffer: SecBuffer);
+var
+  dwType, dwSSPIFlags, dwSSPIOutFlags, Status: DWORD;
+  OutBufferDesc: SecBufferDesc;
+  OutBuffers: array[0..0] of SecBuffer;
+  tsExpiry: TimeStamp;
+begin
+  OutBuffer := Default(SecBuffer);
+
+  dwType := SCHANNEL_SHUTDOWN; // Notify schannel that we are about to close the connection.
+
+  OutBuffers[0].pvBuffer   := @dwType;
+  OutBuffers[0].BufferType := SECBUFFER_TOKEN;
+  OutBuffers[0].cbBuffer   := SizeOf(dwType);
+
+  OutBufferDesc.cBuffers  := 1;
+  OutBufferDesc.pBuffers  := @OutBuffers[0];
+  OutBufferDesc.ulVersion := SECBUFFER_VERSION;
+
+  Status := g_pSSPI.ApplyControlToken(@hContext, @OutBufferDesc);
+  if Failed(Status) then
+    raise ErrSecStatus('at GetShutdownData', 'ApplyControlToken', Status);
+
+  // Build an SSL close notify message.
+  dwSSPIFlags :=
+    ISC_REQ_SEQUENCE_DETECT or ISC_REQ_REPLAY_DETECT or ISC_REQ_CONFIDENTIALITY or
+    ISC_RET_EXTENDED_ERROR or ISC_REQ_ALLOCATE_MEMORY or ISC_REQ_STREAM;
+
+  OutBuffers[0].pvBuffer   := nil;
+  OutBuffers[0].BufferType := SECBUFFER_TOKEN;
+  OutBuffers[0].cbBuffer   := 0;
+
+  OutBufferDesc.cBuffers  := 1;
+  OutBufferDesc.pBuffers  := @OutBuffers[0];
+  OutBufferDesc.ulVersion := SECBUFFER_VERSION;
+
+  Status := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
+                                               @hContext,
+                                               nil,
+                                               dwSSPIFlags,
+                                               0,
+                                               SECURITY_NATIVE_DREP,
+                                               nil,
+                                               0,
+                                               @hContext,
+                                               @OutBufferDesc,
+                                               dwSSPIOutFlags,
+                                               @tsExpiry);
+
+  if Failed(Status) then
+  begin
+    g_pSSPI.FreeContextBuffer(OutBuffers[0].pvBuffer); // Free output buffer.
+    raise ErrSecStatus('at GetShutdownData', 'InitializeSecurityContext', Status);
+  end;
+
+  OutBuffer := OutBuffers[0];
+end;
+
+procedure CheckServerCert(const SessionData: TSessionData; const hContext: CtxtHandle);
+var
+  Status: SECURITY_STATUS;
+  pRemoteCertContext: PCCERT_CONTEXT;
+begin
+  // Authenticate server's credentials. Get server's certificate.
+  Status := g_pSSPI.QueryContextAttributesW(@hContext, SECPKG_ATTR_REMOTE_CERT_CONTEXT, @pRemoteCertContext);
+  if Status <> SEC_E_OK then
+    raise ErrSecStatus('querying remote certificate at CheckServerCert', 'QueryContextAttributesW', Status);
+
+  // Free the server certificate context.
+  CertFreeCertificateContext(pRemoteCertContext);
+  pRemoteCertContext := nil;
+end;
+
+procedure DeleteContext(var hContext: CtxtHandle);
+begin
+  g_pSSPI.DeleteSecurityContext(@hContext);
+  hContext := Default(CtxtHandle);
+end;
+
+// ~~ Data exchange ~~
+
+procedure InitBuffers(const hContext: CtxtHandle; out pbIoBuffer: TBytes;
+  out Sizes: SecPkgContext_StreamSizes);
+var
+  scRet: SECURITY_STATUS;
+begin
+  // Read stream encryption properties.
+  scRet := g_pSSPI.QueryContextAttributesW(@hContext, SECPKG_ATTR_STREAM_SIZES, @Sizes);
+  if scRet <> SEC_E_OK then
+    raise ErrSecStatus('reading SECPKG_ATTR_STREAM_SIZES at InitBuffers', 'QueryContextAttributesW', scRet);
+  // Create a buffer.
+  SetLength(pbIoBuffer, Sizes.cbHeader + Sizes.cbMaximumMessage + Sizes.cbTrailer);
+end;
+
+procedure EncryptData(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes;
+  pbMessage: PByte; cbMessage: DWORD; pbIoBuffer: PByte; pbIoBufferLength: DWORD;
+  out cbWritten: DWORD);
+var
+  scRet: SECURITY_STATUS;
+  Msg: SecBufferDesc;
+  Buffers: array[0..3] of SecBuffer;
+begin
+  if cbMessage > Sizes.cbMaximumMessage then
+    raise Error('Message size %d is greater than maximum allowed %d', [cbMessage, Sizes.cbMaximumMessage]);
+
+  if pbIoBufferLength < Sizes.cbHeader + cbMessage + Sizes.cbTrailer then
+    raise Error('Buffer size %d is lesser than required for message with length %d', [pbIoBufferLength, cbMessage]);
+
+  Move(pbMessage^, (pbIoBuffer + Sizes.cbHeader)^, cbMessage); // Offset by "header size"
+  pbMessage := (pbIoBuffer + Sizes.cbHeader); // pointer to copy of message
+
+  // Encrypt the data
+  Buffers[0].pvBuffer   := pbIoBuffer;               // Pointer to buffer 1
+  Buffers[0].cbBuffer   := Sizes.cbHeader;           // length of header
+  Buffers[0].BufferType := SECBUFFER_STREAM_HEADER;  // Type of the buffer
+
+  Buffers[1].pvBuffer   := pbMessage;                // Pointer to buffer 2
+  Buffers[1].cbBuffer   := cbMessage;                // length of the message
+  Buffers[1].BufferType := SECBUFFER_DATA;           // Type of the buffer
+
+  Buffers[2].pvBuffer   := pbMessage + cbMessage;    // Pointer to buffer 3
+  Buffers[2].cbBuffer   := Sizes.cbTrailer;          // length of the trailer
+  Buffers[2].BufferType := SECBUFFER_STREAM_TRAILER; // Type of the buffer
+
+  Buffers[3]            := Default(SecBuffer);
+  Buffers[3].BufferType := SECBUFFER_EMPTY;          // Type of the buffer 4
+
+  Msg.ulVersion   := SECBUFFER_VERSION;  // Version number
+  Msg.cBuffers    := 4;                  // Number of buffers - must contain four SecBuffer structures.
+  Msg.pBuffers    := @Buffers;           // Pointer to array of buffers
+  scRet := g_pSSPI.EncryptMessage(@hContext, 0, @Msg, 0); // must contain four SecBuffer structures.
+  if Failed(scRet) then
+    raise ErrSecStatus('at EncryptData', 'EncryptMessage', scRet);
+
+  // Resulting Buffers: header, data, trailer
+  cbWritten := Buffers[0].cbBuffer + Buffers[1].cbBuffer + Buffers[2].cbBuffer;
+  if cbWritten = 0 then
+    raise Error('EncryptData: zero data');
+end;
+
+function DecryptData(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes;
+  pbIoBuffer: PByte; var cbEncData: DWORD;
+  pbDecData: PByte; cbDecDataLength: DWORD; out cbWritten: DWORD): SECURITY_STATUS;
+var
+  Msg: SecBufferDesc;
+  Buffers: array[0..3] of SecBuffer;
+  i, DataBufferIdx, ExtraBufferIdx: Integer;
+  cbCurrEncData: DWORD;
+  pbCurrIoBuffer: PByte;
+  Dummy: Cardinal;
+begin
+  cbWritten := 0;
+
+  cbCurrEncData := cbEncData;
+  pbCurrIoBuffer := pbIoBuffer;
+
+  // Decrypt the received data.
+  repeat                            {}// check output buf space remaining
+    Buffers[0].pvBuffer   := pbCurrIoBuffer;
+    Buffers[0].cbBuffer   := cbCurrEncData;
+    Buffers[0].BufferType := SECBUFFER_DATA;  // Initial Type of the buffer 1
+    Buffers[1].BufferType := SECBUFFER_EMPTY; // Initial Type of the buffer 2
+    Buffers[2].BufferType := SECBUFFER_EMPTY; // Initial Type of the buffer 3
+    Buffers[3].BufferType := SECBUFFER_EMPTY; // Initial Type of the buffer 4
+
+    Msg.ulVersion := SECBUFFER_VERSION;  // Version number
+    Msg.cBuffers  := 4;                  // Number of buffers - must contain four SecBuffer structures.
+    Msg.pBuffers  := @Buffers;           // Pointer to array of buffers
+    Result := g_pSSPI.DecryptMessage(@hContext, @Msg, 0, Dummy);
+
+    if Result = SEC_I_CONTEXT_EXPIRED then
+      Break; // Server signalled end of session
+
+    if (Result <> SEC_E_OK) and
+       (Result <> SEC_E_INCOMPLETE_MESSAGE) and
+       (Result <> SEC_I_RENEGOTIATE) then
+      raise ErrSecStatus('at DecryptData - unexpected result', 'DecryptMessage', Result);
+
+    // After DecryptMessage data is still in the Buffers
+    // Buffer with type DATA contains decrypted data
+    // Buffer with type EXTRA contains remaining (unprocessed) data
+    DataBufferIdx := 0;
+    ExtraBufferIdx := 0;
+    for i := Low(Buffers) to High(Buffers) do
+      case Buffers[i].BufferType of
+        SECBUFFER_DATA : DataBufferIdx := i;
+        SECBUFFER_EXTRA: ExtraBufferIdx := i;
+      end;
+
+    if Result = SEC_E_INCOMPLETE_MESSAGE then
+    begin
+      Assert(DataBufferIdx = 0);
+      Assert(ExtraBufferIdx = 0);
+      // move remaining extra data to the beginning of buffer and exit
+      Move(pbCurrIoBuffer^, pbIoBuffer^, cbCurrEncData);
+      cbEncData := cbCurrEncData;
+      Break;
+    end;
+
+    // Move received data to destination if present
+    if DataBufferIdx <> 0 then
+    begin
+      Move(Buffers[DataBufferIdx].pvBuffer^, pbDecData^, Buffers[DataBufferIdx].cbBuffer);
+      Inc(pbDecData, Buffers[DataBufferIdx].cbBuffer);
+      Inc(cbWritten, Buffers[DataBufferIdx].cbBuffer);
+      Dec(cbDecDataLength, Buffers[DataBufferIdx].cbBuffer);
+    end
+    // No data decrypted - move remaining extra data to the beginning of buffer and exit
+    else
+    begin
+      if ExtraBufferIdx <> 0 then
+      begin
+        Move(Buffers[ExtraBufferIdx].pvBuffer^, pbIoBuffer^, Buffers[ExtraBufferIdx].cbBuffer);
+        cbEncData := Buffers[ExtraBufferIdx].cbBuffer;
+      end
+      else
+        cbEncData := 0; // all data processed
+      Break;
+    end;
+
+    // Move pointers to the extra buffer to process it in the next iteration
+    if ExtraBufferIdx <> 0 then
+    begin
+      pbCurrIoBuffer := Buffers[ExtraBufferIdx].pvBuffer;
+      cbCurrEncData := Buffers[ExtraBufferIdx].cbBuffer;
+    end
+    // No unprocessed data - break the loop
+    else
+    begin
+      cbEncData := 0; // all data processed
+      Break;
+    end;
+
+    // The server wants to perform another handshake sequence.
+    if Result = SEC_I_RENEGOTIATE then
+      Break;
+  until False;
+end;
+
+initialization
+
+finalization
+  Fin;
+
+{$ENDIF MSWINDOWS}
+end.

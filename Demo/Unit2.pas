@@ -26,10 +26,12 @@ type
     lblTraf: TLabel;
     btnReqAsync: TButton;
     lbl: TLabel;
+    chbData: TCheckBox;
     procedure chbDumpsClick(Sender: TObject);
     procedure btnReqSyncClick(Sender: TObject);
     procedure btnReqAsyncClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure chbDataClick(Sender: TObject);
   public
     {$IFDEF ICS}
     icsSock: TSChannelWSocket;
@@ -49,6 +51,7 @@ var
   Form2: TForm2;
   hClientCreds: CredHandle = ();
   PrintDumps: Boolean = False;
+  PrintData: Boolean = False;
 
 const
   DefaultReq = 'HEAD / HTTP/1.1'+sLineBreak+'Connection: close'+sLineBreak+sLineBreak;
@@ -59,7 +62,8 @@ implementation
 
 procedure TForm2.FormCreate(Sender: TObject);
 begin
-  mReq.Text := DefaultReq;
+  if mReq.Lines.Count = 0 then
+    mReq.Text := DefaultReq;
 end;
 
 procedure TForm2.Log(const s: string; AddStamp: Boolean);
@@ -93,7 +97,6 @@ begin
   // Cancel
   if TButton(Sender).Caption = SLblBtnSync[True] then
   begin
-    Cancel := True;
     SChannelSocketRequest.Cancel := True;
     TButton(Sender).Caption := SLblBtnSync[False];
     Exit;
@@ -102,7 +105,6 @@ begin
   // Connect
   if TButton(Sender).Caption = SLblBtnSync[False] then
   begin
-    Cancel := False;
     SChannelSocketRequest.Cancel := False;
     TButton(Sender).Caption := SLblBtnSync[True];
     SChannel.Utils.Init;
@@ -112,11 +114,46 @@ begin
     finally
       SChannel.Utils.Fin;
     end;
-    Cancel := False;
     SChannelSocketRequest.Cancel := False;
     TButton(Sender).Caption := SLblBtnSync[False];
     Exit;
   end;
+end;
+
+procedure TForm2.btnReqAsyncClick(Sender: TObject);
+begin
+  {$IFDEF ICS}
+  // Cancel
+  if TButton(Sender).Caption = SLblBtnAsync[True] then
+  begin
+    if icsSock <> nil then
+      icsSock.Close;
+    TButton(Sender).Caption := SLblBtnAsync[False];
+    Exit;
+  end;
+
+  // Connect
+  if TButton(Sender).Caption = SLblBtnAsync[False] then
+  begin
+    TButton(Sender).Caption := SLblBtnAsync[True];
+    icsSock := TSChannelWSocket.Create(Self);
+    icsSock.OnBgException := WSocketBgException;
+    icsSock.OnDataAvailable := WSocketDataAvailable;
+    icsSock.OnSessionConnected := WSocketSessionConnected;
+    icsSock.OnDataSent := WSocketDataSent;
+    icsSock.onException := WSocketException;
+    icsSock.OnSessionClosed := WSocketSessionClosed;
+    icsSock.IcsLogger := TIcsLogger.Create(icsSock);
+    icsSock.IcsLogger.LogOptions := LogAllOptDump + [loSslDevel, loDestEvent, loDestFile, loAddStamp];
+    icsSock.IcsLogger.LogFileName := 'socket.log';
+    icsSock.IcsLogger.OnIcsLogEvent := IcsLoggerLogEvent;
+    icsSock.Addr := eURL.Text;
+    icsSock.Port := '443';
+    icsSock.ComponentOptions := [wsoAsyncDnsLookup{, wsoNoReceiveLoop}];
+    icsSock.Secure := True;
+    icsSock.Connect;
+  end;
+  {$ENDIF}
 end;
 
 procedure TForm2.chbDumpsClick(Sender: TObject);
@@ -125,26 +162,10 @@ begin
   SChannelSocketRequest.PrintDumps := PrintDumps;
 end;
 
-procedure TForm2.btnReqAsyncClick(Sender: TObject);
+procedure TForm2.chbDataClick(Sender: TObject);
 begin
-  {$IFDEF ICS}
-  icsSock := TSChannelWSocket.Create(Self);
-  icsSock.OnBgException := WSocketBgException;
-  icsSock.OnDataAvailable := WSocketDataAvailable;
-  icsSock.OnSessionConnected := WSocketSessionConnected;
-  icsSock.OnDataSent := WSocketDataSent;
-  icsSock.onException := WSocketException;
-  icsSock.OnSessionClosed := WSocketSessionClosed;
-  icsSock.IcsLogger := TIcsLogger.Create(icsSock);
-  icsSock.IcsLogger.LogOptions := LogAllOptDump + [loSslDevel, loDestEvent, loDestFile, loAddStamp];
-  icsSock.IcsLogger.LogFileName := 'socket.log';
-  icsSock.IcsLogger.OnIcsLogEvent := IcsLoggerLogEvent;
-  icsSock.Addr := eURL.Text;
-  icsSock.Port := '443';
-  icsSock.ComponentOptions := [wsoAsyncDnsLookup, wsoNoReceiveLoop];
-  icsSock.Secure := True;
-  icsSock.Connect;
-  {$ENDIF}
+  PrintData := TCheckBox(Sender).Checked;
+  SChannelSocketRequest.PrintData := PrintData;
 end;
 
 {$IFDEF ICS}
@@ -161,15 +182,17 @@ var
   res : Integer;
 begin
   res := TWSocket(Sender).Receive(@TrashCanBuf, SizeOf(TrashCanBuf)-1);
+  // Could be WSAEWOULDBLOCK
   if res = SOCKET_ERROR then
   begin
     Log(Format('Error reading data from server: %s', [SysErrorMessage(WSAGetLastError)]));
-    TSChannelWSocket(Sender).Close;
     Exit;
   end;
 
   TrashCanBuf[res] := #0;
-  Log('WSocket.DataAvailable, got '+IntToStr(res)+sLineBreak+StrPas(PAnsiChar(@TrashCanBuf)));
+  Log('WSocket.DataAvailable('+IntToStr(ErrCode)+'), got '+IntToStr(res)+
+    IfThen(PrintData, sLineBreak+StrPas(PAnsiChar(@TrashCanBuf)))
+  );
   Form2.lblTraf.Caption := Format('Traffic: %d total / %d payload', [TSChannelWSocket(Sender).ReadCount, TSChannelWSocket(Sender).PayloadReadCount]);
 end;
 
@@ -179,7 +202,7 @@ begin
   Log('WSocket.SessionConnected');
 
   req := IfThen(mReq.Lines.Count > 0, mReq.Text, DefaultReq);
-  Log('Sending request:'+sLineBreak+req);
+  Log('Sending request'+IfThen(PrintData, ':'+sLineBreak+req));
 
   TWSocket(Sender).SendLine(req);
 end;
@@ -204,6 +227,7 @@ begin
   Log('WSocket.SessionClosed');
   Log(Format('Traffic: %d total / %d payload', [TSChannelWSocket(Sender).ReadCount, TSChannelWSocket(Sender).PayloadReadCount]));
   FreeAndNil(icsSock);
+  btnReqAsync.Caption := SLblBtnAsync[False];
 end;
 
 {$ENDIF}

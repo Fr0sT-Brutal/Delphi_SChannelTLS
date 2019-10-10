@@ -25,9 +25,9 @@ object Form2: TForm2
   end
   object lblTraf: TLabel
     Left = 390
-    Top = 66
-    Width = 65
-    Height = 17
+    Top = 40
+    Width = 75
+    Height = 16
   end
   object lbl: TLabel
     Left = 16
@@ -74,10 +74,10 @@ object Form2: TForm2
   end
   object chbDumps: TCheckBox
     Left = 390
-    Top = 43
-    Width = 161
+    Top = 70
+    Width = 227
     Height = 17
-    Caption = 'Print handshake dumps'
+    Caption = 'Print handshake dumps (sync only)'
     TabOrder = 4
     OnClick = chbDumpsClick
   end
@@ -90,5 +90,14 @@ object Form2: TForm2
     Default = True
     TabOrder = 5
     OnClick = btnReqAsyncClick
+  end
+  object chbData: TCheckBox
+    Left = 390
+    Top = 93
+    Width = 227
+    Height = 17
+    Caption = 'Print data'
+    TabOrder = 6
+    OnClick = chbDataClick
   end
 end

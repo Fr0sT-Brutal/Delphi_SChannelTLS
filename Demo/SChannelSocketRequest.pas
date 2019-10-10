@@ -10,7 +10,7 @@ unit SChannelSocketRequest;
 interface
 
 uses
-  Forms, Winapi.Windows, System.SysUtils, WinSock, Classes,
+  Forms, Winapi.Windows, System.SysUtils, WinSock, Classes, StrUtils,
   JwaWinError, JwaSspi, SChannel.Utils, SChannel.SyncHandshake;
 
 type
@@ -18,6 +18,7 @@ type
 
 var
   PrintDumps: Boolean = False;
+  PrintData: Boolean = False;
   Cancel: Boolean = False;
   LogFn: TLogFn;
 
@@ -104,6 +105,7 @@ var
   EncrCnt, DecrCnt: Cardinal;
 //  OutBuffer: SecBuffer;
   SessionData: TSessionData;
+  arg: u_long;
 begin
   Result := resConnErr; EncrCnt := 0; DecrCnt := 0; sock := INVALID_SOCKET;
   try try
@@ -131,7 +133,8 @@ begin
     // message begins after the header
     req := RawByteString(ReqStr);
     EncryptData(hCtx, Sizes, Pointer(req), Length(req), PByte(IoBuffer), cbIoBufferLength, cbData); {}// ? что если больше, за два захода понадобится
-    LogFn(Format('Sending %d bytes of plaintext, %d bytes encrypted'+sLineBreak+string(req), [Length(req), cbData]));
+    LogFn(Format('Sending %d bytes of plaintext, %d bytes encrypted', [Length(req), cbData])+
+      IfThen(PrintData, sLineBreak+string(req)));
 
     // Send the encrypted data to the server.
     res := send(sock, Pointer(IoBuffer)^, cbData, 0);
@@ -147,10 +150,15 @@ begin
     // cbData is the length of received data in IoBuffer
     SetLength(buf, Sizes.cbMaximumMessage);
     cbData := 0; DecrCnt := 0;
+    // Set socket non-blocking
+    arg := 1;
+    ioctlsocket(sock, FIONBIO, arg);
+
     repeat
+      Application.ProcessMessages;
       if Cancel then
       begin
-        LogFn('~~~ Cancelled');
+        LogFn('~~~ Closed by user request');
         closesocket(sock);
         Break;
       end;
@@ -158,7 +166,14 @@ begin
       // get the data
       res := recv(sock, (PByte(IoBuffer) + cbData)^, cbIoBufferLength - cbData, 0);
       if res = SOCKET_ERROR then
-        raise ESSPIError.CreateWinAPI('Error reading data from server', 'recv', WSAGetLastError)
+      begin
+        if WSAGetLastError = WSAEWOULDBLOCK then
+        begin
+          Sleep(100);
+          Continue;
+        end;
+        raise ESSPIError.CreateWinAPI('Error reading data from server', 'recv', WSAGetLastError);
+      end
       else // success / disconnect
       begin
         if res = 0 then   // Server disconnected.
@@ -179,7 +194,8 @@ begin
             if cbRead = 0 then
               LogFn('No data')
             else
-              LogFn('Received '+IntToStr(cbRead)+' bytes'+sLineBreak+string(StrPas(PAnsiChar(buf))));
+              LogFn('Received '+IntToStr(cbRead)+' bytes'+
+                IfThen(PrintData, sLineBreak+string(StrPas(PAnsiChar(buf)))));
             Inc(DecrCnt, cbRead);
             if scRet = SEC_I_CONTEXT_EXPIRED then
             begin
@@ -198,7 +214,6 @@ begin
           raise ESSPIError.CreateSecStatus('unexpected result', 'DecryptMessage', scRet);
       end; // case
 
-      Application.ProcessMessages;
     until False;
 
 {}{

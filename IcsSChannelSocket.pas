@@ -152,10 +152,6 @@ begin
     if FDecrBuffer.DataLen > 0 then
     begin
         Result := RecvFromBuffer;
-        // We haven't received data from socket - there could be no more DataAvailable
-        // event. Empty recv will launch it again.
-        pCurrBuffer := nil;
-        inherited DoRecv(pCurrBuffer, 0, Flags);
         Exit;
     end;
 
@@ -178,10 +174,10 @@ begin
         SEC_E_OK, SEC_E_INCOMPLETE_MESSAGE, SEC_I_CONTEXT_EXPIRED:
             begin
                 SChannelLog(loSslDevel, Format('Received %d bytes of encrypted data / %d bytes of payload', [res, cbRead]));
-                FDecrBuffer.DataLen := cbRead;
-                Result := RecvFromBuffer;
                 if scRet = SEC_I_CONTEXT_EXPIRED then
                     SChannelLog(loSslInfo, 'Server closed the connection [SEC_I_CONTEXT_EXPIRED]');
+                FDecrBuffer.DataLen := cbRead;
+                Result := RecvFromBuffer;
             end;
         SEC_I_RENEGOTIATE:
             begin
@@ -249,26 +245,56 @@ begin
     DoHandshakeStart;
 end;
 
-// Data incoming. Handle handshake
+// Data incoming. Handle handshake or ensure decrypted data is received
 function TSChannelWSocket.TriggerDataAvailable(Error: Word): Boolean;
 begin
-    // Custom process only if handshaking
-    if FChannelState <> chsHandshake then
-    begin
-        Result := inherited;
-        Exit;
-    end;
+    case FChannelState of
+        // No secure channel - default
+        chsNotStarted:
+            begin
+                Result := inherited;
+            end;
 
-    Result := True;
-    DoHandshakeProcess;
+        // Handshaking in progress
+        chsHandshake:
+            begin
+                if (Error <> 0) then
+                begin
+                    SChannelLog(loSslErr, Format('Handshake - ! error [%d] in TriggerDataAvailable', [Error]));
+                    TriggerSessionConnected(Error);
+                    InternalClose(TRUE, Error);
+                    Result := FALSE;
+                    Exit;
+                end;
+
+                Result := True;
+                DoHandshakeProcess;
+            end;
+
+        // Channel established - make sure OnDataAvailable is called for all decrypted data
+        chsEstablished, chsShutdown:
+            begin
+                // "inherited" will likely call Receive=>DoRecv which will probably
+                // read some data from socket and decrypt it. So if handler is assigned
+                // (Result = True), loop while there's decrypted data remaining.
+                Result := inherited;
+                if Result then
+                    while Result and (FDecrBuffer.DataLen > 0) do  // process case of clearing OnDataAvailable handler
+                        Result := inherited;
+            end;
+    end; // case
 end;
 
 procedure TSChannelWSocket.TriggerDataSent(Error: Word);
 begin
-  if FChannelState <> chsShutdown then
-      inherited
-  else
-      inherited ShutDown(FShutdownHow);
+    // Custom process only if shutting down the secure channel
+    if FChannelState <> chsShutdown then
+    begin
+        inherited;
+        Exit;
+    end;
+
+    inherited ShutDown(FShutdownHow);
 end;
 
 // TWSocket.ASyncReceive finishes when there's no data in socket but we could
@@ -277,9 +303,10 @@ end;
 procedure TSChannelWSocket.TriggerSessionClosed(Error: Word);
 begin
     try
-        while FDecrBuffer.DataLen > 0 do
-            if not TriggerDataAvailable(0) then
-                Break;
+        if FChannelState = chsEstablished then
+            while FDecrBuffer.DataLen > 0 do
+                if not TriggerDataAvailable(0) then
+                    Break;
 
         inherited;
     except
@@ -332,17 +359,20 @@ end;
 procedure TSChannelWSocket.DoHandshakeProcess;
 var
     cbData: Integer;
-    pCurrBuffer: TWSocketData;
 begin
     // Read next chunk from server
     if FHandShakeData.Stage = hssReadSrvHello then
     begin
         // For some mysterious reason DoRecv requires "var"...
-        pCurrBuffer := (PByte(FHandShakeData.IoBuffer) + FHandShakeData.cbIoBuffer);
-        cbData := DoRecv(pCurrBuffer,
-            Length(FHandShakeData.IoBuffer) - FHandShakeData.cbIoBuffer, 0);
-        if cbData <= 0 then // should not happen
-            raise ESSPIError.CreateWinAPI('Handshake - no data received or error receiving', 'Recv', WSocket_WSAGetLastError);
+        cbData := Receive((PByte(FHandShakeData.IoBuffer) + FHandShakeData.cbIoBuffer),
+            Length(FHandShakeData.IoBuffer) - FHandShakeData.cbIoBuffer);
+        // ! Although this function is called from TriggerDataAvailable,
+        // WSAEWOULDBLOCK could happen so we just ignore receive errors
+        if cbData <= 0 then
+        begin
+            SChannelLog(loSslDevel, Format('Handshake - no data received or error receiving [%d]', [WSocket_WSAGetLastError]));
+            Exit;
+        end;
         SChannelLog(loSslDevel, Format('Handshake - %d bytes received', [cbData]));
         Inc(FHandShakeData.cbIoBuffer, cbData);
     end;

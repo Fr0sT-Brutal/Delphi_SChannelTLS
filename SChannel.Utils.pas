@@ -23,7 +23,7 @@ uses
 
 const
   LogPrefix = '[SChannel]: '; // Just a suggested prefix for log output
-  IO_BUFFER_SIZE = $1000;     // Size of handshake buffer
+  IO_BUFFER_SIZE = $10000;    // Size of handshake buffer
   USED_PROTOCOLS = SP_PROT_TLS1_1 or SP_PROT_TLS1_2; // TLS 1.0 is not used by default, add `SP_PROT_TLS1_0` if needed
 
 type

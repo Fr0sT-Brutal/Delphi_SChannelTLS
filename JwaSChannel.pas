@@ -12,6 +12,7 @@ uses
   Windows, JwaBaseTypes, JwaWinCrypt;
 
 const
+// Protocols
   SP_PROT_TLS1_0_SERVER = $00000040;
   SP_PROT_TLS1_0_CLIENT = $00000080;
   SP_PROT_TLS1_0        = SP_PROT_TLS1_0_SERVER or SP_PROT_TLS1_0_CLIENT;
@@ -24,7 +25,15 @@ const
   SP_PROT_TLS1_2_CLIENT = $00000800;
   SP_PROT_TLS1_2        = SP_PROT_TLS1_2_SERVER or SP_PROT_TLS1_2_CLIENT;
 
-  SECPKG_ATTR_REMOTE_CERT_CONTEXT = $53;   // returns PCCERT_CONTEXT
+// QueryContextAttributes/QueryCredentialsAttribute extensions
+  SECPKG_ATTR_REMOTE_CERT_CONTEXT  = $53;  // returns PCCERT_CONTEXT
+  SECPKG_ATTR_LOCAL_CERT_CONTEXT   = $54;  // returns PCCERT_CONTEXT
+  SECPKG_ATTR_ROOT_STORE           = $55;  // returns HCERTCONTEXT to the root store
+  SECPKG_ATTR_SUPPORTED_ALGS       = $56;  // returns SecPkgCred_SupportedAlgs
+  SECPKG_ATTR_CIPHER_STRENGTHS     = $57;  // returns SecPkgCred_CipherStrengths
+  SECPKG_ATTR_SUPPORTED_PROTOCOLS  = $58;  // returns SecPkgCred_SupportedProtocols
+  SECPKG_ATTR_ISSUER_LIST_EX       = $59;  // returns SecPkgContext_IssuerListInfoEx
+  SECPKG_ATTR_CONNECTION_INFO      = $5a;  // returns SecPkgContext_ConnectionInfo
 
   UNISP_NAME = 'Microsoft Unified Security Protocol Provider';
 
@@ -68,6 +77,12 @@ type
   end;
   SCHANNEL_CRED = _SCHANNEL_CRED;
   PSCHANNEL_CRED = ^SCHANNEL_CRED;
+
+type
+  SecPkgContext_IssuerListInfoEx = record
+    aIssuers: PCERT_NAME_BLOB;
+    cIssuers: Cardinal;
+  end;
 
 const
   SCH_CRED_NO_SYSTEM_MAPPER                    = $00000002;

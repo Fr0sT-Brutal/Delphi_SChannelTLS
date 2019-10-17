@@ -25,7 +25,8 @@ uses
 const
   LogPrefix = '[SChannel]: '; // Just a suggested prefix for log output
   IO_BUFFER_SIZE = $10000;    // Size of handshake buffer
-  USED_PROTOCOLS = SP_PROT_TLS1_1 or SP_PROT_TLS1_2; // TLS 1.0 is not used by default, add `SP_PROT_TLS1_0` if needed
+  USED_PROTOCOLS: DWORD = SP_PROT_TLS1_1 or SP_PROT_TLS1_2; // TLS 1.0 is not used by default, add `SP_PROT_TLS1_0` if needed
+  USED_ALGS: ALG_ID = 0; // = default; CALG_DH_EPHEM; CALG_RSA_KEYX;
 
 type
   // Stage of handshake
@@ -410,12 +411,13 @@ begin
   SchannelCred.grbitEnabledProtocols := USED_PROTOCOLS;
 
   cSupportedAlgs := 0;
-{  if aiKeyExch <> 0 then
+
+  if USED_ALGS <> 0 then
   begin
-    rgbSupportedAlgs[cSupportedAlgs] := aiKeyExch;
+    rgbSupportedAlgs[cSupportedAlgs] := USED_ALGS;
     Inc(cSupportedAlgs);
   end;
-}
+
   if cSupportedAlgs <> 0 then
   begin
     SchannelCred.cSupportedAlgs    := cSupportedAlgs;
@@ -554,7 +556,9 @@ end;
 
 {
  Function to prepare all necessary handshake data. No transport level actions.
- @raises ESSPIError on error
+   @param SessionData - [IN/OUT] record with session data
+   @param HandShakeData - [IN/OUT] record with handshake data
+   @raises ESSPIError on error
  Function actions and returning data depending on input stage:
   - `HandShakeData.Stage` = hssNotStarted. Generate client hello. @br
      *Output stage*: hssSendCliHello. @br

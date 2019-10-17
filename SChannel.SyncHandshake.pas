@@ -70,7 +70,7 @@ end;
 
 // Synchronously perform full handshake process including communication with server.
 // Communication is done via two callback functions.
-//   @param SessionData - record with session data
+//   @param SessionData - [IN/OUT] record with session data
 //   @param ServerName - name of domain to connect to
 //   @param LogFn - logging callback, could be @nil
 //   @param Data - any data with which `SendFn` and `RecvFn` will be called

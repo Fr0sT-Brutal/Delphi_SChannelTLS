@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>SChannel helper: SChannel.SyncHandshake</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="PasDoc 0.15.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<link rel="StyleSheet" type="text/css" href="pasdoc.css">
+</head>
+<body>
+<table class="container"><tr><td class="navigation">
+<h2>SChannel helper</h2><p><a href="AllUnits.html" class="navigation">Units</a></p><p><a href="ClassHierarchy.html" class="navigation">Class Hierarchy</a></p><p><a href="AllClasses.html" class="navigation">Classes, Interfaces, Objects and Records</a></p><p><a href="AllTypes.html" class="navigation">Types</a></p><p><a href="AllVariables.html" class="navigation">Variables</a></p><p><a href="AllConstants.html" class="navigation">Constants</a></p><p><a href="AllFunctions.html" class="navigation">Functions and Procedures</a></p><p><a href="AllIdentifiers.html" class="navigation">Identifiers</a></p></td><td class="content">
+<h1 class="unit">Unit SChannel.SyncHandshake</h1>
+<div class="sections">
+<div class="one_section"><a class="section" href="#PasDoc-Description">Description</a></div><div class="one_section">Uses</div><div class="one_section">Classes, Interfaces, Objects and Records</div><div class="one_section"><a class="section" href="#PasDoc-FuncsProcs">Functions and Procedures</a></div><div class="one_section"><a class="section" href="#PasDoc-Types">Types</a></div><div class="one_section">Constants</div><div class="one_section">Variables</div></div>
+<span id="PasDoc-Description"></span><h2 class="description">Description</h2>
+<p>
+Helper function that implements synchronous TLS handshake by means of Windows SChannel. The function is transport-agnostic so it could be applied to any socket implementation or even other transport.
+
+<p>Inspired by TLS-Sample from <a  href="http://www.coastrd.com/c-schannel-smtp">http://www.coastrd.com/c-schannel-smtp</a>
+
+<p>Uses JEDI API units from <a  href="https://jedi-apilib.sourceforge.net">https://jedi-apilib.sourceforge.net</a>
+
+<p>(c) Fr0sT-Brutal
+
+<p>License MIT</p>
+<span id="PasDoc-Uses"></span><h2 class="overview">Overview</h2>
+<span id="PasDoc-FuncsProcs"></span><h3 class="summary">Functions and Procedures</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="itemcode"><code>procedure <strong><a  href="SChannel.SyncHandshake.html#PerformClientHandshake">PerformClientHandshake</a></strong>(const SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>; const ServerName: string; LogFn: <a  href="SChannel.SyncHandshake.html#TLogFn">TLogFn</a>; Data: Pointer; SendFn: <a  href="SChannel.SyncHandshake.html#TSendFn">TSendFn</a>; RecvFn: <a  href="SChannel.SyncHandshake.html#TRecvFn">TRecvFn</a>; out hContext: CtxtHandle);</code></td>
+</tr>
+</table>
+<span id="PasDoc-Types"></span><h3 class="summary">Types</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.SyncHandshake.html#TLogFn">TLogFn</a></strong> = procedure (const Msg: string) of object;</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.SyncHandshake.html#TSendFn">TSendFn</a></strong> = function (Data: Pointer; Buf: Pointer; BufLen: Integer): Integer;</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.SyncHandshake.html#TRecvFn">TRecvFn</a></strong> = function (Data: Pointer; Buf: Pointer; BufLen: Integer): Integer;</code></td>
+</tr>
+</table>
+<h2 class="description">Description</h2>
+<h3 class="detail">Functions and Procedures</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="PerformClientHandshake"></span><code>procedure <strong>PerformClientHandshake</strong>(const SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>; const ServerName: string; LogFn: <a  href="SChannel.SyncHandshake.html#TLogFn">TLogFn</a>; Data: Pointer; SendFn: <a  href="SChannel.SyncHandshake.html#TSendFn">TSendFn</a>; RecvFn: <a  href="SChannel.SyncHandshake.html#TRecvFn">TRecvFn</a>; out hContext: CtxtHandle);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Synchronously perform full handshake process including communication with server. Communication is done via two callback functions.        </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>SessionData</dt>
+<dd>- record with session data</dd>
+<dt>ServerName</dt>
+<dd>- name of domain to connect to</dd>
+<dt>LogFn</dt>
+<dd>- logging callback, could be <code>Nil</code></dd>
+<dt>Data</dt>
+<dd>- any data with which <code>SendFn</code> and <code>RecvFn</code> will be called</dd>
+<dt>SendFn</dt>
+<dd>- data send callback</dd>
+<dt>RecvFn</dt>
+<dd>- data read callback</dd>
+<dt>hContext</dt>
+<dd>- [OUT] receives current session context</dd>
+</dl>
+<h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<h3 class="detail">Types</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="TLogFn"></span><code><strong>TLogFn</strong> = procedure (const Msg: string) of object;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Logging function. All messages coming from functions of this unit are prefixed with <code><a class="normal" href="SChannel.Utils.html#LogPrefix">SChannel.Utils.LogPrefix</a></code> constant</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="TSendFn"></span><code><strong>TSendFn</strong> = function (Data: Pointer; Buf: Pointer; BufLen: Integer): Integer;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Synchronous communication function.     </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>Data</dt>
+<dd>- the value of <code>Data</code> with which <code><a class="normal" href="SChannel.SyncHandshake.html#PerformClientHandshake">PerformClientHandshake</a></code> was called (Socket object, handle, etc)</dd>
+<dt>Buf</dt>
+<dd>- buffer with data</dd>
+<dt>BufLen</dt>
+<dd>- size of data in buffer</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return">amount of data sent. Must try to send all data in full, as no retries or repeated sends is done.</p><h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><code>exception</code></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="TRecvFn"></span><code><strong>TRecvFn</strong> = function (Data: Pointer; Buf: Pointer; BufLen: Integer): Integer;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Synchronous communication function.     </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>Data</dt>
+<dd>- the value of <code>Data</code> with which <code><a class="normal" href="SChannel.SyncHandshake.html#PerformClientHandshake">PerformClientHandshake</a></code> was called (Socket object, handle, etc)</dd>
+<dt>Buf</dt>
+<dd>- buffer to receive data</dd>
+<dt>BufLen</dt>
+<dd>- size of free space in buffer</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return">amount of data read, <code>0</code> if no data read and <code>-1</code> on error. Must try to send all data in full, as no retries or repeated sends is done.</p><h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><code>exception</code></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<hr><span class="appinfo"><em>Generated by <a  href="https://github.com/pasdoc/pasdoc/wiki">PasDoc 0.15.0</a>. </em>
+</span>
+</td></tr></table></body></html>

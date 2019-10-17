@@ -9,6 +9,7 @@
   Uses JEDI API units from https://jedi-apilib.sourceforge.net
 
   (c) Fr0sT-Brutal
+  
   License MIT
 }
 
@@ -414,7 +415,6 @@ begin
     raise ErrSecStatus('at CreateCredentials', 'AcquireCredentialsHandle', Status);
 end;
 
-// Load global stuff. Must be called before any other function called.
 procedure Init;
 begin
   if g_pSSPI = nil then

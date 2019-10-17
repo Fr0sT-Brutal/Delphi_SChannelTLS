@@ -9,6 +9,7 @@
   Uses JEDI API units from https://jedi-apilib.sourceforge.net
 
   (c) Fr0sT-Brutal
+  
   License MIT
 }
 
@@ -71,7 +72,10 @@ end;
 // Communication is done via two callback functions.
 //   @param SessionData - record with session data
 //   @param ServerName - name of domain to connect to
+//   @param LogFn - logging callback, could be @nil
 //   @param Data - any data with which `SendFn` and `RecvFn` will be called
+//   @param SendFn - data send callback
+//   @param RecvFn - data read callback
 //   @param hContext - [OUT] receives current session context
 // @raises ESSPIError on error
 procedure PerformClientHandshake(const SessionData: TSessionData; const ServerName: string;

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>SChannel helper: SChannel.Utils</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="PasDoc 0.15.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<link rel="StyleSheet" type="text/css" href="pasdoc.css">
+</head>
+<body>
+<table class="container"><tr><td class="navigation">
+<h2>SChannel helper</h2><p><a href="AllUnits.html" class="navigation">Units</a></p><p><a href="ClassHierarchy.html" class="navigation">Class Hierarchy</a></p><p><a href="AllClasses.html" class="navigation">Classes, Interfaces, Objects and Records</a></p><p><a href="AllTypes.html" class="navigation">Types</a></p><p><a href="AllVariables.html" class="navigation">Variables</a></p><p><a href="AllConstants.html" class="navigation">Constants</a></p><p><a href="AllFunctions.html" class="navigation">Functions and Procedures</a></p><p><a href="AllIdentifiers.html" class="navigation">Identifiers</a></p></td><td class="content">
+<h1 class="unit">Unit SChannel.Utils</h1>
+<div class="sections">
+<div class="one_section"><a class="section" href="#PasDoc-Description">Description</a></div><div class="one_section">Uses</div><div class="one_section"><a class="section" href="#PasDoc-Classes">Classes, Interfaces, Objects and Records</a></div><div class="one_section"><a class="section" href="#PasDoc-FuncsProcs">Functions and Procedures</a></div><div class="one_section"><a class="section" href="#PasDoc-Types">Types</a></div><div class="one_section"><a class="section" href="#PasDoc-Constants">Constants</a></div><div class="one_section"><a class="section" href="#PasDoc-Variables">Variables</a></div></div>
+<span id="PasDoc-Description"></span><h2 class="description">Description</h2>
+<p>
+Helper functions for easy implementation of TLS communication by means of Windows SChannel. The functions are transport-agnostic so they could be applied to any socket implementation or even other transport.
+
+<p>Inspired by TLS-Sample from <a  href="http://www.coastrd.com/c-schannel-smtp">http://www.coastrd.com/c-schannel-smtp</a>
+
+<p>Uses JEDI API units from <a  href="https://jedi-apilib.sourceforge.net">https://jedi-apilib.sourceforge.net</a>
+
+<p>(c) Fr0sT-Brutal
+
+<p>License MIT</p>
+<span id="PasDoc-Uses"></span><h2 class="overview">Overview</h2>
+<span id="PasDoc-Classes"></span><h3 class="cio">Classes, Interfaces, Objects and Records</h3>
+<table class="classestable wide_list">
+<tr class="listheader">
+<th class="itemname">Name</th>
+<th class="itemdesc">Description</th>
+</tr>
+<tr class="list">
+<td class="itemname">Record&nbsp;<a class="bold" href="SChannel.Utils.THandShakeData.html"><code>THandShakeData</code></a></td>
+<td class="itemdesc">United state and data for TLS handshake</td>
+</tr>
+<tr class="list2">
+<td class="itemname">Record&nbsp;<a class="bold" href="SChannel.Utils.TSessionData.html"><code>TSessionData</code></a></td>
+<td class="itemdesc">Data related to a session.</td>
+</tr>
+<tr class="list">
+<td class="itemname">Class&nbsp;<a class="bold" href="SChannel.Utils.ESSPIError.html"><code>ESSPIError</code></a></td>
+<td class="itemdesc">Specific exception class.</td>
+</tr>
+</table>
+<span id="PasDoc-FuncsProcs"></span><h3 class="summary">Functions and Procedures</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#LoadSecurityLibrary">LoadSecurityLibrary</a></strong>;</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#CreateCredentials">CreateCredentials</a></strong>(const User: string; out hCreds: CredHandle; out SchannelCred: SCHANNEL_CRED);</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#Init">Init</a></strong>;</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#Fin">Fin</a></strong>;</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#InitSession">InitSession</a></strong>(var SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#FinSession">FinSession</a></strong>(var SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#DoClientHandshake">DoClientHandshake</a></strong>(const SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>; var HandShakeData: <a  href="SChannel.Utils.THandShakeData.html">THandShakeData</a>): SECURITY_STATUS;</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#GetShutdownData">GetShutdownData</a></strong>(const SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>; const hContext: CtxtHandle; out OutBuffer: SecBuffer);</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></strong>(const SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>; const hContext: CtxtHandle);</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#DeleteContext">DeleteContext</a></strong>(var hContext: CtxtHandle);</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#InitBuffers">InitBuffers</a></strong>(const hContext: CtxtHandle; out pbIoBuffer: TBytes; out Sizes: SecPkgContext_StreamSizes);</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#EncryptData">EncryptData</a></strong>(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes; pbMessage: PByte; cbMessage: DWORD; pbIoBuffer: PByte; pbIoBufferLength: DWORD; out cbWritten: DWORD);</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#DecryptData">DecryptData</a></strong>(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes; pbIoBuffer: PByte; var cbEncData: DWORD; pbDecData: PByte; cbDecDataLength: DWORD; out cbWritten: DWORD): SECURITY_STATUS;</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#SecStatusErrStr">SecStatusErrStr</a></strong>(scRet: SECURITY_STATUS): string;</code></td>
+</tr>
+</table>
+<span id="PasDoc-Types"></span><h3 class="summary">Types</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#THandShakeStage">THandShakeStage</a></strong> = (...);</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#TChannelState">TChannelState</a></strong> = (...);</code></td>
+</tr>
+</table>
+<span id="PasDoc-Constants"></span><h3 class="summary">Constants</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#LogPrefix">LogPrefix</a></strong> = '[SChannel]: ';</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#IO_BUFFER_SIZE">IO_BUFFER_SIZE</a></strong> = $10000;</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#USED_PROTOCOLS">USED_PROTOCOLS</a></strong> = SP_PROT_TLS1_1 or SP_PROT_TLS1_2;</code></td>
+</tr>
+</table>
+<span id="PasDoc-Variables"></span><h3 class="summary">Variables</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#hMYCertStore">hMYCertStore</a></strong>: HCERTSTORE = nil;</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#g_pSSPI">g_pSSPI</a></strong>: PSecurityFunctionTable;</code></td>
+</tr>
+</table>
+<h2 class="description">Description</h2>
+<h3 class="detail">Functions and Procedures</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="LoadSecurityLibrary"></span><code>procedure <strong>LoadSecurityLibrary</strong>;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Mainly for internal use </p>
+<h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="CreateCredentials"></span><code>procedure <strong>CreateCredentials</strong>(const User: string; out hCreds: CredHandle; out SchannelCred: SCHANNEL_CRED);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Mainly for internal use </p>
+<h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="Init"></span><code>procedure <strong>Init</strong>;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Load global stuff. Must be called before any other function called. Could be called many times </p>
+<h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="Fin"></span><code>procedure <strong>Fin</strong>;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Dispose and null global stuff</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="InitSession"></span><code>procedure <strong>InitSession</strong>(var SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Init session, return data record to be used in calling other functions. Could be called many times (nothing will be done on already init-ed record)  </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>SessionData</dt>
+<dd>- [IN, OUT] record that receives values. On first call must be zeroed.</dd>
+</dl>
+<h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="FinSession"></span><code>procedure <strong>FinSession</strong>(var SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Finalize session</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="DoClientHandshake"></span><code>function <strong>DoClientHandshake</strong>(const SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>; var HandShakeData: <a  href="SChannel.Utils.THandShakeData.html">THandShakeData</a>): SECURITY_STATUS;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Function to prepare all necessary handshake data. No transport level actions.  Function actions and returning data depending on input stage: </p>
+
+<ul class="paragraph_spacing">
+  <li><p><code>HandShakeData.Stage</code> = <a class="normal" href="SChannel.Utils.html#hssNotStarted">hssNotStarted</a>. Generate client hello. <br> <em>Output stage</em>: <a class="normal" href="SChannel.Utils.html#hssSendCliHello">hssSendCliHello</a>. <br> <em>Caller action</em>: send returned data (client hello) to server <br> <em>Input data</em>: </p>
+
+<ul class="paragraph_spacing">
+  <li><p>ServerName - host we're connecting to</p></li>
+</ul>
+
+<p> <em>Output data</em>: </p>
+
+<ul class="paragraph_spacing">
+  <li><p>hContext - handle to secure context</p></li>
+  <li><p>OutBuffers - array with single item that must be finally disposed with <code>g_pSSPI.FreeContextBuffer</code></p></li>
+</ul>
+
+<p></p></li>
+  <li><p><code>HandShakeData.Stage</code> = <a class="normal" href="SChannel.Utils.html#hssSendCliHello">hssSendCliHello</a>. <strong>Not</strong> handled by <code>DoClientHandshake</code> <br></p></li>
+  <li><p><code>HandShakeData.Stage</code> = <a class="normal" href="SChannel.Utils.html#hssReadSrvHello">hssReadSrvHello</a>, <a class="normal" href="SChannel.Utils.html#hssReadSrvHelloNoRead">hssReadSrvHelloNoRead</a>, <a class="normal" href="SChannel.Utils.html#hssReadSrvHelloContNeed">hssReadSrvHelloContNeed</a>. Handle server hello
+
+<p><em>Output stage</em>: <a class="normal" href="SChannel.Utils.html#hssReadSrvHello">hssReadSrvHello</a>, <a class="normal" href="SChannel.Utils.html#hssReadSrvHelloNoRead">hssReadSrvHelloNoRead</a>, <a class="normal" href="SChannel.Utils.html#hssReadSrvHelloContNeed">hssReadSrvHelloContNeed</a>, <a class="normal" href="SChannel.Utils.html#hssReadSrvHelloOK">hssReadSrvHelloOK</a>. <br> <em>Caller action</em>: </p>
+
+<ul class="paragraph_spacing">
+  <li><p><a class="normal" href="SChannel.Utils.html#hssReadSrvHello">hssReadSrvHello</a>: read data from server and call <code>DoClientHandshake</code> again</p></li>
+  <li><p><a class="normal" href="SChannel.Utils.html#hssReadSrvHelloNoRead">hssReadSrvHelloNoRead</a>: call <code>DoClientHandshake</code> again without reading</p></li>
+  <li><p><a class="normal" href="SChannel.Utils.html#hssReadSrvHelloContNeed">hssReadSrvHelloContNeed</a>: send token returned in <code>OutBuffers</code> and call <code>DoClientHandshake</code> again</p></li>
+  <li><p><a class="normal" href="SChannel.Utils.html#hssReadSrvHelloOK">hssReadSrvHelloOK</a>: send token returned in <code>OutBuffers</code> and finish</p></li>
+</ul>
+
+<p> <em>Input data</em>: </p>
+
+<ul class="paragraph_spacing">
+  <li><p>ServerName - host we're connecting to</p></li>
+  <li><p>IoBuffer - buffer with data from server</p></li>
+  <li><p>cbIoBuffer - size of data in buffer</p></li>
+</ul>
+
+<p> <em>Output data</em>: </p>
+
+<ul class="paragraph_spacing">
+  <li><p>cbIoBuffer - length of unprocessed data in input buffer</p></li>
+  <li><p>OutBuffers - array with single item that must be finally disposed with <code>g_pSSPI.FreeContextBuffer</code> (<a class="normal" href="SChannel.Utils.html#hssReadSrvHelloContNeed">hssReadSrvHelloContNeed</a>, <a class="normal" href="SChannel.Utils.html#hssReadSrvHelloOK">hssReadSrvHelloOK</a>)</p></li>
+</ul>
+
+<p></p></li>
+  <li><p><code>HandShakeData.Stage</code> = <a class="normal" href="SChannel.Utils.html#hssReadSrvHelloOK">hssReadSrvHelloOK</a>. <strong>Not</strong> handled by <code>DoClientHandshake</code> <br></p></li>
+  <li><p><code>HandShakeData.Stage</code> = <a class="normal" href="SChannel.Utils.html#hssDone">hssDone</a>. <strong>Not</strong> handled by <code>DoClientHandshake</code> <br></p></li>
+</ul>
+
+<p></p>
+<h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="GetShutdownData"></span><code>procedure <strong>GetShutdownData</strong>(const SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>; const hContext: CtxtHandle; out OutBuffer: SecBuffer);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Generate data to send to a server on connection shutdown </p>
+<h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="CheckServerCert"></span><code>procedure <strong>CheckServerCert</strong>(const SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>; const hContext: CtxtHandle);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Check server cert </p>
+<h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="DeleteContext"></span><code>procedure <strong>DeleteContext</strong>(var hContext: CtxtHandle);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Dispose and null security context</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="InitBuffers"></span><code>procedure <strong>InitBuffers</strong>(const hContext: CtxtHandle; out pbIoBuffer: TBytes; out Sizes: SecPkgContext_StreamSizes);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Receive size values for current session and init buffer length to contain full message including header and trailer </p>
+<h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="EncryptData"></span><code>procedure <strong>EncryptData</strong>(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes; pbMessage: PByte; cbMessage: DWORD; pbIoBuffer: PByte; pbIoBufferLength: DWORD; out cbWritten: DWORD);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Encrypt data (prepare for sending to server).        </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>hContext</dt>
+<dd>- current session context</dd>
+<dt>Sizes</dt>
+<dd>- current session sizes</dd>
+<dt>pbMessage</dt>
+<dd>- input data to encrypt</dd>
+<dt>cbMessage</dt>
+<dd>- length of input data</dd>
+<dt>pbIoBuffer</dt>
+<dd>- buffer to receive encrypted data</dd>
+<dt>pbIoBufferLength</dt>
+<dd>- size of buffer</dd>
+<dt>cbWritten</dt>
+<dd>- [OUT] size of encrypted data written to buffer</dd>
+</dl>
+<h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="DecryptData"></span><code>function <strong>DecryptData</strong>(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes; pbIoBuffer: PByte; var cbEncData: DWORD; pbDecData: PByte; cbDecDataLength: DWORD; out cbWritten: DWORD): SECURITY_STATUS;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Decrypt data received from server         </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>hContext</dt>
+<dd>- current session context</dd>
+<dt>Sizes</dt>
+<dd>- current session sizes</dd>
+<dt>pbIoBuffer</dt>
+<dd>- input encrypted data to decrypt</dd>
+<dt>cbEncData</dt>
+<dd>- [IN/OUT] length of encrypted data in buffer. After function call it is set to amount of unprocessed data that is placed from the beginning of the buffer</dd>
+<dt>pbDecData</dt>
+<dd>- buffer to receive decrypted data</dd>
+<dt>cbDecDataLength</dt>
+<dd>- size of buffer</dd>
+<dt>cbWritten</dt>
+<dd>- [OUT] size of decrypted data written to buffer</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return"> </p>
+
+<ul class="paragraph_spacing">
+  <li><p><code>SEC_I_CONTEXT_EXPIRED</code> - server signaled end of session</p></li>
+  <li><p><code>SEC_E_OK</code> - message processed fully</p></li>
+  <li><p><code>SEC_E_INCOMPLETE_MESSAGE</code> - need more data</p></li>
+  <li><p><code>SEC_I_RENEGOTIATE</code> - server wants to perform another handshake sequence</p></li>
+</ul>
+
+<p></p><h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="SecStatusErrStr"></span><code>function <strong>SecStatusErrStr</strong>(scRet: SECURITY_STATUS): string;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Returns string representaion of given security status</p>
+</td></tr>
+</table>
+<h3 class="detail">Types</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="THandShakeStage"></span><code><strong>THandShakeStage</strong> = (...);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Stage of handshake</p>
+<h6 class="description_section">Values</h6>
+<ul>
+<li>
+<span id="hssNotStarted">hssNotStarted</span>: Initial stage</li>
+<li>
+<span id="hssSendCliHello">hssSendCliHello</span>: Sending client hello</li>
+<li>
+<span id="hssReadSrvHello">hssReadSrvHello</span>: Reading server hello - general</li>
+<li>
+<span id="hssReadSrvHelloNoRead">hssReadSrvHelloNoRead</span>: Reading server hello - repeat call without reading</li>
+<li>
+<span id="hssReadSrvHelloContNeed">hssReadSrvHelloContNeed</span>: Reading server hello - in process, send token</li>
+<li>
+<span id="hssReadSrvHelloOK">hssReadSrvHelloOK</span>: Reading server hello - success, send token</li>
+<li>
+<span id="hssDone">hssDone</span>: Final stage</li>
+</ul>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="TChannelState"></span><code><strong>TChannelState</strong> = (...);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+State of secure channel</p>
+<h6 class="description_section">Values</h6>
+<ul>
+<li>
+<span id="chsNotStarted">chsNotStarted</span>: Initial stage</li>
+<li>
+<span id="chsHandshake">chsHandshake</span>: Handshaking with server</li>
+<li>
+<span id="chsEstablished">chsEstablished</span>: Channel established successfully</li>
+<li>
+<span id="chsShutdown">chsShutdown</span>: Sending shutdown signal and closing connection</li>
+</ul>
+</td></tr>
+</table>
+<h3 class="detail">Constants</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="LogPrefix"></span><code><strong>LogPrefix</strong> = '[SChannel]: ';</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Just a suggested prefix for log output</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="IO_BUFFER_SIZE"></span><code><strong>IO_BUFFER_SIZE</strong> = $10000;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Size of handshake buffer</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="USED_PROTOCOLS"></span><code><strong>USED_PROTOCOLS</strong> = SP_PROT_TLS1_1 or SP_PROT_TLS1_2;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+TLS 1.0 is not used by default, add <code>SP_PROT_TLS1_0</code> if needed</p>
+</td></tr>
+</table>
+<h3 class="detail">Variables</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="hMYCertStore"></span><code><strong>hMYCertStore</strong>: HCERTSTORE = nil;</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="g_pSSPI"></span><code><strong>g_pSSPI</strong>: PSecurityFunctionTable;</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<hr><span class="appinfo"><em>Generated by <a  href="https://github.com/pasdoc/pasdoc/wiki">PasDoc 0.15.0</a>. </em>
+</span>
+</td></tr></table></body></html>

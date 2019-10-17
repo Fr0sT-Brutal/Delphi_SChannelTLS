@@ -3,6 +3,7 @@
   Windows SChannel.
 
   (c) Fr0sT-Brutal
+  
   License MIT
 }
 

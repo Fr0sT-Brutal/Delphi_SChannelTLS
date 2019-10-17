@@ -880,7 +880,7 @@ begin
                                             @PolicyStatus) then
       raise ErrWinAPI('at VerifyServerCertificate verifying cert chain', 'CertVerifyCertificateChainPolicy');
 
-    if PolicyStatus.dwError <> S_OK then
+    if PolicyStatus.dwError <> NO_ERROR then
       raise Error('Error at VerifyServerCertificate verifying cert chain calling method "CertVerifyCertificateChainPolicy": %s',
         [WinVerifyTrustErrorStr(PolicyStatus.dwError)]);
   finally
@@ -993,7 +993,7 @@ begin
   pbCurrIoBuffer := pbIoBuffer;
 
   // Decrypt the received data.
-  repeat                            {}// check output buf space remaining
+  repeat
     Buffers[0].pvBuffer   := pbCurrIoBuffer;
     Buffers[0].cbBuffer   := cbCurrEncData;
     Buffers[0].BufferType := SECBUFFER_DATA;  // Initial Type of the buffer 1
@@ -1038,6 +1038,9 @@ begin
     // Move received data to destination if present
     if DataBufferIdx <> 0 then
     begin
+      // check output buf space remaining
+      if cbDecDataLength < Buffers[DataBufferIdx].cbBuffer then
+        Break;
       Move(Buffers[DataBufferIdx].pvBuffer^, pbDecData^, Buffers[DataBufferIdx].cbBuffer);
       Inc(pbDecData, Buffers[DataBufferIdx].cbBuffer);
       Inc(cbWritten, Buffers[DataBufferIdx].cbBuffer);

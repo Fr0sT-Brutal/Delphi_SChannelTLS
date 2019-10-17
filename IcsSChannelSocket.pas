@@ -264,7 +264,7 @@ begin
                     SChannelLog(loSslErr, Format('Handshake - ! error [%d] in TriggerDataAvailable', [Error]));
                     TriggerSessionConnected(Error);
                     InternalClose(TRUE, Error);
-                    Result := FALSE;
+                    Result := False;
                     Exit;
                 end;
 
@@ -283,6 +283,8 @@ begin
                     while Result and (FDecrBuffer.DataLen > 0) do  // process case of clearing OnDataAvailable handler
                         Result := inherited;
             end;
+        else
+            Result := False; // compiler happy
     end; // case
 end;
 

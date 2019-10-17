@@ -47,7 +47,7 @@ type
   TRecvFn = function (Data: Pointer; Buf: Pointer; BufLen: Integer): Integer;
 
 // Synchronously perform full handshake process including communication with server.
-procedure PerformClientHandshake(const SessionData: TSessionData; const ServerName: string;
+procedure PerformClientHandshake(var SessionData: TSessionData; const ServerName: string;
   LogFn: TLogFn; Data: Pointer; SendFn: TSendFn; RecvFn: TRecvFn;
   out hContext: CtxtHandle);
 
@@ -78,7 +78,7 @@ end;
 //   @param RecvFn - data read callback
 //   @param hContext - [OUT] receives current session context
 // @raises ESSPIError on error
-procedure PerformClientHandshake(const SessionData: TSessionData; const ServerName: string;
+procedure PerformClientHandshake(var SessionData: TSessionData; const ServerName: string;
   LogFn: TLogFn; Data: Pointer; SendFn: TSendFn; RecvFn: TRecvFn;
   out hContext: CtxtHandle);
 var

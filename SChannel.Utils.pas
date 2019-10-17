@@ -119,7 +119,7 @@ procedure LoadSecurityLibrary;
 procedure CreateCredentials(const User: string; out hCreds: CredHandle; out SchannelCred: SCHANNEL_CRED);
 // Mainly for internal use
 // @raises ESSPIError on error
-function VerifyServerCertificate(pServerCert: PCCERT_CONTEXT; const szServerName: string; dwCertFlags: DWORD): DWORD;
+procedure VerifyServerCertificate(pServerCert: PCCERT_CONTEXT; const szServerName: string; dwCertFlags: DWORD);
 
 // ~~ Global init and fin ~~
 // Load global stuff. Must be called before any other function called.
@@ -143,7 +143,7 @@ procedure FinSession(var SessionData: TSessionData);
 
 // Function to prepare all necessary handshake data. No transport level actions.
 // @raises ESSPIError on error
-function DoClientHandshake(const SessionData: TSessionData; var HandShakeData: THandShakeData): SECURITY_STATUS;
+function DoClientHandshake(var SessionData: TSessionData; var HandShakeData: THandShakeData): SECURITY_STATUS;
 // Generate data to send to a server on connection shutdown
 // @raises ESSPIError on error
 procedure GetShutdownData(const SessionData: TSessionData; const hContext: CtxtHandle;
@@ -197,6 +197,8 @@ function DecryptData(const hContext: CtxtHandle; const Sizes: SecPkgContext_Stre
 
 // Returns string representaion of given security status
 function SecStatusErrStr(scRet: SECURITY_STATUS): string;
+// Returns string representaion of given verify trust error
+function WinVerifyTrustErrorStr(Status: DWORD): string;
 
 {$ENDIF MSWINDOWS}
 
@@ -288,6 +290,29 @@ begin
     SEC_E_KDC_CERT_EXPIRED              : Result := 'SEC_E_KDC_CERT_EXPIRED';
     SEC_E_KDC_CERT_REVOKED              : Result := 'SEC_E_KDC_CERT_REVOKED';
     else Result := 'Unknown ' + IntToStr(scRet);
+  end;
+end;
+
+function WinVerifyTrustErrorStr(Status: DWORD): string;
+begin
+  case HRESULT(Status) of
+    CERT_E_EXPIRED               : Result := 'CERT_E_EXPIRED';
+    CERT_E_VALIDITYPERIODNESTING : Result := 'CERT_E_VALIDITYPERIODNESTING';
+    CERT_E_ROLE                  : Result := 'CERT_E_ROLE';
+    CERT_E_PATHLENCONST          : Result := 'CERT_E_PATHLENCONST';
+    CERT_E_CRITICAL              : Result := 'CERT_E_CRITICAL';
+    CERT_E_PURPOSE               : Result := 'CERT_E_PURPOSE';
+    CERT_E_ISSUERCHAINING        : Result := 'CERT_E_ISSUERCHAINING';
+    CERT_E_MALFORMED             : Result := 'CERT_E_MALFORMED';
+    CERT_E_UNTRUSTEDROOT         : Result := 'CERT_E_UNTRUSTEDROOT';
+    CERT_E_CHAINING              : Result := 'CERT_E_CHAINING';
+    TRUST_E_FAIL                 : Result := 'TRUST_E_FAIL';
+    CERT_E_REVOKED               : Result := 'CERT_E_REVOKED';
+    CERT_E_UNTRUSTEDTESTROOT     : Result := 'CERT_E_UNTRUSTEDTESTROOT';
+    CERT_E_REVOCATION_FAILURE    : Result := 'CERT_E_REVOCATION_FAILURE';
+    CERT_E_CN_NO_MATCH           : Result := 'CERT_E_CN_NO_MATCH';
+    CERT_E_WRONG_USAGE           : Result := 'CERT_E_WRONG_USAGE';
+    else Result := 'Unknown ' + IntToStr(Status);
   end;
 end;
 
@@ -464,69 +489,67 @@ end;
 
 // ~~ Connect & close ~~
 
-{}procedure GetNewClientCredentials(const SessionData: TSessionData; const hContext: CtxtHandle);
+procedure GetNewClientCredentials(var SessionData: TSessionData; const hContext: CtxtHandle);
+var
+  IssuerListInfo: SecPkgContext_IssuerListInfoEx;
+  pChainContext: PCCERT_CHAIN_CONTEXT;
+  FindByIssuerPara: CERT_CHAIN_FIND_BY_ISSUER_PARA;
+  pCertContext: PCCERT_CONTEXT;
+  tsExpiry: TimeStamp;
+  Status: SECURITY_STATUS;
+  hCreds: CredHandle;
 begin
-  Debug(LogPrefix + 'GetNewClientCredentials TODO');
-(*
-  CredHandle                      hCreds;
-  SecPkgContext_IssuerListInfoEx  IssuerListInfo;
-  PCCERT_CHAIN_CONTEXT            pChainContext;
-  CERT_CHAIN_FIND_BY_ISSUER_PARA  FindByIssuerPara;
-  PCCERT_CONTEXT                  pCertContext;
-  TimeStamp                        tsExpiry;
-  SECURITY_STATUS                  Status;
-
   // Read list of trusted issuers from schannel.
-  Status = g_pSSPI->QueryContextAttributes( phContext, SECPKG_ATTR_ISSUER_LIST_EX, (PVOID)&IssuerListInfo );
-  if(Status != SEC_E_OK) { printf("Error 0x%x querying issuer list info\n", Status); return; }
+  Status := g_pSSPI.QueryContextAttributesW(@hContext, SECPKG_ATTR_ISSUER_LIST_EX, @IssuerListInfo);
+  if Status <> SEC_E_OK then
+    raise ErrSecStatus('at GetNewClientCredentials querying issuer list info', 'QueryContextAttributesW', Status);
 
   // Enumerate the client certificates.
-  ZeroMemory(&FindByIssuerPara, sizeof(FindByIssuerPara));
+  FindByIssuerPara := Default(CERT_CHAIN_FIND_BY_ISSUER_PARA);
+  FindByIssuerPara.cbSize := SizeOf(FindByIssuerPara);
+  FindByIssuerPara.pszUsageIdentifier := szOID_PKIX_KP_CLIENT_AUTH;
+  FindByIssuerPara.dwKeySpec := 0;
+  FindByIssuerPara.cIssuer   := IssuerListInfo.cIssuers;
+  FindByIssuerPara.rgIssuer  := IssuerListInfo.aIssuers;
 
-  FindByIssuerPara.cbSize = sizeof(FindByIssuerPara);
-  FindByIssuerPara.pszUsageIdentifier = szOID_PKIX_KP_CLIENT_AUTH;
-  FindByIssuerPara.dwKeySpec = 0;
-  FindByIssuerPara.cIssuer   = IssuerListInfo.cIssuers;
-  FindByIssuerPara.rgIssuer  = IssuerListInfo.aIssuers;
+  pChainContext := nil;
 
-  pChainContext = NULL;
-
-  while(TRUE)
-  {   // Find a certificate chain.
-    pChainContext = CertFindChainInStore( hMyCertStore,
-                        X509_ASN_ENCODING,
-                        0,
-                        CERT_CHAIN_FIND_BY_ISSUER,
-                        &FindByIssuerPara,
-                        pChainContext );
-    if(pChainContext == NULL) { printf("Error 0x%x finding cert chain\n", GetLastError()); break; }
-
-    printf("\ncertificate chain found\n");
+  while True do
+  begin
+    // Find a certificate chain.
+    pChainContext := CertFindChainInStore(hMYCertStore,
+                                          X509_ASN_ENCODING,
+                                          0,
+                                          CERT_CHAIN_FIND_BY_ISSUER,
+                                          @FindByIssuerPara,
+                                          pChainContext);
+    if pChainContext = nil then
+      raise ErrWinAPI('at GetNewClientCredentials finding cert chain', 'CertFindChainInStore');
 
     // Get pointer to leaf certificate context.
-    pCertContext = pChainContext->rgpChain[0]->rgpElement[0]->pCertContext;
+    pCertContext := pChainContext.rgpChain^.rgpElement^.pCertContext;
 
-    Status = g_pSSPI->AcquireCredentialsHandleA(  NULL,           // Name of principal
-                                                      UNISP_NAME_A,       // Name of package
-                                                      SECPKG_CRED_OUTBOUND,   // Flags indicating use
-                                                      NULL,           // Pointer to logon ID
-                                                      NULL,         // Package specific data
-                                                      NULL,           // Pointer to GetKey() func
-                                                      NULL,           // Value to pass to GetKey()
-                                                      &hCreds,        // (out) Cred Handle
-                                                      &tsExpiry );      // (out) Lifetime (optional)
+    // Create schannel credential.
+    SessionData.SchannelCred.dwVersion := SCHANNEL_CRED_VERSION;
+    SessionData.SchannelCred.cCreds := 1;
+    SessionData.SchannelCred.paCred := @pCertContext;
 
-    if(Status != SEC_E_OK) {printf("**** Error 0x%x returned by AcquireCredentialsHandle\n", Status); continue;}
+    Status := g_pSSPI.AcquireCredentialsHandleW(nil,                          // Name of principal
+                                                PSecWChar(PChar(UNISP_NAME)), // Name of package
+                                                SECPKG_CRED_OUTBOUND,         // Flags indicating use
+                                                nil,                          // Pointer to logon ID
+                                                @SessionData.SchannelCred,    // Package specific data
+                                                nil,                          // Pointer to GetKey() func
+                                                nil,                          // Value to pass to GetKey()
+                                                @hCreds,                      // (out) Cred Handle
+                                                @tsExpiry);                   // (out) Lifetime (optional)
 
-    printf("\nnew schannel credential created\n");
+    if Status <> SEC_E_OK then
+      Continue;
 
-    g_pSSPI->FreeCredentialsHandle(phCreds); // Destroy the old credentials.
-
-    *phCreds = hCreds;
-  }
-
-
-*)
+    g_pSSPI.FreeCredentialsHandle(@SessionData.hCreds); // Destroy the old credentials.
+    SessionData.hCreds := hCreds;
+  end; // while
 end;
 
 {
@@ -571,7 +594,7 @@ end;
 
   - `HandShakeData.Stage` = hssDone. **Not** handled by @name @br
 }
-function DoClientHandshake(const SessionData: TSessionData; var HandShakeData: THandShakeData): SECURITY_STATUS;
+function DoClientHandshake(var SessionData: TSessionData; var HandShakeData: THandShakeData): SECURITY_STATUS;
 
   // Process "extra" buffer and modify HandShakeData.cbIoBuffer accordingly.
   // After the call HandShakeData.IoBuffer will contain HandShakeData.cbIoBuffer
@@ -795,7 +818,7 @@ begin
   OutBuffer := OutBuffers[0];
 end;
 
-function VerifyServerCertificate(pServerCert: PCCERT_CONTEXT; const szServerName: string; dwCertFlags: DWORD): DWORD;
+procedure VerifyServerCertificate(pServerCert: PCCERT_CONTEXT; const szServerName: string; dwCertFlags: DWORD);
 var
   polHttps: HTTPSPolicyCallbackData;
   PolicyPara: CERT_CHAIN_POLICY_PARA;
@@ -853,7 +876,9 @@ begin
                                             @PolicyStatus) then
       raise ErrWinAPI('at VerifyServerCertificate verifying cert chain', 'CertVerifyCertificateChainPolicy');
 
-    Result := PolicyStatus.dwError;
+    if PolicyStatus.dwError <> S_OK then
+      raise Error('Error at VerifyServerCertificate verifying cert chain calling method "CertVerifyCertificateChainPolicy": %s',
+        [WinVerifyTrustErrorStr(PolicyStatus.dwError)]);
   finally
     if pChainContext <> nil then
       CertFreeCertificateChain(pChainContext);
@@ -873,9 +898,7 @@ begin
 
   try
     // Attempt to validate server certificate.
-    Status := VerifyServerCertificate(pRemoteCertContext, ServerName, 0 );
-    if Status <> SEC_E_OK then
-      raise ErrSecStatus('authenticating server credentials at CheckServerCert', 'VerifyServerCertificate', Status);
+    VerifyServerCertificate(pRemoteCertContext, ServerName, 0);
   finally
     // Free the server certificate context.
     CertFreeCertificateContext(pRemoteCertContext);

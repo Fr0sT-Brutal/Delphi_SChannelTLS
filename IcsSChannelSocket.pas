@@ -426,7 +426,7 @@ begin
     FHandShakeData.Stage := hssDone;
     FChannelState := chsEstablished;
     SChannelLog(loSslInfo, 'Handshake established');
-    CheckServerCert(FSessionData, FhContext);
+    CheckServerCert(FhContext, Addr);
     SChannelLog(loSslInfo, 'Server credentials authenticated');
     InitBuffers(FhContext, FSendBuffer, FSizes);
     SetLength(FRecvBuffer.Data, Length(FSendBuffer));

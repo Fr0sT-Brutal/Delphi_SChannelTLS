@@ -117,6 +117,9 @@ procedure LoadSecurityLibrary;
 // Mainly for internal use
 // @raises ESSPIError on error
 procedure CreateCredentials(const User: string; out hCreds: CredHandle; out SchannelCred: SCHANNEL_CRED);
+// Mainly for internal use
+// @raises ESSPIError on error
+function VerifyServerCertificate(pServerCert: PCCERT_CONTEXT; const szServerName: string; dwCertFlags: DWORD): DWORD;
 
 // ~~ Global init and fin ~~
 // Load global stuff. Must be called before any other function called.
@@ -147,7 +150,7 @@ procedure GetShutdownData(const SessionData: TSessionData; const hContext: CtxtH
   out OutBuffer: SecBuffer);
 // Check server cert
 // @raises ESSPIError on error
-procedure CheckServerCert(const SessionData: TSessionData; const hContext: CtxtHandle);
+procedure CheckServerCert(const hContext: CtxtHandle; const ServerName: string);
 // Dispose and null security context
 procedure DeleteContext(var hContext: CtxtHandle);
 
@@ -792,19 +795,91 @@ begin
   OutBuffer := OutBuffers[0];
 end;
 
-procedure CheckServerCert(const SessionData: TSessionData; const hContext: CtxtHandle);
+function VerifyServerCertificate(pServerCert: PCCERT_CONTEXT; const szServerName: string; dwCertFlags: DWORD): DWORD;
+var
+  polHttps: HTTPSPolicyCallbackData;
+  PolicyPara: CERT_CHAIN_POLICY_PARA;
+  PolicyStatus: CERT_CHAIN_POLICY_STATUS;
+  ChainPara: CERT_CHAIN_PARA;
+  pChainContext: PCCERT_CHAIN_CONTEXT;
+const
+  rgszUsages: array[0..2] of PAnsiChar = (
+    szOID_PKIX_KP_SERVER_AUTH,
+    szOID_SERVER_GATED_CRYPTO,
+    szOID_SGC_NETSCAPE
+  );
+  cUsages: DWORD = SizeOf(rgszUsages) div SizeOf(LPSTR);
+begin
+  pChainContext := nil;
+
+  if pServerCert = nil then
+    raise Error('Error at VerifyServerCertificate - server cert is NULL');
+
+  // Build certificate chain.
+  try
+    ChainPara := Default(CERT_CHAIN_PARA);
+    ChainPara.cbSize := SizeOf(ChainPara);
+    ChainPara.RequestedUsage.dwType := USAGE_MATCH_TYPE_OR;
+    ChainPara.RequestedUsage.Usage.cUsageIdentifier     := cUsages;
+    ChainPara.RequestedUsage.Usage.rgpszUsageIdentifier := PAnsiChar(@rgszUsages);
+
+    if not CertGetCertificateChain(0,
+                                   pServerCert,
+                                   nil,
+                                   pServerCert.hCertStore,
+                                   @ChainPara,
+                                   0,
+                                   nil,
+                                   @pChainContext) then
+      raise ErrWinAPI('at VerifyServerCertificate getting cert chain', 'CertGetCertificateChain');
+
+    // Validate certificate chain.
+    polHttps := Default(HTTPSPolicyCallbackData);
+    polHttps.cbSize         := SizeOf(HTTPSPolicyCallbackData);
+    polHttps.dwAuthType     := AUTHTYPE_SERVER;
+    polHttps.fdwChecks      := dwCertFlags;
+    polHttps.pwszServerName := PChar(szServerName);
+
+    PolicyPara := Default(CERT_CHAIN_POLICY_PARA);
+    PolicyPara.cbSize            := SizeOf(PolicyPara);
+    PolicyPara.pvExtraPolicyPara := @polHttps;
+
+    PolicyStatus := Default(CERT_CHAIN_POLICY_STATUS);
+    PolicyStatus.cbSize := SizeOf(PolicyStatus);
+
+    if not CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_SSL,
+                                            pChainContext,
+                                            @PolicyPara,
+                                            @PolicyStatus) then
+      raise ErrWinAPI('at VerifyServerCertificate verifying cert chain', 'CertVerifyCertificateChainPolicy');
+
+    Result := PolicyStatus.dwError;
+  finally
+    if pChainContext <> nil then
+      CertFreeCertificateChain(pChainContext);
+  end;
+end;
+
+procedure CheckServerCert(const hContext: CtxtHandle; const ServerName: string);
 var
   Status: SECURITY_STATUS;
   pRemoteCertContext: PCCERT_CONTEXT;
 begin
+  pRemoteCertContext := nil;
   // Authenticate server's credentials. Get server's certificate.
   Status := g_pSSPI.QueryContextAttributesW(@hContext, SECPKG_ATTR_REMOTE_CERT_CONTEXT, @pRemoteCertContext);
   if Status <> SEC_E_OK then
     raise ErrSecStatus('querying remote certificate at CheckServerCert', 'QueryContextAttributesW', Status);
 
-  // Free the server certificate context.
-  CertFreeCertificateContext(pRemoteCertContext);
-  pRemoteCertContext := nil;
+  try
+    // Attempt to validate server certificate.
+    Status := VerifyServerCertificate(pRemoteCertContext, ServerName, 0 );
+    if Status <> SEC_E_OK then
+      raise ErrSecStatus('authenticating server credentials at CheckServerCert', 'VerifyServerCertificate', Status);
+  finally
+    // Free the server certificate context.
+    CertFreeCertificateContext(pRemoteCertContext);
+  end;
 end;
 
 procedure DeleteContext(var hContext: CtxtHandle);

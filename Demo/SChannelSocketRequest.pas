@@ -124,7 +124,7 @@ begin
     // Perform handshake
     PerformClientHandshake(SessionData, URL, LogFn, Pointer(sock), @SendFn, @RecvFn, hCtx);
     LogFn('----- Client Handshake Performed');
-    CheckServerCert(SessionData, hCtx);
+    CheckServerCert(hCtx, URL);
     LogFn(LogPrefix + 'Server credentials authenticated');
     InitBuffers(hCtx, IoBuffer, Sizes);
     cbIoBufferLength := Length(IoBuffer);

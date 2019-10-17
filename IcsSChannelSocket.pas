@@ -37,13 +37,11 @@ type
       FSizes: SecPkgContext_StreamSizes;
       FPayloadReadCount : Int64; // counters of unencrypted (payload) traffic
       FPayloadWriteCount: Int64;
-      FShutdownHow: Integer;
 
       // overrides
       procedure   AssignDefaultValue; override;
       procedure   TriggerSessionConnectedSpecial(Error : Word); override;
       function    TriggerDataAvailable(Error : Word) : Boolean; override;
-      procedure   TriggerDataSent(Error : Word); override;
       procedure   TriggerSessionClosed(Error: Word); override;
       function    GetRcvdCount : LongInt; override;
       function    DoRecv(var Buffer : TWSocketData;
@@ -288,18 +286,6 @@ begin
     end; // case
 end;
 
-procedure TSChannelWSocket.TriggerDataSent(Error: Word);
-begin
-    // Custom process only if shutting down the secure channel
-    if FChannelState <> chsShutdown then
-    begin
-        inherited;
-        Exit;
-    end;
-
-    inherited ShutDown(FShutdownHow);
-end;
-
 // TWSocket.ASyncReceive finishes when there's no data in socket but we could
 // still have something already decrypted in internal buffer. Make sure we
 // consume it all
@@ -312,6 +298,15 @@ begin
                     Break;
 
         inherited;
+{$IFNDEF NO_DEBUG_LOG}
+        if CheckLogOptions(loWsockInfo) then
+            if FSecure then
+                DebugLog(loWsockInfo, Format('TSChannelWSocket.TriggerSessionClosed. Payload R %d, W %d, total R %d, W %d',
+                    [FPayloadReadCount, FPayloadWriteCount, FReadCount, FWriteCount]))
+            else
+                DebugLog(loWsockInfo, Format('TSChannelWSocket.TriggerSessionClosed. Total R %d, W %d',
+                    [FReadCount, FWriteCount]))
+{$ENDIF}
     except
         on E:Exception do
             HandleBackGroundException(E, 'TSChannelWSocket.TriggerSessionClosed');
@@ -455,9 +450,10 @@ begin
         begin
             SChannelLog(loSslDevel, Format('Sending shutdown notify - %d bytes of data', [OutBuffer.cbBuffer]));
             FChannelState := chsShutdown;
-            FShutdownHow := How;
             Send(OutBuffer.pvBuffer, OutBuffer.cbBuffer);
             g_pSSPI.FreeContextBuffer(OutBuffer.pvBuffer);
+            // Currently we don't wait for data to be sent, just shutdown
+            inherited ShutDown(How);
         end;
     // Just log an exception, don't let it go
     except on E: Exception do

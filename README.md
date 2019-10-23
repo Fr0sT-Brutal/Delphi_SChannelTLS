@@ -5,10 +5,9 @@ SChannel is Windows built-in implementation of TLS protocols. This allows suppor
 
 Repo contains:
 
-- [`SChannel.Utils.pas`](https://fr0st-brutal.github.io/Delphi_SChannelTLS/SChannel.Utils.html) - unit with transport-agnostic helper functions for easy implementation of TLS communication by means of
-  Windows SChannel.
+- [`SChannel.Utils.pas`](https://fr0st-brutal.github.io/Delphi_SChannelTLS/docs/SChannel.Utils.html) - unit with transport-agnostic helper functions for easy implementation of TLS communication by means of Windows SChannel.
   
-- [`SChannel.SyncHandshake.pas`](https://fr0st-brutal.github.io/Delphi_SChannelTLS/SChannel.SyncHandshake.html) - sample of transport-agnostic synchronous TLS handshake using callback functions for real communication
+- [`SChannel.SyncHandshake.pas`](https://fr0st-brutal.github.io/Delphi_SChannelTLS/docs/SChannel.SyncHandshake.html) - sample of transport-agnostic synchronous TLS handshake using callback functions for real communication
 
 - `Jwa*.pas` - API declarations borrowed from JEDI project
 

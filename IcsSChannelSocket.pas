@@ -101,7 +101,7 @@ begin
     inherited;
 end;
 
-// Get the number of char received and waiting to be read
+// Get the number of bytes received, decrypted and waiting to be read
 function TSChannelWSocket.GetRcvdCount: LongInt;
 begin
     if FChannelState = chsEstablished then
@@ -229,15 +229,15 @@ end;
 // Socket connected - internal event. Start handshake
 procedure TSChannelWSocket.TriggerSessionConnectedSpecial(Error: Word);
 begin
-    InitSession(FSessionData);
-    SChannelLog(loSslInfo, 'Credentials initialized');
-    SChannelLog(loSslInfo, 'Connected, starting TLS handshake');
-
     { Error occured / no SChannel used, signal connect as usual }
     if not FSecure or (Error <> 0) then begin
         inherited;
         Exit;
     end;
+
+    InitSession(FSessionData);
+    SChannelLog(loSslInfo, 'Credentials initialized');
+    SChannelLog(loSslInfo, 'Connected, starting TLS handshake');
 
     FHandShakeData.ServerName := Addr;
     FhContext := Default(CtxtHandle);
@@ -361,7 +361,6 @@ begin
     // Read next chunk from server
     if FHandShakeData.Stage = hssReadSrvHello then
     begin
-        // For some mysterious reason DoRecv requires "var"...
         cbData := Receive((PByte(FHandShakeData.IoBuffer) + FHandShakeData.cbIoBuffer),
             Length(FHandShakeData.IoBuffer) - FHandShakeData.cbIoBuffer);
         // ! Although this function is called from TriggerDataAvailable,

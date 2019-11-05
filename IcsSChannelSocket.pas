@@ -301,15 +301,15 @@ begin
 {$IFNDEF NO_DEBUG_LOG}
         if CheckLogOptions(loWsockInfo) then
             if FSecure then
-                DebugLog(loWsockInfo, Format('TSChannelWSocket.TriggerSessionClosed. Payload R %d, W %d, total R %d, W %d',
+                DebugLog(loWsockInfo, Format('TriggerSessionClosed. Payload R %d, W %d, total R %d, W %d',
                     [FPayloadReadCount, FPayloadWriteCount, FReadCount, FWriteCount]))
             else
-                DebugLog(loWsockInfo, Format('TSChannelWSocket.TriggerSessionClosed. Total R %d, W %d',
+                DebugLog(loWsockInfo, Format('TriggerSessionClosed. Total R %d, W %d',
                     [FReadCount, FWriteCount]))
 {$ENDIF}
     except
         on E:Exception do
-            HandleBackGroundException(E, 'TSChannelWSocket.TriggerSessionClosed');
+            HandleBackGroundException(E, 'TriggerSessionClosed');
     end;
 end;
 

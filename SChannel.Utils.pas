@@ -630,13 +630,13 @@ begin
 
         //  Initiate a ClientHello message and generate a token.
         SetLength(HandShakeData.OutBuffers, 1);
-        HandShakeData.OutBuffers[0].pvBuffer   := nil;
-        HandShakeData.OutBuffers[0].BufferType := SECBUFFER_TOKEN;
         HandShakeData.OutBuffers[0].cbBuffer   := 0;
+        HandShakeData.OutBuffers[0].BufferType := SECBUFFER_TOKEN;
+        HandShakeData.OutBuffers[0].pvBuffer   := nil;
 
+        OutBuffer.ulVersion := SECBUFFER_VERSION;
         OutBuffer.cBuffers  := 1;
         OutBuffer.pBuffers  := PSecBuffer(HandShakeData.OutBuffers);
-        OutBuffer.ulVersion := SECBUFFER_VERSION;
 
         Result := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
                                                      nil,
@@ -670,29 +670,29 @@ begin
         // received from the server. Schannel will consume some or all
         // of this. Leftover data (if any) will be placed in buffer 1 and
         // given a buffer type of SECBUFFER_EXTRA.
-        InBuffers[0].pvBuffer   := HandShakeData.IoBuffer;
         InBuffers[0].cbBuffer   := HandShakeData.cbIoBuffer;
         InBuffers[0].BufferType := SECBUFFER_TOKEN;
+        InBuffers[0].pvBuffer   := HandShakeData.IoBuffer;
 
-        InBuffers[1].pvBuffer   := nil;
         InBuffers[1].cbBuffer   := 0;
         InBuffers[1].BufferType := SECBUFFER_EMPTY;
+        InBuffers[1].pvBuffer   := nil;
 
+        InBuffer.ulVersion := SECBUFFER_VERSION;
         InBuffer.cBuffers  := 2;
         InBuffer.pBuffers  := @InBuffers;
-        InBuffer.ulVersion := SECBUFFER_VERSION;
 
         // Set up the output buffers. These are initialized to NULL
         // so as to make it less likely we'll attempt to free random
         // garbage later.
         SetLength(HandShakeData.OutBuffers, 1);
-        HandShakeData.OutBuffers[0].pvBuffer   := nil;
-        HandShakeData.OutBuffers[0].BufferType := SECBUFFER_TOKEN;
         HandShakeData.OutBuffers[0].cbBuffer   := 0;
+        HandShakeData.OutBuffers[0].BufferType := SECBUFFER_TOKEN;
+        HandShakeData.OutBuffers[0].pvBuffer   := nil;
 
+        OutBuffer.ulVersion := SECBUFFER_VERSION;
         OutBuffer.cBuffers  := 1;
         OutBuffer.pBuffers  := PSecBuffer(HandShakeData.OutBuffers);
-        OutBuffer.ulVersion := SECBUFFER_VERSION;
 
         Result := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
                                                      @HandShakeData.hContext,
@@ -775,13 +775,13 @@ begin
 
   dwType := SCHANNEL_SHUTDOWN; // Notify schannel that we are about to close the connection.
 
-  OutBuffers[0].pvBuffer   := @dwType;
-  OutBuffers[0].BufferType := SECBUFFER_TOKEN;
   OutBuffers[0].cbBuffer   := SizeOf(dwType);
+  OutBuffers[0].BufferType := SECBUFFER_TOKEN;
+  OutBuffers[0].pvBuffer   := @dwType;
 
+  OutBufferDesc.ulVersion := SECBUFFER_VERSION;
   OutBufferDesc.cBuffers  := 1;
   OutBufferDesc.pBuffers  := @OutBuffers[0];
-  OutBufferDesc.ulVersion := SECBUFFER_VERSION;
 
   Status := g_pSSPI.ApplyControlToken(@hContext, @OutBufferDesc);
   if Failed(Status) then
@@ -792,13 +792,13 @@ begin
     ISC_REQ_SEQUENCE_DETECT or ISC_REQ_REPLAY_DETECT or ISC_REQ_CONFIDENTIALITY or
     ISC_RET_EXTENDED_ERROR or ISC_REQ_ALLOCATE_MEMORY or ISC_REQ_STREAM;
 
-  OutBuffers[0].pvBuffer   := nil;
-  OutBuffers[0].BufferType := SECBUFFER_TOKEN;
   OutBuffers[0].cbBuffer   := 0;
+  OutBuffers[0].BufferType := SECBUFFER_TOKEN;
+  OutBuffers[0].pvBuffer   := nil;
 
+  OutBufferDesc.ulVersion := SECBUFFER_VERSION;
   OutBufferDesc.cBuffers  := 1;
   OutBufferDesc.pBuffers  := @OutBuffers[0];
-  OutBufferDesc.ulVersion := SECBUFFER_VERSION;
 
   Status := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
                                                @hContext,
@@ -948,17 +948,17 @@ begin
   pbMessage := (pbIoBuffer + Sizes.cbHeader); // pointer to copy of message
 
   // Encrypt the data
-  Buffers[0].pvBuffer   := pbIoBuffer;               // Pointer to buffer 1
   Buffers[0].cbBuffer   := Sizes.cbHeader;           // length of header
   Buffers[0].BufferType := SECBUFFER_STREAM_HEADER;  // Type of the buffer
+  Buffers[0].pvBuffer   := pbIoBuffer;               // Pointer to buffer 1
 
-  Buffers[1].pvBuffer   := pbMessage;                // Pointer to buffer 2
   Buffers[1].cbBuffer   := cbMessage;                // length of the message
   Buffers[1].BufferType := SECBUFFER_DATA;           // Type of the buffer
+  Buffers[1].pvBuffer   := pbMessage;                // Pointer to buffer 2
 
-  Buffers[2].pvBuffer   := pbMessage + cbMessage;    // Pointer to buffer 3
   Buffers[2].cbBuffer   := Sizes.cbTrailer;          // length of the trailer
   Buffers[2].BufferType := SECBUFFER_STREAM_TRAILER; // Type of the buffer
+  Buffers[2].pvBuffer   := pbMessage + cbMessage;    // Pointer to buffer 3
 
   Buffers[3]            := Default(SecBuffer);
   Buffers[3].BufferType := SECBUFFER_EMPTY;          // Type of the buffer 4
@@ -994,11 +994,14 @@ begin
 
   // Decrypt the received data.
   repeat
-    Buffers[0].pvBuffer   := pbCurrIoBuffer;
     Buffers[0].cbBuffer   := cbCurrEncData;
     Buffers[0].BufferType := SECBUFFER_DATA;  // Initial Type of the buffer 1
+    Buffers[0].pvBuffer   := pbCurrIoBuffer;
+    Buffers[1]            := Default(SecBuffer);
     Buffers[1].BufferType := SECBUFFER_EMPTY; // Initial Type of the buffer 2
+    Buffers[2]            := Default(SecBuffer);
     Buffers[2].BufferType := SECBUFFER_EMPTY; // Initial Type of the buffer 3
+    Buffers[3]            := Default(SecBuffer);
     Buffers[3].BufferType := SECBUFFER_EMPTY; // Initial Type of the buffer 4
 
     Msg.ulVersion := SECBUFFER_VERSION;  // Version number

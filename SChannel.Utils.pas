@@ -630,9 +630,8 @@ begin
 
         //  Initiate a ClientHello message and generate a token.
         SetLength(HandShakeData.OutBuffers, 1);
-        HandShakeData.OutBuffers[0].cbBuffer   := 0;
+        HandShakeData.OutBuffers[0] := Default(SecBuffer);
         HandShakeData.OutBuffers[0].BufferType := SECBUFFER_TOKEN;
-        HandShakeData.OutBuffers[0].pvBuffer   := nil;
 
         OutBuffer.ulVersion := SECBUFFER_VERSION;
         OutBuffer.cBuffers  := 1;
@@ -674,9 +673,8 @@ begin
         InBuffers[0].BufferType := SECBUFFER_TOKEN;
         InBuffers[0].pvBuffer   := HandShakeData.IoBuffer;
 
-        InBuffers[1].cbBuffer   := 0;
+        InBuffers[1]            := Default(SecBuffer);
         InBuffers[1].BufferType := SECBUFFER_EMPTY;
-        InBuffers[1].pvBuffer   := nil;
 
         InBuffer.ulVersion := SECBUFFER_VERSION;
         InBuffer.cBuffers  := 2;
@@ -686,9 +684,8 @@ begin
         // so as to make it less likely we'll attempt to free random
         // garbage later.
         SetLength(HandShakeData.OutBuffers, 1);
-        HandShakeData.OutBuffers[0].cbBuffer   := 0;
+        HandShakeData.OutBuffers[0] := Default(SecBuffer);
         HandShakeData.OutBuffers[0].BufferType := SECBUFFER_TOKEN;
-        HandShakeData.OutBuffers[0].pvBuffer   := nil;
 
         OutBuffer.ulVersion := SECBUFFER_VERSION;
         OutBuffer.cBuffers  := 1;
@@ -781,7 +778,7 @@ begin
 
   OutBufferDesc.ulVersion := SECBUFFER_VERSION;
   OutBufferDesc.cBuffers  := 1;
-  OutBufferDesc.pBuffers  := @OutBuffers[0];
+  OutBufferDesc.pBuffers  := @OutBuffers;
 
   Status := g_pSSPI.ApplyControlToken(@hContext, @OutBufferDesc);
   if Failed(Status) then
@@ -792,13 +789,12 @@ begin
     ISC_REQ_SEQUENCE_DETECT or ISC_REQ_REPLAY_DETECT or ISC_REQ_CONFIDENTIALITY or
     ISC_RET_EXTENDED_ERROR or ISC_REQ_ALLOCATE_MEMORY or ISC_REQ_STREAM;
 
-  OutBuffers[0].cbBuffer   := 0;
+  OutBuffers[0] := Default(SecBuffer);
   OutBuffers[0].BufferType := SECBUFFER_TOKEN;
-  OutBuffers[0].pvBuffer   := nil;
 
   OutBufferDesc.ulVersion := SECBUFFER_VERSION;
   OutBufferDesc.cBuffers  := 1;
-  OutBufferDesc.pBuffers  := @OutBuffers[0];
+  OutBufferDesc.pBuffers  := @OutBuffers;
 
   Status := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
                                                @hContext,

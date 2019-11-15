@@ -634,7 +634,7 @@ begin
         HandShakeData.OutBuffers[0].BufferType := SECBUFFER_TOKEN;
 
         OutBuffer.ulVersion := SECBUFFER_VERSION;
-        OutBuffer.cBuffers  := 1;
+        OutBuffer.cBuffers  := Length(HandShakeData.OutBuffers);
         OutBuffer.pBuffers  := PSecBuffer(HandShakeData.OutBuffers);
 
         Result := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
@@ -677,18 +677,30 @@ begin
         InBuffers[1].BufferType := SECBUFFER_EMPTY;
 
         InBuffer.ulVersion := SECBUFFER_VERSION;
-        InBuffer.cBuffers  := 2;
+        InBuffer.cBuffers  := Length(InBuffers);
         InBuffer.pBuffers  := @InBuffers;
 
         // Set up the output buffers. These are initialized to NULL
         // so as to make it less likely we'll attempt to free random
         // garbage later.
-        SetLength(HandShakeData.OutBuffers, 1);
+        SetLength(HandShakeData.OutBuffers, 3);
         HandShakeData.OutBuffers[0] := Default(SecBuffer);
         HandShakeData.OutBuffers[0].BufferType := SECBUFFER_TOKEN;
+        // ! Usually only one buffer is enough but I experienced rare and random
+        // SEC_E_BUFFER_TOO_SMALL and SEC_E_MESSAGE_ALTERED errors on Windows 7/8.
+        // Retrying a handshake worked well. According to Internet findings, these
+        // errors are caused by SChannel bug with TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
+        // and TLS_DHE_RSA_WITH_AES_256_GCM_SHA384 ciphers. While some advice disabling
+        // these ciphers or not using TLSv1.2 at all or disable revocation checking,
+        // cURL project tries to solve the issue by adding more buffers. This does
+        // NOT fix the error completely but hopefully makes it somewhat less frequent...
+        HandShakeData.OutBuffers[1] := Default(SecBuffer);
+        HandShakeData.OutBuffers[1].BufferType := SECBUFFER_ALERT;
+        HandShakeData.OutBuffers[2] := Default(SecBuffer);
+        HandShakeData.OutBuffers[2].BufferType := SECBUFFER_EMPTY;
 
         OutBuffer.ulVersion := SECBUFFER_VERSION;
-        OutBuffer.cBuffers  := 1;
+        OutBuffer.cBuffers  := Length(HandShakeData.OutBuffers);
         OutBuffer.pBuffers  := PSecBuffer(HandShakeData.OutBuffers);
 
         Result := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
@@ -777,7 +789,7 @@ begin
   OutBuffers[0].pvBuffer   := @dwType;
 
   OutBufferDesc.ulVersion := SECBUFFER_VERSION;
-  OutBufferDesc.cBuffers  := 1;
+  OutBufferDesc.cBuffers  := Length(OutBuffers);
   OutBufferDesc.pBuffers  := @OutBuffers;
 
   Status := g_pSSPI.ApplyControlToken(@hContext, @OutBufferDesc);
@@ -793,7 +805,7 @@ begin
   OutBuffers[0].BufferType := SECBUFFER_TOKEN;
 
   OutBufferDesc.ulVersion := SECBUFFER_VERSION;
-  OutBufferDesc.cBuffers  := 1;
+  OutBufferDesc.cBuffers  := Length(OutBuffers);
   OutBufferDesc.pBuffers  := @OutBuffers;
 
   Status := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
@@ -960,7 +972,7 @@ begin
   Buffers[3].BufferType := SECBUFFER_EMPTY;          // Type of the buffer 4
 
   Msg.ulVersion   := SECBUFFER_VERSION;  // Version number
-  Msg.cBuffers    := 4;                  // Number of buffers - must contain four SecBuffer structures.
+  Msg.cBuffers    := Length(Buffers);    // Number of buffers - must contain four SecBuffer structures.
   Msg.pBuffers    := @Buffers;           // Pointer to array of buffers
   scRet := g_pSSPI.EncryptMessage(@hContext, 0, @Msg, 0); // must contain four SecBuffer structures.
   if Failed(scRet) then
@@ -1001,7 +1013,7 @@ begin
     Buffers[3].BufferType := SECBUFFER_EMPTY; // Initial Type of the buffer 4
 
     Msg.ulVersion := SECBUFFER_VERSION;  // Version number
-    Msg.cBuffers  := 4;                  // Number of buffers - must contain four SecBuffer structures.
+    Msg.cBuffers  := Length(Buffers);    // Number of buffers - must contain four SecBuffer structures.
     Msg.pBuffers  := @Buffers;           // Pointer to array of buffers
     Result := g_pSSPI.DecryptMessage(@hContext, @Msg, 0, Dummy);
 

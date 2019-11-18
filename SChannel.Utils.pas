@@ -84,7 +84,8 @@ type
   TSessionData = record
     // Handle of credentials, mainly for internal use
     hCreds: CredHandle;
-    // SChannel credentials, mainly for internal use
+    // SChannel credentials, mainly for internal use but could be init-ed by user
+    // to tune specific channel properties.
     SchannelCred: SCHANNEL_CRED;
   end;
 
@@ -115,9 +116,13 @@ var
 // Mainly for internal use
 // @raises ESSPIError on error
 procedure LoadSecurityLibrary;
-// Mainly for internal use
+// Mainly for internal use.
+//   @param SchannelCred - [?IN/OUT] If `SchannelCred.dwVersion` = `SCHANNEL_CRED_VERSION`,            \
+//     the parameter is considered "IN/OUT" and won't be modified before AcquireCredentialsHandle call.\
+//     Otherwise the parameter is considered "OUT" and is init-ed with default values.                 \
+//     Thus user can pass desired values to AcquireCredentialsHandle function.
 // @raises ESSPIError on error
-procedure CreateCredentials(const User: string; out hCreds: CredHandle; out SchannelCred: SCHANNEL_CRED);
+procedure CreateCredentials(const User: string; out hCreds: CredHandle; var SchannelCred: SCHANNEL_CRED);
 // Mainly for internal use
 // @raises ESSPIError on error
 procedure VerifyServerCertificate(pServerCert: PCCERT_CONTEXT; const szServerName: string; dwCertFlags: DWORD);
@@ -134,7 +139,9 @@ procedure Fin;
 
 // Init session, return data record to be used in calling other functions.
 // Could be called many times (nothing will be done on already init-ed record)
-//   @param SessionData - [IN, OUT] record that receives values. On first call must be zeroed.
+//   @param SessionData - [IN, OUT] record that receives values. On first call   \
+//     must be zeroed. Alternatively, user could fill `SessionData.SchannelCred` \
+//     with desired values to tune channel properties.
 // @raises ESSPIError on error
 procedure InitSession(var SessionData: TSessionData);
 // Finalize session
@@ -369,7 +376,7 @@ begin
     raise ErrWinAPI('at LoadSecurityLibrary reading security interface', 'InitSecurityInterface');
 end;
 
-procedure CreateCredentials(const User: string; out hCreds: CredHandle; out SchannelCred: SCHANNEL_CRED);
+procedure CreateCredentials(const User: string; out hCreds: CredHandle; var SchannelCred: SCHANNEL_CRED);
 var
   tsExpiry: TimeStamp;
   cSupportedAlgs: DWORD;
@@ -397,34 +404,39 @@ begin
   else
     pCertContext := nil;
 
-  // Build Schannel credential structure. Currently, this sample only
-  // specifies the protocol to be used (and optionally the certificate,
-  // of course). Real applications may wish to specify other parameters as well.
-  SchannelCred := Default(SCHANNEL_CRED);
-
-  SchannelCred.dwVersion := SCHANNEL_CRED_VERSION;
-  if pCertContext <> nil then
+  // Schannel credential structure not inited yet - fill with default values.
+  // Otherwise let the user pass his own values.
+  if SchannelCred.dwVersion <> SCHANNEL_CRED_VERSION then
   begin
-    SchannelCred.cCreds := 1;
-    SchannelCred.paCred := @pCertContext;
+    // Build Schannel credential structure. Currently, this sample only
+    // specifies the protocol to be used (and optionally the certificate,
+    // of course). Real applications may wish to specify other parameters as well.
+    SchannelCred := Default(SCHANNEL_CRED);
+
+    SchannelCred.dwVersion := SCHANNEL_CRED_VERSION;
+    if pCertContext <> nil then
+    begin
+      SchannelCred.cCreds := 1;
+      SchannelCred.paCred := @pCertContext;
+    end;
+    SchannelCred.grbitEnabledProtocols := USED_PROTOCOLS;
+
+    cSupportedAlgs := 0;
+
+    if USED_ALGS <> 0 then
+    begin
+      rgbSupportedAlgs[cSupportedAlgs] := USED_ALGS;
+      Inc(cSupportedAlgs);
+    end;
+
+    if cSupportedAlgs <> 0 then
+    begin
+      SchannelCred.cSupportedAlgs    := cSupportedAlgs;
+      SchannelCred.palgSupportedAlgs := @rgbSupportedAlgs;
+    end;
+
+    SchannelCred.dwFlags := SCH_CRED_NO_DEFAULT_CREDS;
   end;
-  SchannelCred.grbitEnabledProtocols := USED_PROTOCOLS;
-
-  cSupportedAlgs := 0;
-
-  if USED_ALGS <> 0 then
-  begin
-    rgbSupportedAlgs[cSupportedAlgs] := USED_ALGS;
-    Inc(cSupportedAlgs);
-  end;
-
-  if cSupportedAlgs <> 0 then
-  begin
-    SchannelCred.cSupportedAlgs    := cSupportedAlgs;
-    SchannelCred.palgSupportedAlgs := @rgbSupportedAlgs;
-  end;
-
-  SchannelCred.dwFlags := SCH_CRED_NO_DEFAULT_CREDS;
 
   // Create an SSPI credential with SChannel security package
   Status := g_pSSPI.AcquireCredentialsHandleW(nil,         // Name of principal

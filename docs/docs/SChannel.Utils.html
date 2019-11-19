@@ -94,6 +94,9 @@ Helper functions for easy implementation of TLS communication by means of Window
 <tr class="list2">
 <td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#WinVerifyTrustErrorStr">WinVerifyTrustErrorStr</a></strong>(Status: DWORD): string;</code></td>
 </tr>
+<tr class="list">
+<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#IsWinHandshakeBug">IsWinHandshakeBug</a></strong>(scRet: SECURITY_STATUS): Boolean;</code></td>
+</tr>
 </table>
 <span id="PasDoc-Types"></span><h3 class="summary">Types</h3>
 <table class="summary wide_list">
@@ -441,6 +444,15 @@ Returns string representaion of given security status</p>
 <tr><td colspan="1">
 <p>
 Returns string representaion of given verify trust error</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="IsWinHandshakeBug"></span><code>function <strong>IsWinHandshakeBug</strong>(scRet: SECURITY_STATUS): Boolean;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Check if status is likely a Windows TLS v1.2 handshake bug (<code>SEC_E_BUFFER_TOO_SMALL</code> or <code>SEC_E_MESSAGE_ALTERED</code> status is returned by <code>InitializeSecurityContext</code> on handshake). This function only checks if parameter is one of these two values.</p>
 </td></tr>
 </table>
 <h3 class="detail">Types</h3>

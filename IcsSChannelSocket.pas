@@ -31,6 +31,7 @@ type
       FSessionData: TSessionData;
       FHandShakeData: THandShakeData;
       FhContext: CtxtHandle;
+      FHandshakeBug: Boolean;
       FSendBuffer: TBytes;  // buffer that receives encrypted data to be sent
       FRecvBuffer: TBuffer; // buffer that receives encrypted data from server
       FDecrBuffer: TBuffer; // buffer that receives decrypted data from server
@@ -82,6 +83,7 @@ begin
     FinSession(FSessionData);
     FSessionData := Default(TSessionData);
     DeleteContext(FhContext);
+    FHandshakeBug := False;
     FSendBuffer := nil;
     FRecvBuffer := Default(TBuffer);
     FDecrBuffer := Default(TBuffer);
@@ -118,7 +120,7 @@ function TSChannelWSocket.DoRecv(var Buffer: TWSocketData; BufferSize,
     // Uses external variables: Buffer, BufferSize
     function RecvFromBuffer: Integer;
     begin
-        if FDecrBuffer.DataLen < BufferSize then
+        if Integer(FDecrBuffer.DataLen) < BufferSize then
             Result := FDecrBuffer.DataLen
         else
             Result := BufferSize;
@@ -162,13 +164,13 @@ begin
     // For some mysterious reason DoRecv requires "var"...
     // In FRecvBuffer data always starts from the beginning
     pCurrBuffer := Pointer(@FRecvBuffer.Data[FRecvBuffer.DataLen]);
-    res := inherited DoRecv(pCurrBuffer, Length(FRecvBuffer.Data) - FRecvBuffer.DataLen, Flags);
+    res := inherited DoRecv(pCurrBuffer, Length(FRecvBuffer.Data) - Integer(FRecvBuffer.DataLen), Flags);
     if res <= 0 then
         Exit(res);
     Inc(FRecvBuffer.DataLen, res);
     scRet := DecryptData(
-       FhContext, FSizes, Pointer(FRecvBuffer.Data), FRecvBuffer.DataLen,
-       Pointer(FDecrBuffer.Data), Length(FDecrBuffer.Data), cbRead);
+        FhContext, FSizes, Pointer(FRecvBuffer.Data), FRecvBuffer.DataLen,
+        Pointer(FDecrBuffer.Data), Length(FDecrBuffer.Data), cbRead);
     case scRet of
         SEC_E_OK, SEC_E_INCOMPLETE_MESSAGE, SEC_I_CONTEXT_EXPIRED:
             begin
@@ -181,7 +183,6 @@ begin
         SEC_I_RENEGOTIATE:
             begin
                 SChannelLog(loSslInfo, 'Server requested renegotiate');
-                FHandShakeData.ServerName := Addr;
                 DoHandshakeStart;
                 Result := 0;
             end;
@@ -297,7 +298,6 @@ begin
                 if not TriggerDataAvailable(0) then
                     Break;
 
-        inherited;
 {$IFNDEF NO_DEBUG_LOG}
         if CheckLogOptions(loWsockInfo) then
             if FSecure then
@@ -305,8 +305,9 @@ begin
                     [FPayloadReadCount, FPayloadWriteCount, FReadCount, FWriteCount]))
             else
                 DebugLog(loWsockInfo, Format('TriggerSessionClosed. Total R %d, W %d',
-                    [FReadCount, FWriteCount]))
+                    [FReadCount, FWriteCount]));
 {$ENDIF}
+        inherited;
     except
         on E:Exception do
             HandleBackGroundException(E, 'TriggerSessionClosed');
@@ -316,10 +317,10 @@ end;
 // SChannel-specific output
 procedure TSChannelWSocket.SChannelLog(LogOption: TLogOption; const Msg: string);
 begin
-  {$IFNDEF NO_DEBUG_LOG}
+{$IFNDEF NO_DEBUG_LOG}
     if CheckLogOptions(LogOption) then
         DebugLog(LogOption, SChannel.Utils.LogPrefix + Msg);
-  {$ENDIF}
+{$ENDIF}
 end;
 
 // Start handshake process
@@ -362,7 +363,7 @@ begin
     if FHandShakeData.Stage = hssReadSrvHello then
     begin
         cbData := Receive((PByte(FHandShakeData.IoBuffer) + FHandShakeData.cbIoBuffer),
-            Length(FHandShakeData.IoBuffer) - FHandShakeData.cbIoBuffer);
+            Length(FHandShakeData.IoBuffer) - Integer(FHandShakeData.cbIoBuffer));
         // ! Although this function is called from TriggerDataAvailable,
         // WSAEWOULDBLOCK could happen so we just ignore receive errors
         if cbData <= 0 then
@@ -376,7 +377,22 @@ begin
 
     // Decode hello
     try
-        DoClientHandshake(FSessionData, FHandShakeData);
+        try
+            DoClientHandshake(FSessionData, FHandShakeData);
+        except on E: ESSPIError do
+            // Hide Windows handshake bug and restart the process for the first time
+            if (FHandShakeData.Stage = hssReadSrvHello) and IsWinHandshakeBug(E.SecStatus)
+                and not FHandshakeBug then
+            begin
+                SChannelLog(loSslErr, Format('Handshake bug: "%s", retrying', [E.Message]));
+                FHandshakeBug := True;
+                DeleteContext(FHandShakeData.hContext);
+                DoHandshakeStart;
+                Exit;
+            end
+            else
+                raise E;
+        end;
 
         // Send token if needed
         if FHandShakeData.Stage in [hssReadSrvHelloContNeed, hssReadSrvHelloOK] then
@@ -384,10 +400,10 @@ begin
             if (FHandShakeData.OutBuffers[0].cbBuffer > 0) and (FHandShakeData.OutBuffers[0].pvBuffer <> nil) then
             begin
                 cbData := Send(FHandShakeData.OutBuffers[0].pvBuffer, FHandShakeData.OutBuffers[0].cbBuffer);
-                if cbData = FHandShakeData.OutBuffers[0].cbBuffer then
-                  SChannelLog(loSslDevel, Format('Handshake stage 2 - %d bytes sent', [cbData]))
+                if cbData = Integer(FHandShakeData.OutBuffers[0].cbBuffer) then
+                    SChannelLog(loSslDevel, Format('Handshake stage 2 - %d bytes sent', [cbData]))
                 else
-                  SChannelLog(loSslErr, 'Handshake - ! data sent partially');
+                    SChannelLog(loSslErr, 'Handshake - ! data sent partially');
                 g_pSSPI.FreeContextBuffer(FHandShakeData.OutBuffers[0].pvBuffer); // Free output buffer
                 SetLength(FHandShakeData.OutBuffers, 0);
             end;

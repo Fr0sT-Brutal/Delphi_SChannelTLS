@@ -116,7 +116,7 @@ var
 // Mainly for internal use
 // @raises ESSPIError on error
 procedure LoadSecurityLibrary;
-// Mainly for internal use.
+// Mainly for internal use
 //   @param SchannelCred - [?IN/OUT] If `SchannelCred.dwVersion` = `SCHANNEL_CRED_VERSION`,            \
 //     the parameter is considered "IN/OUT" and won't be modified before AcquireCredentialsHandle call.\
 //     Otherwise the parameter is considered "OUT" and is init-ed with default values.                 \
@@ -207,6 +207,10 @@ function DecryptData(const hContext: CtxtHandle; const Sizes: SecPkgContext_Stre
 function SecStatusErrStr(scRet: SECURITY_STATUS): string;
 // Returns string representaion of given verify trust error
 function WinVerifyTrustErrorStr(Status: DWORD): string;
+// Check if status is likely a Windows TLS v1.2 handshake bug (`SEC_E_BUFFER_TOO_SMALL`
+//  or `SEC_E_MESSAGE_ALTERED` status is returned by `InitializeSecurityContext` on handshake).
+// This function only checks if parameter is one of these two values.
+function IsWinHandshakeBug(scRet: SECURITY_STATUS): Boolean;
 
 {$ENDIF MSWINDOWS}
 
@@ -322,6 +326,11 @@ begin
     CERT_E_WRONG_USAGE           : Result := 'CERT_E_WRONG_USAGE';
     else Result := 'Unknown ' + IntToStr(Status);
   end;
+end;
+
+function IsWinHandshakeBug(scRet: SECURITY_STATUS): Boolean;
+begin
+  Result := (scRet = SEC_E_BUFFER_TOO_SMALL) or (scRet = SEC_E_MESSAGE_ALTERED);
 end;
 
 { ESSPIError }

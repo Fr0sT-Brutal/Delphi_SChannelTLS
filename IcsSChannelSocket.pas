@@ -149,10 +149,13 @@ begin
         Exit;
     end;
 
-    // There's already decrypted data in buffer - copy from it
+    // There's already decrypted data in buffer - copy from it and call empty
+    // Receive to re-launch FD_WRITE event
     if FDecrBuffer.DataLen > 0 then
     begin
         Result := RecvFromBuffer;
+        pCurrBuffer := nil;
+        inherited DoRecv(pCurrBuffer, 0, Flags);
         Exit;
     end;
 
@@ -249,13 +252,14 @@ end;
 function TSChannelWSocket.TriggerDataAvailable(Error: Word): Boolean;
 begin
     case FChannelState of
-        // No secure channel - default
-        chsNotStarted:
+        // No secure channel / Channel established - default
+        chsNotStarted,
+        chsEstablished, chsShutdown:
             begin
                 Result := inherited;
             end;
 
-        // Handshaking in progress
+        // Handshaking in progress - special handling
         chsHandshake:
             begin
                 if (Error <> 0) then
@@ -271,17 +275,6 @@ begin
                 DoHandshakeProcess;
             end;
 
-        // Channel established - make sure OnDataAvailable is called for all decrypted data
-        chsEstablished, chsShutdown:
-            begin
-                // "inherited" will likely call Receive=>DoRecv which will probably
-                // read some data from socket and decrypt it. So if handler is assigned
-                // (Result = True), loop while there's decrypted data remaining.
-                Result := inherited;
-                if Result then
-                    while Result and (FDecrBuffer.DataLen > 0) do  // process case of clearing OnDataAvailable handler
-                        Result := inherited;
-            end;
         else
             Result := False; // compiler happy
     end; // case

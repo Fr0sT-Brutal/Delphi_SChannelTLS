@@ -17,6 +17,9 @@ uses
   OverbyteIcsWSocket, OverbyteIcsWSockBuf, OverbyteIcsLogger,
   SChannel.Utils;
 
+const
+  WS_OK = 0; // WinSock success code
+
 type
   TBuffer = record
       Data: TBytes;
@@ -234,7 +237,7 @@ end;
 procedure TSChannelWSocket.TriggerSessionConnectedSpecial(Error: Word);
 begin
     { Error occured / no SChannel used, signal connect as usual }
-    if not FSecure or (Error <> 0) then begin
+    if not FSecure or (Error <> WS_OK) then begin
         inherited;
         Exit;
     end;
@@ -262,7 +265,7 @@ begin
         // Handshaking in progress - special handling
         chsHandshake:
             begin
-                if (Error <> 0) then
+                if (Error <> WS_OK) then
                 begin
                     SChannelLog(loSslErr, Format('Handshake - ! error [%d] in TriggerDataAvailable', [Error]));
                     TriggerSessionConnected(Error);
@@ -288,7 +291,7 @@ begin
     try
         if FChannelState = chsEstablished then
             while FDecrBuffer.DataLen > 0 do
-                if not TriggerDataAvailable(0) then
+                if not TriggerDataAvailable(WS_OK) then
                     Break;
 
 {$IFNDEF NO_DEBUG_LOG}
@@ -410,7 +413,7 @@ begin
             if FHandShakeData.Stage = hssReadSrvHelloOK then
             begin
                 DoHandshakeSuccess;
-                TriggerSessionConnected(0);
+                TriggerSessionConnected(WS_OK);
                 Exit;
             end;
         end;

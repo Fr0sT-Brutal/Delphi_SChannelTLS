@@ -203,6 +203,8 @@ function DecryptData(const hContext: CtxtHandle; const Sizes: SecPkgContext_Stre
 
 // ~~ Misc ~~
 
+// Check if handle `x` is null (has both fields equal to zero)
+function SecIsNullHandle(const x: SecHandle): Boolean;
 // Returns string representaion of given security status
 function SecStatusErrStr(scRet: SECURITY_STATUS): string;
 // Returns string representaion of given verify trust error
@@ -222,6 +224,11 @@ const
   S_E_SecStatusErrPatt = 'Error %s calling method "%s": %s';
 
 // ~~ Utils ~~
+
+function SecIsNullHandle(const x: SecHandle): Boolean;
+begin
+  Result := (x.dwLower = 0) and (x.dwUpper = 0);
+end;
 
 function SecStatusErrStr(scRet: SECURITY_STATUS): string;
 begin
@@ -492,7 +499,7 @@ end;
 
 procedure InitSession(var SessionData: TSessionData);
 begin
-  if PUInt64(@SessionData.hCreds)^ = 0 then
+  if SecIsNullHandle(SessionData.hCreds) then
   begin
     // Create credentials
     CreateCredentials('', SessionData.hCreds, SessionData.SchannelCred);
@@ -501,7 +508,7 @@ end;
 
 procedure FinSession(var SessionData: TSessionData);
 begin
-  if PUInt64(@SessionData.hCreds)^ <> 0 then
+  if not SecIsNullHandle(SessionData.hCreds) then
   begin
     // Free SSPI credentials handle.
     g_pSSPI.FreeCredentialsHandle(@SessionData.hCreds);
@@ -512,6 +519,7 @@ end;
 
 // ~~ Connect & close ~~
 
+// Try to get new client credentials, leaving old value on error
 procedure GetNewClientCredentials(var SessionData: TSessionData; const hContext: CtxtHandle);
 var
   IssuerListInfo: SecPkgContext_IssuerListInfoEx;
@@ -547,7 +555,10 @@ begin
                                           @FindByIssuerPara,
                                           pChainContext);
     if pChainContext = nil then
-      raise ErrWinAPI('at GetNewClientCredentials finding cert chain', 'CertFindChainInStore');
+    begin
+      Debug('GetNewClientCredentials: error in CertFindChainInStore finding cert chain - ' + SysErrorMessage(GetLastError));
+      Break;
+    end;
 
     // Get pointer to leaf certificate context.
     pCertContext := pChainContext.rgpChain^.rgpElement^.pCertContext;

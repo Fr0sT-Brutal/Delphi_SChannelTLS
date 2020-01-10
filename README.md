@@ -11,7 +11,7 @@ Repo contains:
 
 - `Jwa*.pas` - API declarations borrowed from JEDI project
 
-- `IcsSChannelSocket.pas` - [ICS](http://www.overbyte.eu/frame_index.html) TWSocket descendant that performs TLS communication
+- [`IcsSChannelSocket.pas`](https://fr0st-brutal.github.io/Delphi_SChannelTLS/docs/IcsSChannelSocket.html) - [ICS](http://www.overbyte.eu/frame_index.html) TWSocket descendant that performs TLS communication
 
 - `Demo\` - demo project for performing any textual (mainly HTTPS) requests via secure connection
 

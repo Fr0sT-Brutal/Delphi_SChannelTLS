@@ -1,6 +1,8 @@
 {
   ICS TWSocket descendant that performs TLS communication by means of
   Windows SChannel.
+  Automatically processes SChannel connection bug.
+  Supports establishing and finishing TLS channel over existing connection.
 
   (c) Fr0sT-Brutal
   
@@ -21,12 +23,14 @@ const
   WS_OK = 0; // WinSock success code
 
 type
+  // @exclude
   TBuffer = record
       Data: TBytes;
       DataStartIdx: Integer;
       DataLen: Cardinal;
   end;
 
+  // ICS TWSocket descendant supporting TLS
   TSChannelWSocket = class(TWSocket)
   strict protected
       FSecure: Boolean;
@@ -41,6 +45,9 @@ type
       FSizes: SecPkgContext_StreamSizes;
       FPayloadReadCount : Int64; // counters of unencrypted (payload) traffic
       FPayloadWriteCount: Int64;
+      // event handlers
+      FOnTLSDone: TNotifyEvent;
+      FOnTLSShutdown: TNotifyEvent;
 
       // overrides
       procedure   AssignDefaultValue; override;
@@ -57,16 +64,37 @@ type
       procedure   DoHandshakeStart;
       procedure   DoHandshakeProcess;
       procedure   DoHandshakeSuccess;
+      procedure   StartTLS;
+      procedure   ShutdownTLS;
+      procedure   SetSecure(const Value: Boolean);
   public
       constructor Create(AOwner : TComponent); override;
       procedure   Listen; override;
       procedure   Shutdown(How : Integer); override;
   published
-      // If True, connect is established via TLS
-      property    Secure: Boolean          read FSecure            write FSecure;
-      // Payload traffic counters. Read/WriteCount props reflect encrypted traffic
+      // Indicates whether TLS is currently used. Effect of setting the property
+      // depends on current state. @br
+      // Socket is **not** connected:
+      //   - Setting @name to @True: TLS handshake will be established
+      //     automatically as soon as socket is connected.
+      //   - Setting @name to @False: work as usual (no TLS)
+      //
+      // Socket **is** connected:
+      //   - Setting @name to @True: TLS handshake will be started immediately
+      //     over existing connection
+      //   - Setting @name to @False: TLS shutdown will be executed immediately
+      //     without closing the connection
+      property    Secure: Boolean          read FSecure            write SetSecure;
+      // Traffic counter for incoming payload.
+      // `TWSocket.ReadCount` property reflects encrypted traffic
       property    PayloadReadCount: Int64  read FPayloadReadCount;
+      // Traffic counter for outgoing payload.
+      // `TWSocket.WriteCount` property reflects encrypted traffic
       property    PayloadWriteCount: Int64 read FPayloadWriteCount;
+      // Event is called when TLS handshake is established successfully
+      property    OnTLSDone: TNotifyEvent     read FOnTLSDone      write FOnTLSDone;
+      // Event is called when TLS handshake is shut down
+      property    OnTLSShutdown: TNotifyEvent read FOnTLSShutdown  write FOnTLSShutdown;
   end;
 
 implementation
@@ -77,6 +105,7 @@ begin
     inherited Create(AOwner);
 end;
 
+// Cleanup on creation and before connection
 procedure TSChannelWSocket.AssignDefaultValue;
 begin
     inherited;
@@ -93,17 +122,6 @@ begin
     FSizes := Default(SecPkgContext_StreamSizes);
     FPayloadReadCount := 0;
     FPayloadWriteCount := 0;
-end;
-
-// Deny listening in secure mode
-procedure TSChannelWSocket.Listen;
-begin
-    { Check if we really want to use SChannel in server }
-    if FSecure then
-        raise ESocketException.Create('Listening is not supported with SChannel yet');
-
-    { No SChannel used, Listen as usual }
-    inherited;
 end;
 
 // Get the number of bytes received, decrypted and waiting to be read
@@ -242,13 +260,8 @@ begin
         Exit;
     end;
 
-    InitSession(FSessionData);
-    SChannelLog(loSslInfo, 'Credentials initialized');
     SChannelLog(loSslInfo, 'Connected, starting TLS handshake');
-
-    FHandShakeData.ServerName := Addr;
-    FhContext := Default(CtxtHandle);
-    DoHandshakeStart;
+    StartTLS;
 end;
 
 // Data incoming. Handle handshake or ensure decrypted data is received
@@ -439,33 +452,91 @@ begin
     InitBuffers(FhContext, FSendBuffer, FSizes);
     SetLength(FRecvBuffer.Data, Length(FSendBuffer));
     SetLength(FDecrBuffer.Data, FSizes.cbMaximumMessage);
+
+    if Assigned(FOnTLSDone) then
+        FOnTLSDone(Self);
 end;
 
-procedure TSChannelWSocket.Shutdown(How: Integer);
+// Change internal FSecure field and, if connected, run StartTLS/ShutdownTLS
+procedure TSChannelWSocket.SetSecure(const Value: Boolean);
+begin
+    if FSecure = Value then Exit; // no change
+
+    FSecure := Value;
+
+    if FSecure then
+    begin
+        // already connected - start handshake
+        if FState = wsConnected then
+            StartTLS;
+    end
+    else
+    begin
+        // already connected - shutdown TLS
+        if FState = wsConnected then
+            ShutdownTLS;
+    end;
+end;
+
+// Start TLS handshake process
+procedure TSChannelWSocket.StartTLS;
+begin
+    InitSession(FSessionData);
+    SChannelLog(loSslInfo, 'Credentials initialized');
+
+    FHandShakeData.ServerName := Addr;
+    FhContext := Default(CtxtHandle);
+    DoHandshakeStart;
+end;
+
+// Shutdown TLS channel without closing the socket connection
+procedure TSChannelWSocket.ShutdownTLS;
 var
     OutBuffer: SecBuffer;
 begin
-    if FHSocket = INVALID_SOCKET then
-        Exit;
-    // Secure channel not established -
+    SChannelLog(loSslInfo, 'Shutting down');
+
+    // Send a close_notify alert to the server and close down the connection.
+    GetShutdownData(FSessionData, FhContext, OutBuffer);
+    if OutBuffer.cbBuffer > 0 then
+    begin
+        SChannelLog(loSslDevel, Format('Sending shutdown notify - %d bytes of data', [OutBuffer.cbBuffer]));
+        FChannelState := chsShutdown;
+        Send(OutBuffer.pvBuffer, OutBuffer.cbBuffer);
+        g_pSSPI.FreeContextBuffer(OutBuffer.pvBuffer);
+    end;
+    DeleteContext(FhContext);
+
+    if Assigned(FOnTLSShutdown) then
+        FOnTLSShutdown(Self);
+end;
+
+// Override for inherited method - deny listening in secure mode
+procedure TSChannelWSocket.Listen;
+begin
+    { Check if we really want to use SChannel in server }
+    if FSecure then
+        raise ESocketException.Create('Listening is not supported with SChannel yet');
+
+    { No SChannel used, Listen as usual }
+    inherited;
+end;
+
+// Override for inherited method - shutdown TLS channel before closing the connection
+// (ignoring exceptions and don't waiting for peer response)
+procedure TSChannelWSocket.Shutdown(How: Integer);
+begin
+    // Secure channel not established - run default
     if not FSecure or not (FChannelState in [chsEstablished, chsShutdown]) then begin
         inherited ShutDown(How);
         Exit;
     end;
-    SChannelLog(loSslInfo, 'Shutting down');
 
-    // Send a close_notify alert to the server and close down the connection.
+    // Send a close_notify alert to the server and close the connection.
     try
-        GetShutdownData(FSessionData, FhContext, OutBuffer);
-        if OutBuffer.cbBuffer > 0 then
-        begin
-            SChannelLog(loSslDevel, Format('Sending shutdown notify - %d bytes of data', [OutBuffer.cbBuffer]));
-            FChannelState := chsShutdown;
-            Send(OutBuffer.pvBuffer, OutBuffer.cbBuffer);
-            g_pSSPI.FreeContextBuffer(OutBuffer.pvBuffer);
-            // Currently we don't wait for data to be sent, just shutdown
-            inherited ShutDown(How);
-        end;
+        ShutdownTLS;
+        // Currently we don't wait for data to be sent or server replies, just shutdown
+        inherited ShutDown(How);
     // Just log an exception, don't let it go
     except on E: Exception do
         SChannelLog(loSslErr, E.Message);

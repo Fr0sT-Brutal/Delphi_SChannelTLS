@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>SChannel helper: IcsSChannelSocket: Class TSChannelWSocket</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="PasDoc 0.15.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<link rel="StyleSheet" type="text/css" href="pasdoc.css">
+</head>
+<body>
+<table class="container"><tr><td class="navigation">
+<h2>SChannel helper</h2><p><a href="AllUnits.html" class="navigation">Units</a></p><p><a href="ClassHierarchy.html" class="navigation">Class Hierarchy</a></p><p><a href="AllClasses.html" class="navigation">Classes, Interfaces, Objects and Records</a></p><p><a href="AllTypes.html" class="navigation">Types</a></p><p><a href="AllVariables.html" class="navigation">Variables</a></p><p><a href="AllConstants.html" class="navigation">Constants</a></p><p><a href="AllFunctions.html" class="navigation">Functions and Procedures</a></p><p><a href="AllIdentifiers.html" class="navigation">Identifiers</a></p></td><td class="content">
+<span id="TSChannelWSocket"></span><h1 class="cio">Class TSChannelWSocket</h1>
+<div class="sections">
+<div class="one_section"><a class="section" href="#PasDoc-Description">Description</a></div><div class="one_section"><a class="section" href="#PasDoc-Hierarchy">Hierarchy</a></div><div class="one_section">Fields</div><div class="one_section"><a class="section" href="#PasDoc-Methods">Methods</a></div><div class="one_section"><a class="section" href="#PasDoc-Properties">Properties</a></div></div>
+<span id="PasDoc-Description"></span><h2 class="unit">Unit</h2>
+<p class="unitlink">
+<a  href="IcsSChannelSocket.html">IcsSChannelSocket</a></p>
+<h2 class="declaration">Declaration</h2>
+<p class="declaration">
+<code>type TSChannelWSocket = class(TWSocket)</code></p>
+<h2 class="description">Description</h2>
+<p>
+ICS TWSocket descendant supporting TLS</p>
+<span id="PasDoc-Hierarchy"></span><h2 class="hierarchy">Hierarchy</h2>
+<ul class="hierarchy"><li class="ancestor">TWSocket</li>
+<li class="thisitem">TSChannelWSocket</li></ul><h2 class="overview">Overview</h2>
+<span id="PasDoc-Methods"></span><h3 class="summary">Methods</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>constructor <strong><a  href="IcsSChannelSocket.TSChannelWSocket.html#Create">Create</a></strong>(AOwner : TComponent); override;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>procedure <strong><a  href="IcsSChannelSocket.TSChannelWSocket.html#Listen">Listen</a></strong>; override;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>procedure <strong><a  href="IcsSChannelSocket.TSChannelWSocket.html#Shutdown">Shutdown</a></strong>(How : Integer); override;</code></td>
+</tr>
+</table>
+<span id="PasDoc-Properties"></span><h3 class="summary">Properties</h3>
+<table class="summary wide_list">
+<tr class="list">
+<td class="visibility"><a  href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><code>property <strong><a  href="IcsSChannelSocket.TSChannelWSocket.html#Secure">Secure</a></strong>: Boolean          read FSecure            write SetSecure;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a  href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><code>property <strong><a  href="IcsSChannelSocket.TSChannelWSocket.html#PayloadReadCount">PayloadReadCount</a></strong>: Int64  read FPayloadReadCount;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a  href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><code>property <strong><a  href="IcsSChannelSocket.TSChannelWSocket.html#PayloadWriteCount">PayloadWriteCount</a></strong>: Int64 read FPayloadWriteCount;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a  href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><code>property <strong><a  href="IcsSChannelSocket.TSChannelWSocket.html#OnTLSDone">OnTLSDone</a></strong>: TNotifyEvent     read FOnTLSDone      write FOnTLSDone;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a  href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><code>property <strong><a  href="IcsSChannelSocket.TSChannelWSocket.html#OnTLSShutdown">OnTLSShutdown</a></strong>: TNotifyEvent read FOnTLSShutdown  write FOnTLSShutdown;</code></td>
+</tr>
+</table>
+<h2 class="description">Description</h2>
+<h3 class="detail">Methods</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="Create"></span><code>constructor <strong>Create</strong>(AOwner : TComponent); override;</code></td>
+</tr>
+<tr><td colspan="2">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="Listen"></span><code>procedure <strong>Listen</strong>; override;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Override for inherited method - deny listening in secure mode</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="Shutdown"></span><code>procedure <strong>Shutdown</strong>(How : Integer); override;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Override for inherited method - shutdown TLS channel before closing the connection (ignoring exceptions and don't waiting for peer response)</p>
+</td></tr>
+</table>
+<h3 class="detail">Properties</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a  href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><span id="Secure"></span><code>property <strong>Secure</strong>: Boolean          read FSecure            write SetSecure;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Indicates whether TLS is currently used. Effect of setting the property depends on current state. <br> Socket is <strong>not</strong> connected: </p>
+
+<ul class="paragraph_spacing">
+  <li><p>Setting <code>Secure</code> to <code>True</code>: TLS handshake will be established automatically as soon as socket is connected.</p></li>
+  <li><p>Setting <code>Secure</code> to <code>False</code>: work as usual (no TLS)</p></li>
+</ul>
+
+<p> Socket <strong>is</strong> connected: </p>
+
+<ul class="paragraph_spacing">
+  <li><p>Setting <code>Secure</code> to <code>True</code>: TLS handshake will be started immediately over existing connection</p></li>
+  <li><p>Setting <code>Secure</code> to <code>False</code>: TLS shutdown will be executed immediately without closing the connection</p></li>
+</ul>
+
+<p></p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a  href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><span id="PayloadReadCount"></span><code>property <strong>PayloadReadCount</strong>: Int64  read FPayloadReadCount;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Traffic counter for incoming payload. <code>TWSocket.ReadCount</code> property reflects encrypted traffic</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a  href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><span id="PayloadWriteCount"></span><code>property <strong>PayloadWriteCount</strong>: Int64 read FPayloadWriteCount;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Traffic counter for outgoing payload. <code>TWSocket.WriteCount</code> property reflects encrypted traffic</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a  href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><span id="OnTLSDone"></span><code>property <strong>OnTLSDone</strong>: TNotifyEvent     read FOnTLSDone      write FOnTLSDone;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Event is called when TLS handshake is established successfully</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a  href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
+<td class="itemcode"><span id="OnTLSShutdown"></span><code>property <strong>OnTLSShutdown</strong>: TNotifyEvent read FOnTLSShutdown  write FOnTLSShutdown;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Event is called when TLS handshake is shut down</p>
+</td></tr>
+</table>
+<hr><span class="appinfo"><em>Generated by <a  href="https://github.com/pasdoc/pasdoc/wiki">PasDoc 0.15.0</a>. </em>
+</span>
+</td></tr></table></body></html>

@@ -89,12 +89,15 @@ Helper functions for easy implementation of TLS communication by means of Window
 <td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#DecryptData">DecryptData</a></strong>(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes; pbIoBuffer: PByte; var cbEncData: DWORD; pbDecData: PByte; cbDecDataLength: DWORD; out cbWritten: DWORD): SECURITY_STATUS;</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#SecStatusErrStr">SecStatusErrStr</a></strong>(scRet: SECURITY_STATUS): string;</code></td>
+<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#SecIsNullHandle">SecIsNullHandle</a></strong>(const x: SecHandle): Boolean;</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#WinVerifyTrustErrorStr">WinVerifyTrustErrorStr</a></strong>(Status: DWORD): string;</code></td>
+<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#SecStatusErrStr">SecStatusErrStr</a></strong>(scRet: SECURITY_STATUS): string;</code></td>
 </tr>
 <tr class="list">
+<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#WinVerifyTrustErrorStr">WinVerifyTrustErrorStr</a></strong>(Status: DWORD): string;</code></td>
+</tr>
+<tr class="list2">
 <td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#IsWinHandshakeBug">IsWinHandshakeBug</a></strong>(scRet: SECURITY_STATUS): Boolean;</code></td>
 </tr>
 </table>
@@ -153,11 +156,11 @@ Mainly for internal use </p>
 </tr>
 <tr><td colspan="1">
 <p>
-Mainly for internal use.  </p>
+Mainly for internal use  </p>
 <h6 class="description_section">Parameters</h6>
 <dl class="parameters">
 <dt>SchannelCred</dt>
-<dd>- [?IN/OUT] If <code>SchannelCred.dwVersion</code> = <code>SCHANNEL_CRED_VERSION</code>, the parameter is considered &quot;IN/OUT&quot; and won't be modified before AcquireCredentialsHandle call. Otherwise the parameter is considered &quot;OUT&quot; and is init-ed with default values. Thus user can pass desired values to AcquireCredentialsHandle function.</dd>
+<dd>- [?IN/OUT] If <code>SchannelCred.dwVersion</code> = <code>SCHANNEL_CRED_VERSION</code>, the parameter is considered &quot;IN/OUT&quot; and won't be modified before <code>AcquireCredentialsHandle</code> call. Otherwise the parameter is considered &quot;OUT&quot; and is init-ed with default values. Thus user can pass desired values to <code>AcquireCredentialsHandle</code> function.</dd>
 </dl>
 <h6 class="description_section">Exceptions raised</h6>
 <dl class="exceptions_raised">
@@ -172,7 +175,7 @@ Mainly for internal use.  </p>
 </tr>
 <tr><td colspan="1">
 <p>
-Mainly for internal use </p>
+Mainly for internal use. Gets called by <code><a class="normal" href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></code> </p>
 <h6 class="description_section">Exceptions raised</h6>
 <dl class="exceptions_raised">
 <dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
@@ -186,7 +189,7 @@ Mainly for internal use </p>
 </tr>
 <tr><td colspan="1">
 <p>
-Load global stuff. Must be called before any other function called. Could be called many times </p>
+Load global stuff. Must be called before any other function called. Could be called multiple times without checks. <br> <strong>Thread-unsafe! Uses global variables</strong> </p>
 <h6 class="description_section">Exceptions raised</h6>
 <dl class="exceptions_raised">
 <dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
@@ -200,7 +203,7 @@ Load global stuff. Must be called before any other function called. Could be cal
 </tr>
 <tr><td colspan="1">
 <p>
-Dispose and null global stuff</p>
+Dispose and nullify global stuff. Could be called multiple times without checks. <br> <strong>Thread-unsafe! Uses global variables</strong></p>
 </td></tr>
 </table>
 <table class="detail wide_list">
@@ -209,7 +212,7 @@ Dispose and null global stuff</p>
 </tr>
 <tr><td colspan="1">
 <p>
-Init session, return data record to be used in calling other functions. Could be called many times (nothing will be done on already init-ed record)  </p>
+Init session, return data record to be used in calling other functions. Could be called multiple times (nothing will be done on already init-ed record)  </p>
 <h6 class="description_section">Parameters</h6>
 <dl class="parameters">
 <dt>SessionData</dt>
@@ -325,7 +328,7 @@ Generate data to send to a server on connection shutdown </p>
 </tr>
 <tr><td colspan="1">
 <p>
-Check server cert </p>
+Check server certificate </p>
 <h6 class="description_section">Exceptions raised</h6>
 <dl class="exceptions_raised">
 <dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
@@ -339,7 +342,7 @@ Check server cert </p>
 </tr>
 <tr><td colspan="1">
 <p>
-Dispose and null security context</p>
+Dispose and nullify security context</p>
 </td></tr>
 </table>
 <table class="detail wide_list">
@@ -426,6 +429,15 @@ Decrypt data received from server         </p>
 <dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
 <dd>on error</dd>
 </dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="SecIsNullHandle"></span><code>function <strong>SecIsNullHandle</strong>(const x: SecHandle): Boolean;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Check if handle <code>x</code> is null (has both fields equal to zero)</p>
 </td></tr>
 </table>
 <table class="detail wide_list">
@@ -527,7 +539,7 @@ Size of handshake buffer</p>
 </tr>
 <tr><td colspan="1">
 <p>
-TLS 1.0 is not used by default, add <code>SP_PROT_TLS1_0</code> if needed</p>
+Set of used protocols. Note: TLS 1.0 is not used by default, add <code>SP_PROT_TLS1_0</code> if needed</p>
 </td></tr>
 </table>
 <table class="detail wide_list">
@@ -536,7 +548,7 @@ TLS 1.0 is not used by default, add <code>SP_PROT_TLS1_0</code> if needed</p>
 </tr>
 <tr><td colspan="1">
 <p>
-= default; CALG_DH_EPHEM; CALG_RSA_KEYX;</p>
+Set of used algorithms. <code>0</code> means default. Add <code>CALG_DH_EPHEM</code>, <code>CALG_RSA_KEYX</code>, etc if needed</p>
 </td></tr>
 </table>
 <h3 class="detail">Variables</h3>

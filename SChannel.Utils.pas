@@ -25,8 +25,12 @@ uses
 const
   LogPrefix = '[SChannel]: '; // Just a suggested prefix for log output
   IO_BUFFER_SIZE = $10000;    // Size of handshake buffer
-  USED_PROTOCOLS: DWORD = SP_PROT_TLS1_1 or SP_PROT_TLS1_2; // TLS 1.0 is not used by default, add `SP_PROT_TLS1_0` if needed
-  USED_ALGS: ALG_ID = 0; // = default; CALG_DH_EPHEM; CALG_RSA_KEYX;
+  // Set of used protocols.
+  // Note: TLS 1.0 is not used by default, add `SP_PROT_TLS1_0` if needed
+  USED_PROTOCOLS: DWORD = SP_PROT_TLS1_1 or SP_PROT_TLS1_2;
+  // Set of used algorithms.
+  // `0` means default. Add `CALG_DH_EPHEM`, `CALG_RSA_KEYX`, etc if needed
+  USED_ALGS: ALG_ID = 0;
 
 type
   // Stage of handshake
@@ -107,7 +111,7 @@ type
   end;
 
 var
-  // ~~ Globals that are set by internal functions ~~
+  // ~~ Globals that are set/cleared by Init & Fin functions ~~
   hMYCertStore: HCERTSTORE = nil;
   g_pSSPI: PSecurityFunctionTable;
 
@@ -117,28 +121,31 @@ var
 // @raises ESSPIError on error
 procedure LoadSecurityLibrary;
 // Mainly for internal use
-//   @param SchannelCred - [?IN/OUT] If `SchannelCred.dwVersion` = `SCHANNEL_CRED_VERSION`,            \
-//     the parameter is considered "IN/OUT" and won't be modified before AcquireCredentialsHandle call.\
-//     Otherwise the parameter is considered "OUT" and is init-ed with default values.                 \
-//     Thus user can pass desired values to AcquireCredentialsHandle function.
+//   @param SchannelCred - [?IN/OUT] If `SchannelCred.dwVersion` = `SCHANNEL_CRED_VERSION`,              \
+//     the parameter is considered "IN/OUT" and won't be modified before `AcquireCredentialsHandle` call.\
+//     Otherwise the parameter is considered "OUT" and is init-ed with default values.                   \
+//     Thus user can pass desired values to `AcquireCredentialsHandle` function.
 // @raises ESSPIError on error
 procedure CreateCredentials(const User: string; out hCreds: CredHandle; var SchannelCred: SCHANNEL_CRED);
-// Mainly for internal use
+// Mainly for internal use. Gets called by `CheckServerCert`
 // @raises ESSPIError on error
 procedure VerifyServerCertificate(pServerCert: PCCERT_CONTEXT; const szServerName: string; dwCertFlags: DWORD);
 
 // ~~ Global init and fin ~~
 // Load global stuff. Must be called before any other function called.
-// Could be called many times
+// Could be called multiple times without checks. @br
+// **Thread-unsafe! Uses global variables**
 // @raises ESSPIError on error
 procedure Init;
-// Dispose and null global stuff
+// Dispose and nullify global stuff.
+// Could be called multiple times without checks. @br
+// **Thread-unsafe! Uses global variables**
 procedure Fin;
 
 // ~~ Session init and fin ~~
 
 // Init session, return data record to be used in calling other functions.
-// Could be called many times (nothing will be done on already init-ed record)
+// Could be called multiple times (nothing will be done on already init-ed record)
 //   @param SessionData - [IN, OUT] record that receives values. On first call   \
 //     must be zeroed. Alternatively, user could fill `SessionData.SchannelCred` \
 //     with desired values to tune channel properties.
@@ -156,10 +163,10 @@ function DoClientHandshake(var SessionData: TSessionData; var HandShakeData: THa
 // @raises ESSPIError on error
 procedure GetShutdownData(const SessionData: TSessionData; const hContext: CtxtHandle;
   out OutBuffer: SecBuffer);
-// Check server cert
+// Check server certificate
 // @raises ESSPIError on error
 procedure CheckServerCert(const hContext: CtxtHandle; const ServerName: string);
-// Dispose and null security context
+// Dispose and nullify security context
 procedure DeleteContext(var hContext: CtxtHandle);
 
 // ~~ Data exchange ~~
@@ -487,7 +494,6 @@ begin
   end;
 end;
 
-// Dispose and null global stuff
 procedure Fin;
 begin
   // Close "MY" certificate store.

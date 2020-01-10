@@ -10,3 +10,5 @@ push
 init
 fin
 stage
+secure
+shutdown

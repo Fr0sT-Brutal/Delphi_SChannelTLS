@@ -84,28 +84,35 @@ procedure PerformClientHandshake(var SessionData: TSessionData; const ServerName
 var
   HandShakeData: THandShakeData;
   cbData: Integer;
-begin
-  HandShakeData := Default(THandShakeData);
-  HandShakeData.ServerName := ServerName;
-  hContext := Default(CtxtHandle);
-  if not Assigned(LogFn) then
-    LogFn := TLogFnHoster.DefLogFn;
+  HandshakeBug: Boolean;
 
-  try try
+  procedure DoHandshakeStart;
+  begin
     // Generate hello
     DoClientHandshake(SessionData, HandShakeData);
     Assert(HandShakeData.Stage = hssSendCliHello);
 
     // Send hello to server
     cbData := SendFn(Data, HandShakeData.OutBuffers[0].pvBuffer, HandShakeData.OutBuffers[0].cbBuffer);
-    if cbData = HandShakeData.OutBuffers[0].cbBuffer then
+    if cbData = Integer(HandShakeData.OutBuffers[0].cbBuffer) then
       LogFn(LogPrefix + Format('Handshake - %d bytes sent', [cbData]))
     else
       LogFn(LogPrefix + 'Handshake - ! data sent partially');
     g_pSSPI.FreeContextBuffer(HandShakeData.OutBuffers[0].pvBuffer); // Free output buffer.
     SetLength(HandShakeData.OutBuffers, 0);
     HandShakeData.Stage := hssReadSrvHello;
+  end;
 
+begin
+  HandShakeData := Default(THandShakeData);
+  HandShakeData.ServerName := ServerName;
+  hContext := Default(CtxtHandle);
+  HandshakeBug := False;
+  if not Assigned(LogFn) then
+    LogFn := TLogFnHoster.DefLogFn;
+
+  try try
+    DoHandshakeStart;
     // Read hello from server
     SetLength(HandShakeData.IoBuffer, IO_BUFFER_SIZE);
     HandShakeData.cbIoBuffer := 0;
@@ -122,15 +129,30 @@ begin
       end;
 
       // Decode hello
-      DoClientHandshake(SessionData, HandShakeData);
-
+      try
+        DoClientHandshake(SessionData, HandShakeData);
+      except on E: ESSPIError do
+        // Hide Windows handshake bug and restart the process for the first time
+        if (HandShakeData.Stage = hssReadSrvHello) and IsWinHandshakeBug(E.SecStatus)
+          and not HandshakeBug then
+        begin
+          LogFn(Format('Handshake bug: "%s", retrying', [E.Message]));
+          HandshakeBug := True;
+          DeleteContext(HandShakeData.hContext);
+          HandShakeData.Stage := hssNotStarted;
+          DoHandshakeStart;
+          Continue;
+        end
+        else
+          raise E;     // TODO: after this exc props are lost
+      end;
       // Send token if needed
       if HandShakeData.Stage in [hssReadSrvHelloContNeed, hssReadSrvHelloOK] then
       begin
         if (HandShakeData.OutBuffers[0].cbBuffer > 0) and (HandShakeData.OutBuffers[0].pvBuffer <> nil) then
         begin
           cbData := SendFn(Data, HandShakeData.OutBuffers[0].pvBuffer, HandShakeData.OutBuffers[0].cbBuffer);
-          if cbData = HandShakeData.OutBuffers[0].cbBuffer then
+          if cbData = Integer(HandShakeData.OutBuffers[0].cbBuffer) then
             LogFn(LogPrefix + Format('Handshake - %d bytes sent', [cbData]))
           else
             LogFn(LogPrefix + 'Handshake - ! data sent partially');
@@ -163,6 +185,7 @@ begin
     begin
       if Length(HandShakeData.OutBuffers) > 0 then
         g_pSSPI.FreeContextBuffer(HandShakeData.OutBuffers[0].pvBuffer); // Free output buffer
+      SetLength(HandShakeData.OutBuffers, 0);
       hContext := HandShakeData.hContext;
     end;
   end;

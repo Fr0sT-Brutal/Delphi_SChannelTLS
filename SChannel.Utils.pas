@@ -83,9 +83,19 @@ type
     OutBuffers: array of SecBuffer;
   end;
 
+  // Session options
+  TSessionFlag = (
+    // If @true, SChannel won't verify server certificate (use with care! Though
+    // this could help when connecting by IP)
+    sfNoServerVerify
+  );
+  TSessionFlags = set of TSessionFlag;
+
   // Data related to a session. Using a variable of this type allows thread-safe
   // usage
   TSessionData = record
+    // Options
+    Flags: TSessionFlags;
     // Handle of credentials, mainly for internal use
     hCreds: CredHandle;
     // SChannel credentials, mainly for internal use but could be init-ed by user
@@ -659,12 +669,15 @@ var
   InBuffers: array [0..1] of SecBuffer;
   OutBuffer, InBuffer: SecBufferDesc;
 begin
+  dwSSPIFlags :=
+    ISC_REQ_SEQUENCE_DETECT or ISC_REQ_REPLAY_DETECT or ISC_REQ_CONFIDENTIALITY or
+    ISC_RET_EXTENDED_ERROR or ISC_REQ_ALLOCATE_MEMORY or ISC_REQ_STREAM;
+  if sfNoServerVerify in SessionData.Flags then
+    dwSSPIFlags := dwSSPIFlags or ISC_REQ_MANUAL_CRED_VALIDATION;
+
   case HandShakeData.Stage of
     hssNotStarted:
       begin
-        dwSSPIFlags :=
-          ISC_REQ_SEQUENCE_DETECT or ISC_REQ_REPLAY_DETECT or ISC_REQ_CONFIDENTIALITY or
-          ISC_RET_EXTENDED_ERROR or ISC_REQ_ALLOCATE_MEMORY or ISC_REQ_STREAM;
 
         //  Initiate a ClientHello message and generate a token.
         SetLength(HandShakeData.OutBuffers, 1);
@@ -677,7 +690,7 @@ begin
 
         Result := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
                                                      nil,
-                                                     PSecWChar(PChar(HandShakeData.ServerName)),
+                                                     PSecWChar(Pointer(HandShakeData.ServerName)), // ! PChar('') <> nil !
                                                      dwSSPIFlags,
                                                      0,
                                                      SECURITY_NATIVE_DREP,
@@ -700,9 +713,6 @@ begin
     hssReadSrvHelloNoRead,
     hssReadSrvHelloContNeed:
       begin
-        dwSSPIFlags :=
-          ISC_REQ_SEQUENCE_DETECT or ISC_REQ_REPLAY_DETECT or ISC_REQ_CONFIDENTIALITY or
-          ISC_RET_EXTENDED_ERROR or ISC_REQ_ALLOCATE_MEMORY or ISC_REQ_STREAM;
         // Set up the input buffers. Buffer 0 is used to pass in data
         // received from the server. Schannel will consume some or all
         // of this. Leftover data (if any) will be placed in buffer 1 and
@@ -743,7 +753,7 @@ begin
 
         Result := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
                                                      @HandShakeData.hContext,
-                                                     PSecWChar(PChar(HandShakeData.ServerName)),
+                                                     PSecWChar(Pointer(HandShakeData.ServerName)),
                                                      dwSSPIFlags,
                                                      0,
                                                      SECURITY_NATIVE_DREP,

@@ -468,7 +468,7 @@ begin
       SchannelCred.palgSupportedAlgs := @rgbSupportedAlgs;
     end;
 
-    SchannelCred.dwFlags := SCH_CRED_NO_DEFAULT_CREDS;
+    SchannelCred.dwFlags := SCH_CRED_REVOCATION_CHECK_CHAIN;
   end;
 
   // Create an SSPI credential with SChannel security package
@@ -678,7 +678,6 @@ begin
   case HandShakeData.Stage of
     hssNotStarted:
       begin
-
         //  Initiate a ClientHello message and generate a token.
         SetLength(HandShakeData.OutBuffers, 1);
         HandShakeData.OutBuffers[0] := Default(SecBuffer);
@@ -689,13 +688,13 @@ begin
         OutBuffer.pBuffers  := PSecBuffer(HandShakeData.OutBuffers);
 
         Result := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
-                                                     nil,
+                                                     nil,  // NULL on the first call
                                                      PSecWChar(Pointer(HandShakeData.ServerName)), // ! PChar('') <> nil !
                                                      dwSSPIFlags,
-                                                     0,
-                                                     SECURITY_NATIVE_DREP,
-                                                     nil,
-                                                     0,
+                                                     0,    // Reserved
+                                                     0,    // Not used with Schannel
+                                                     nil,  // NULL on the first call
+                                                     0,    // Reserved
                                                      @HandShakeData.hContext,
                                                      @OutBuffer,
                                                      dwSSPIOutFlags,
@@ -755,10 +754,10 @@ begin
                                                      @HandShakeData.hContext,
                                                      PSecWChar(Pointer(HandShakeData.ServerName)),
                                                      dwSSPIFlags,
-                                                     0,
-                                                     SECURITY_NATIVE_DREP,
+                                                     0,          // Reserved
+                                                     0,          // Not used with Schannel
                                                      @InBuffer,
-                                                     0,
+                                                     0,          // Reserved
                                                      nil,
                                                      @OutBuffer,
                                                      dwSSPIOutFlags,

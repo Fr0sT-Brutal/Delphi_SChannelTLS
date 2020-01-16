@@ -44,4 +44,13 @@ There's SChannel bug that causes functions rarely and randomly return `SEC_E_BUF
 	...
 	```
 
-3. `TSChannelWSocket` class from `IcsSChannelSocket.pas` already implements one-time retrying invisibly to a caller.
+3. `TSChannelWSocket` class from `IcsSChannelSocket.pas` and `PerformClientHandshake` function from `SChannel.SyncHandshake.pas` already implement one-time retrying invisibly to a caller.
+
+IcsSChannelSocket
+-------------------
+
+Socket class descending from ICS `TWSocket` that does many things for you. Key features:
+
+- Automatic handshake retry when handshake bug (see above) is encountered
+- TLS channel could be started/finished at any moment by setting `Secure` property; `OnTLSDone` and `OnTLSShutdown` events will signal channel state
+- Session data could be shared between multiple sockets with `SharedSessionData` property. When sessions are shared, handshake becomes significantly shorter so it worths it

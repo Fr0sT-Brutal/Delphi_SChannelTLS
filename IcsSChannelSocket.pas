@@ -35,7 +35,7 @@ type
   strict protected
       FSecure: Boolean;
       FChannelState: TChannelState;
-      FSessionData: TSessionData;
+      FSharedSessionData: ISharedSessionData;
       FHandShakeData: THandShakeData;
       FhContext: CtxtHandle;
       FHandshakeBug: Boolean;
@@ -84,17 +84,20 @@ type
       //     over existing connection
       //   - Setting @name to @False: TLS shutdown will be executed immediately
       //     without closing the connection
-      property    Secure: Boolean          read FSecure            write SetSecure;
+      property Secure: Boolean read FSecure write SetSecure;
       // Traffic counter for incoming payload.
       // `TWSocket.ReadCount` property reflects encrypted traffic
-      property    PayloadReadCount: Int64  read FPayloadReadCount;
+      property PayloadReadCount: Int64 read FPayloadReadCount;
       // Traffic counter for outgoing payload.
       // `TWSocket.WriteCount` property reflects encrypted traffic
-      property    PayloadWriteCount: Int64 read FPayloadWriteCount;
+      property PayloadWriteCount: Int64 read FPayloadWriteCount;
+      // Session data that could be shared between multiple sockets. To share a session,
+      // assign this property before starting TLS handshake
+      property SharedSessionData: ISharedSessionData read FSharedSessionData write FSharedSessionData;
       // Event is called when TLS handshake is established successfully
-      property    OnTLSDone: TNotifyEvent     read FOnTLSDone      write FOnTLSDone;
+      property OnTLSDone: TNotifyEvent read FOnTLSDone write FOnTLSDone;
       // Event is called when TLS handshake is shut down
-      property    OnTLSShutdown: TNotifyEvent read FOnTLSShutdown  write FOnTLSShutdown;
+      property OnTLSShutdown: TNotifyEvent read FOnTLSShutdown write FOnTLSShutdown;
   end;
 
 implementation
@@ -112,8 +115,6 @@ begin
 
     FChannelState := chsNotStarted;
     FHandShakeData := Default(THandShakeData);
-    FinSession(FSessionData);
-    FSessionData := Default(TSessionData);
     DeleteContext(FhContext);
     FHandshakeBug := False;
     FSendBuffer := nil;
@@ -342,7 +343,7 @@ begin
 
     try
         // Generate hello
-        DoClientHandshake(FSessionData, FHandShakeData);
+        DoClientHandshake(SharedSessionData.GetSessionDataPtr^, FHandShakeData);
         Assert(FHandShakeData.Stage = hssSendCliHello);
 
         // Send hello to server
@@ -387,7 +388,7 @@ begin
     // Decode hello
     try
         try
-            DoClientHandshake(FSessionData, FHandShakeData);
+            DoClientHandshake(SharedSessionData.GetSessionDataPtr^, FHandShakeData);
         except on E: ESSPIError do
             // Hide Windows handshake bug and restart the process for the first time
             if (FHandShakeData.Stage = hssReadSrvHello) and IsWinHandshakeBug(E.SecStatus)
@@ -480,9 +481,24 @@ end;
 
 // Start TLS handshake process
 procedure TSChannelWSocket.StartTLS;
+var
+    SessData: TSessionData;
 begin
-    InitSession(FSessionData);
-    SChannelLog(loSslInfo, S_Msg_CredsInited);
+    // Create and init shared session data if not created yet
+    if SharedSessionData = nil then
+    begin
+      SessData := Default(TSessionData);
+      InitSession(SessData);
+      SChannelLog(loSslInfo, S_Msg_CredsInited);
+      SharedSessionData := TSharedSessionData.Create(SessData);
+    end;
+
+    // Init session data if not inited yet or finished (unlikely)
+    if SecIsNullHandle(SharedSessionData.GetSessionDataPtr.hCreds) then
+    begin
+      InitSession(SharedSessionData.GetSessionDataPtr^);
+      SChannelLog(loSslInfo, S_Msg_CredsInited);
+    end;
 
     FHandShakeData.ServerName := Addr;
     FhContext := Default(CtxtHandle);
@@ -497,7 +513,7 @@ begin
     SChannelLog(loSslInfo, S_Msg_ShuttingDownTLS);
 
     // Send a close_notify alert to the server and close down the connection.
-    GetShutdownData(FSessionData, FhContext, OutBuffer);
+    GetShutdownData(SharedSessionData.GetSessionDataPtr^, FhContext, OutBuffer);
     if OutBuffer.cbBuffer > 0 then
     begin
         SChannelLog(loSslDevel, Format(S_Msg_SendingShutdown, [OutBuffer.cbBuffer]));

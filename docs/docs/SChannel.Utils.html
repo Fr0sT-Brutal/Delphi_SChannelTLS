@@ -141,6 +141,69 @@ Helper functions for easy implementation of TLS communication by means of Window
 <tr class="list2">
 <td class="itemcode"><code><strong><a  href="SChannel.Utils.html#USED_ALGS">USED_ALGS</a></strong>: ALG_ID = 0;</code></td>
 </tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_Received">S_Msg_Received</a></strong> = 'Received %d bytes of encrypted data / %d bytes of payload';</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_SessionClosed">S_Msg_SessionClosed</a></strong> = 'Server closed the session [SEC_I_CONTEXT_EXPIRED]';</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_Renegotiate">S_Msg_Renegotiate</a></strong> = 'Server requested renegotiate';</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Err_DecryptMessageUnexpRes">S_Err_DecryptMessageUnexpRes</a></strong> = 'DecryptMessage unexpected result %s';</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_Sending">S_Msg_Sending</a></strong> = 'Sending %d bytes of payload / %d bytes encrypted';</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Err_Sending">S_Err_Sending</a></strong> = 'Error sending payload to server: &quot;%s&quot;';</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_StartingTLS">S_Msg_StartingTLS</a></strong> = 'Starting TLS handshake';</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HandshakeTDAErr">S_Msg_HandshakeTDAErr</a></strong> = 'Handshake - ! error [%d] in TriggerDataAvailable';</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HShStageW1Success">S_Msg_HShStageW1Success</a></strong> = 'Handshake @W1 - %d bytes sent';</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HShStageW1Fail">S_Msg_HShStageW1Fail</a></strong> = 'Handshake @W1 - ! error sending data';</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HShStageRFail">S_Msg_HShStageRFail</a></strong> = 'Handshake @R - no data received or error receiving [%d]';</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HShStageRSuccess">S_Msg_HShStageRSuccess</a></strong> = 'Handshake @R - %d bytes received';</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HandshakeBug">S_Msg_HandshakeBug</a></strong> = 'Handshake bug: &quot;%s&quot;, retrying';</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HShStageW2Success">S_Msg_HShStageW2Success</a></strong> = 'Handshake @W2 - %d bytes sent';</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HShStageW2Fail">S_Msg_HShStageW2Fail</a></strong> = 'Handshake @W2 - ! error sending data';</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_Established">S_Msg_Established</a></strong> = 'Handshake established';</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_SrvCredsAuth">S_Msg_SrvCredsAuth</a></strong> = 'Server credentials authenticated';</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_CredsInited">S_Msg_CredsInited</a></strong> = 'Credentials initialized';</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_ShuttingDownTLS">S_Msg_ShuttingDownTLS</a></strong> = 'Shutting down TLS';</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_SendingShutdown">S_Msg_SendingShutdown</a></strong> = 'Sending shutdown notify - %d bytes of data';</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Err_ListeningNotSupported">S_Err_ListeningNotSupported</a></strong> = 'Listening is not supported with SChannel yet';</code></td>
+</tr>
 </table>
 <span id="PasDoc-Variables"></span><h3 class="summary">Variables</h3>
 <table class="summary wide_list">
@@ -595,6 +658,155 @@ Set of used protocols. Note: TLS 1.0 is not used by default, add <code>SP_PROT_T
 <p>
 Set of used algorithms. <code>0</code> means default. Add <code>CALG_DH_EPHEM</code>, <code>CALG_RSA_KEYX</code>, etc if needed</p>
 </td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_Received"></span><code><strong>S_Msg_Received</strong> = 'Received %d bytes of encrypted data / %d bytes of payload';</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Messages that could be written to log by various implementations</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_SessionClosed"></span><code><strong>S_Msg_SessionClosed</strong> = 'Server closed the session [SEC_I_CONTEXT_EXPIRED]';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_Renegotiate"></span><code><strong>S_Msg_Renegotiate</strong> = 'Server requested renegotiate';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Err_DecryptMessageUnexpRes"></span><code><strong>S_Err_DecryptMessageUnexpRes</strong> = 'DecryptMessage unexpected result %s';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_Sending"></span><code><strong>S_Msg_Sending</strong> = 'Sending %d bytes of payload / %d bytes encrypted';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Err_Sending"></span><code><strong>S_Err_Sending</strong> = 'Error sending payload to server: &quot;%s&quot;';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_StartingTLS"></span><code><strong>S_Msg_StartingTLS</strong> = 'Starting TLS handshake';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_HandshakeTDAErr"></span><code><strong>S_Msg_HandshakeTDAErr</strong> = 'Handshake - ! error [%d] in TriggerDataAvailable';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_HShStageW1Success"></span><code><strong>S_Msg_HShStageW1Success</strong> = 'Handshake @W1 - %d bytes sent';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_HShStageW1Fail"></span><code><strong>S_Msg_HShStageW1Fail</strong> = 'Handshake @W1 - ! error sending data';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_HShStageRFail"></span><code><strong>S_Msg_HShStageRFail</strong> = 'Handshake @R - no data received or error receiving [%d]';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_HShStageRSuccess"></span><code><strong>S_Msg_HShStageRSuccess</strong> = 'Handshake @R - %d bytes received';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_HandshakeBug"></span><code><strong>S_Msg_HandshakeBug</strong> = 'Handshake bug: &quot;%s&quot;, retrying';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_HShStageW2Success"></span><code><strong>S_Msg_HShStageW2Success</strong> = 'Handshake @W2 - %d bytes sent';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_HShStageW2Fail"></span><code><strong>S_Msg_HShStageW2Fail</strong> = 'Handshake @W2 - ! error sending data';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_Established"></span><code><strong>S_Msg_Established</strong> = 'Handshake established';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_SrvCredsAuth"></span><code><strong>S_Msg_SrvCredsAuth</strong> = 'Server credentials authenticated';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_CredsInited"></span><code><strong>S_Msg_CredsInited</strong> = 'Credentials initialized';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_ShuttingDownTLS"></span><code><strong>S_Msg_ShuttingDownTLS</strong> = 'Shutting down TLS';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_SendingShutdown"></span><code><strong>S_Msg_SendingShutdown</strong> = 'Sending shutdown notify - %d bytes of data';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Err_ListeningNotSupported"></span><code><strong>S_Err_ListeningNotSupported</strong> = 'Listening is not supported with SChannel yet';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
 </table>
 <h3 class="detail">Variables</h3>
 <table class="detail wide_list">

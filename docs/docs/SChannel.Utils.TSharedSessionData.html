@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>SChannel helper: SChannel.Utils: Record TSessionData</title>
+<title>SChannel helper: SChannel.Utils: Class TSharedSessionData</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="PasDoc 0.15.0">
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
@@ -10,64 +10,62 @@
 <body>
 <table class="container"><tr><td class="navigation">
 <h2>SChannel helper</h2><p><a href="AllUnits.html" class="navigation">Units</a></p><p><a href="ClassHierarchy.html" class="navigation">Class Hierarchy</a></p><p><a href="AllClasses.html" class="navigation">Classes, Interfaces, Objects and Records</a></p><p><a href="AllTypes.html" class="navigation">Types</a></p><p><a href="AllVariables.html" class="navigation">Variables</a></p><p><a href="AllConstants.html" class="navigation">Constants</a></p><p><a href="AllFunctions.html" class="navigation">Functions and Procedures</a></p><p><a href="AllIdentifiers.html" class="navigation">Identifiers</a></p></td><td class="content">
-<span id="TSessionData"></span><h1 class="cio">Record TSessionData</h1>
+<span id="TSharedSessionData"></span><h1 class="cio">Class TSharedSessionData</h1>
 <div class="sections">
-<div class="one_section"><a class="section" href="#PasDoc-Description">Description</a></div><div class="one_section">Hierarchy</div><div class="one_section"><a class="section" href="#PasDoc-Fields">Fields</a></div><div class="one_section">Methods</div><div class="one_section">Properties</div></div>
+<div class="one_section"><a class="section" href="#PasDoc-Description">Description</a></div><div class="one_section"><a class="section" href="#PasDoc-Hierarchy">Hierarchy</a></div><div class="one_section">Fields</div><div class="one_section"><a class="section" href="#PasDoc-Methods">Methods</a></div><div class="one_section">Properties</div></div>
 <span id="PasDoc-Description"></span><h2 class="unit">Unit</h2>
 <p class="unitlink">
 <a  href="SChannel.Utils.html">SChannel.Utils</a></p>
 <h2 class="declaration">Declaration</h2>
 <p class="declaration">
-<code>type TSessionData = record</code></p>
+<code>type TSharedSessionData = class(TInterfacedObject, <a class="normal" href="SChannel.Utils.ISharedSessionData.html">ISharedSessionData</a>)</code></p>
 <h2 class="description">Description</h2>
 <p>
-Data related to a session. Using a variable of this type allows thread-safe usage</p>
-<h2 class="overview">Overview</h2>
-<span id="PasDoc-Fields"></span><h3 class="summary">Fields</h3>
+Interfaced object with session data for sharing credentials</p>
+<span id="PasDoc-Hierarchy"></span><h2 class="hierarchy">Hierarchy</h2>
+<ul class="hierarchy"><li class="ancestor">TInterfacedObject</li>
+<li class="thisitem">TSharedSessionData</li></ul><h2 class="overview">Overview</h2>
+<span id="PasDoc-Methods"></span><h3 class="summary">Methods</h3>
 <table class="summary wide_list">
 <tr class="list">
 <td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.TSessionData.html#Flags">Flags</a></strong>: <a  href="SChannel.Utils.html#TSessionFlags">TSessionFlags</a>;</code></td>
+<td class="itemcode"><code>constructor <strong><a  href="SChannel.Utils.TSharedSessionData.html#Create">Create</a></strong>(const SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
 </tr>
 <tr class="list2">
 <td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.TSessionData.html#hCreds">hCreds</a></strong>: CredHandle;</code></td>
+<td class="itemcode"><code>destructor <strong><a  href="SChannel.Utils.TSharedSessionData.html#Destroy">Destroy</a></strong>; override;</code></td>
 </tr>
 <tr class="list">
 <td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.TSessionData.html#SchannelCred">SchannelCred</a></strong>: SCHANNEL_CRED;</code></td>
+<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.TSharedSessionData.html#GetSessionDataPtr">GetSessionDataPtr</a></strong>: <a  href="SChannel.Utils.html#PSessionData">PSessionData</a>;</code></td>
 </tr>
 </table>
 <h2 class="description">Description</h2>
-<h3 class="detail">Fields</h3>
+<h3 class="detail">Methods</h3>
 <table class="detail wide_list">
 <tr class="list">
 <td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><span id="Flags"></span><code><strong>Flags</strong>: <a  href="SChannel.Utils.html#TSessionFlags">TSessionFlags</a>;</code></td>
+<td class="itemcode"><span id="Create"></span><code>constructor <strong>Create</strong>(const SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
 </tr>
 <tr><td colspan="2">
-<p>
-Options</p>
-</td></tr>
+&nbsp;</td></tr>
 </table>
 <table class="detail wide_list">
 <tr class="list">
 <td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><span id="hCreds"></span><code><strong>hCreds</strong>: CredHandle;</code></td>
+<td class="itemcode"><span id="Destroy"></span><code>destructor <strong>Destroy</strong>; override;</code></td>
 </tr>
 <tr><td colspan="2">
-<p>
-Handle of credentials, mainly for internal use</p>
-</td></tr>
+&nbsp;</td></tr>
 </table>
 <table class="detail wide_list">
 <tr class="list">
 <td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><span id="SchannelCred"></span><code><strong>SchannelCred</strong>: SCHANNEL_CRED;</code></td>
+<td class="itemcode"><span id="GetSessionDataPtr"></span><code>function <strong>GetSessionDataPtr</strong>: <a  href="SChannel.Utils.html#PSessionData">PSessionData</a>;</code></td>
 </tr>
 <tr><td colspan="2">
 <p>
-SChannel credentials, mainly for internal use but could be init-ed by user to tune specific channel properties.</p>
+Return pointer to <code><a class="normal" href="SChannel.Utils.TSessionData.html">TSessionData</a></code> record</p>
 </td></tr>
 </table>
 <hr><span class="appinfo"><em>Generated by <a  href="https://github.com/pasdoc/pasdoc/wiki">PasDoc 0.15.0</a>. </em>

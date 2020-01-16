@@ -40,6 +40,14 @@ Helper functions for easy implementation of TLS communication by means of Window
 <td class="itemdesc">Data related to a session.</td>
 </tr>
 <tr class="list">
+<td class="itemname">Interface&nbsp;<a class="bold" href="SChannel.Utils.ISharedSessionData.html"><code>ISharedSessionData</code></a></td>
+<td class="itemdesc">Interface with session data for sharing credentials</td>
+</tr>
+<tr class="list2">
+<td class="itemname">Class&nbsp;<a class="bold" href="SChannel.Utils.TSharedSessionData.html"><code>TSharedSessionData</code></a></td>
+<td class="itemdesc">Interfaced object with session data for sharing credentials</td>
+</tr>
+<tr class="list">
 <td class="itemname">Class&nbsp;<a class="bold" href="SChannel.Utils.ESSPIError.html"><code>ESSPIError</code></a></td>
 <td class="itemdesc">Specific exception class.</td>
 </tr>
@@ -108,6 +116,15 @@ Helper functions for easy implementation of TLS communication by means of Window
 </tr>
 <tr class="list2">
 <td class="itemcode"><code><strong><a  href="SChannel.Utils.html#TChannelState">TChannelState</a></strong> = (...);</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#TSessionFlag">TSessionFlag</a></strong> = (...);</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#TSessionFlags">TSessionFlags</a></strong> = set of <a  href="SChannel.Utils.html#TSessionFlag">TSessionFlag</a>;</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#PSessionData">PSessionData</a></strong> = &circ;<a  href="SChannel.Utils.TSessionData.html">TSessionData</a>;</code></td>
 </tr>
 </table>
 <span id="PasDoc-Constants"></span><h3 class="summary">Constants</h3>
@@ -513,6 +530,34 @@ State of secure channel</p>
 <span id="chsShutdown">chsShutdown</span>: Sending shutdown signal and closing connection</li>
 </ul>
 </td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="TSessionFlag"></span><code><strong>TSessionFlag</strong> = (...);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Session options</p>
+<h6 class="description_section">Values</h6>
+<ul>
+<li>
+<span id="sfNoServerVerify">sfNoServerVerify</span>: If <code>True</code>, SChannel won't verify server certificate (use with care! Though this could help when connecting by IP)</li>
+</ul>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="TSessionFlags"></span><code><strong>TSessionFlags</strong> = set of <a  href="SChannel.Utils.html#TSessionFlag">TSessionFlag</a>;</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="PSessionData"></span><code><strong>PSessionData</strong> = &circ;<a  href="SChannel.Utils.TSessionData.html">TSessionData</a>;</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
 </table>
 <h3 class="detail">Constants</h3>
 <table class="detail wide_list">

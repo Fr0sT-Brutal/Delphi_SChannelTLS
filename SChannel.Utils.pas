@@ -102,6 +102,23 @@ type
     // to tune specific channel properties.
     SchannelCred: SCHANNEL_CRED;
   end;
+  PSessionData = ^TSessionData;
+
+  // Interface with session data for sharing credentials
+  ISharedSessionData = interface
+    // Return pointer to `TSessionData` record
+    function GetSessionDataPtr: PSessionData;
+  end;
+
+  // Interfaced object with session data for sharing credentials
+  TSharedSessionData = class(TInterfacedObject, ISharedSessionData)
+  strict private
+    FSessionData: TSessionData;
+  public
+    constructor Create(const SessionData: TSessionData);
+    destructor Destroy; override;
+    function GetSessionDataPtr: PSessionData;
+  end;
 
   // Specific exception class. Could be created on WinAPI error, SChannel error
   // or general internal error.
@@ -357,7 +374,27 @@ begin
   Result := (scRet = SEC_E_BUFFER_TOO_SMALL) or (scRet = SEC_E_MESSAGE_ALTERED);
 end;
 
-{ ESSPIError }
+{ ~~ TSharedSessionData ~~ }
+
+constructor TSharedSessionData.Create(const SessionData: TSessionData);
+begin
+  inherited Create;
+  FSessionData := SessionData;
+end;
+
+// Return pointer to `TSessionData` record
+function TSharedSessionData.GetSessionDataPtr: PSessionData;
+begin
+  Result := @FSessionData;
+end;
+
+destructor TSharedSessionData.Destroy;
+begin
+  FinSession(FSessionData);
+  inherited;
+end;
+
+{ ~~ ESSPIError ~~ }
 
 constructor ESSPIError.CreateWinAPI(const Msg, Func: string; Err: DWORD);
 begin

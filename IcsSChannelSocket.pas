@@ -198,20 +198,20 @@ begin
     case scRet of
         SEC_E_OK, SEC_E_INCOMPLETE_MESSAGE, SEC_I_CONTEXT_EXPIRED:
             begin
-                SChannelLog(loSslDevel, Format('Received %d bytes of encrypted data / %d bytes of payload', [res, cbRead]));
+                SChannelLog(loSslDevel, Format(S_Msg_Received, [res, cbRead]));
                 if scRet = SEC_I_CONTEXT_EXPIRED then
-                    SChannelLog(loSslInfo, 'Server closed the connection [SEC_I_CONTEXT_EXPIRED]');
+                    SChannelLog(loSslInfo, S_Msg_SessionClosed);
                 FDecrBuffer.DataLen := cbRead;
                 Result := RecvFromBuffer;
             end;
         SEC_I_RENEGOTIATE:
             begin
-                SChannelLog(loSslInfo, 'Server requested renegotiate');
+                SChannelLog(loSslInfo, S_Msg_Renegotiate);
                 DoHandshakeStart;
                 Result := 0;
             end;
         else
-            raise ESSPIError.CreateFmt('DecryptMessage unexpected result %s', [SecStatusErrStr(scRet)]);
+            raise ESSPIError.CreateFmt(S_Err_DecryptMessageUnexpRes, [SecStatusErrStr(scRet)]);
     end; // case
 end;
 
@@ -236,12 +236,12 @@ begin
 
     // Handshake established - encrypt and send
     EncryptData(FhContext, FSizes, Data, Len, PByte(FSendBuffer), Length(FSendBuffer), EncryptedLen);
-    SChannelLog(loSslDevel, Format('Sending %d bytes of payload, %d bytes encrypted', [Len, EncryptedLen]));
+    SChannelLog(loSslDevel, Format(S_Msg_Sending, [Len, EncryptedLen]));
     Sent := inherited RealSend(TWSocketData(FSendBuffer), EncryptedLen);
 
     if Sent <= 0 then
     begin
-        raise ESSPIError.CreateWinAPI('Error sending payload to server: "%s"', 'Send', WSocket_WSAGetLastError);
+        raise ESSPIError.CreateWinAPI(S_Err_Sending, 'Send', WSocket_WSAGetLastError);
         Result := Sent;
         Exit;
     end;
@@ -260,7 +260,7 @@ begin
         Exit;
     end;
 
-    SChannelLog(loSslInfo, 'Connected, starting TLS handshake');
+    SChannelLog(loSslInfo, S_Msg_StartingTLS);
     StartTLS;
 end;
 
@@ -280,7 +280,7 @@ begin
             begin
                 if (Error <> WS_OK) then
                 begin
-                    SChannelLog(loSslErr, Format('Handshake - ! error [%d] in TriggerDataAvailable', [Error]));
+                    SChannelLog(loSslErr, Format(S_Msg_HandshakeTDAErr, [Error]));
                     TriggerSessionConnected(Error);
                     InternalClose(TRUE, Error);
                     Result := False;
@@ -348,9 +348,9 @@ begin
         // Send hello to server
         BytesSent := Send(FHandShakeData.OutBuffers[0].pvBuffer, FHandShakeData.OutBuffers[0].cbBuffer);
         if BytesSent > 0 then
-            SChannelLog(loSslDevel, Format('Handshake stage 1 - %d bytes sent', [BytesSent]))
+            SChannelLog(loSslDevel, Format(S_Msg_HShStageW1Success, [BytesSent]))
         else
-            SChannelLog(loSslErr, 'Handshake - ! error sending data');
+            SChannelLog(loSslErr, S_Msg_HShStageW1Fail);
 
         // Prepare to read hello from server
         SetLength(FHandShakeData.IoBuffer, IO_BUFFER_SIZE);
@@ -377,10 +377,10 @@ begin
         // WSAEWOULDBLOCK could happen so we just ignore receive errors
         if cbData <= 0 then
         begin
-            SChannelLog(loSslDevel, Format('Handshake - no data received or error receiving [%d]', [WSocket_WSAGetLastError]));
+            SChannelLog(loSslDevel, Format(S_Msg_HShStageRFail, [WSocket_WSAGetLastError]));
             Exit;
         end;
-        SChannelLog(loSslDevel, Format('Handshake - %d bytes received', [cbData]));
+        SChannelLog(loSslDevel, Format(S_Msg_HShStageRSuccess, [cbData]));
         Inc(FHandShakeData.cbIoBuffer, cbData);
     end;
 
@@ -393,7 +393,7 @@ begin
             if (FHandShakeData.Stage = hssReadSrvHello) and IsWinHandshakeBug(E.SecStatus)
                 and not FHandshakeBug then
             begin
-                SChannelLog(loSslErr, Format('Handshake bug: "%s", retrying', [E.Message]));
+                SChannelLog(loSslErr, Format(S_Msg_HandshakeBug, [E.Message]));
                 FHandshakeBug := True;
                 DeleteContext(FHandShakeData.hContext);
                 DoHandshakeStart;
@@ -410,9 +410,9 @@ begin
             begin
                 cbData := Send(FHandShakeData.OutBuffers[0].pvBuffer, FHandShakeData.OutBuffers[0].cbBuffer);
                 if cbData = Integer(FHandShakeData.OutBuffers[0].cbBuffer) then
-                    SChannelLog(loSslDevel, Format('Handshake stage 2 - %d bytes sent', [cbData]))
+                    SChannelLog(loSslDevel, Format(S_Msg_HShStageW2Success, [cbData]))
                 else
-                    SChannelLog(loSslErr, 'Handshake - ! data sent partially');
+                    SChannelLog(loSslErr, S_Msg_HShStageW2Fail);
                 g_pSSPI.FreeContextBuffer(FHandShakeData.OutBuffers[0].pvBuffer); // Free output buffer
                 SetLength(FHandShakeData.OutBuffers, 0);
             end;
@@ -446,9 +446,9 @@ begin
     FHandShakeData := Default(THandShakeData);
     FHandShakeData.Stage := hssDone;
     FChannelState := chsEstablished;
-    SChannelLog(loSslInfo, 'Handshake established');
+    SChannelLog(loSslInfo, S_Msg_Established);
     CheckServerCert(FhContext, Addr);
-    SChannelLog(loSslInfo, 'Server credentials authenticated');
+    SChannelLog(loSslInfo, S_Msg_SrvCredsAuth);
     InitBuffers(FhContext, FSendBuffer, FSizes);
     SetLength(FRecvBuffer.Data, Length(FSendBuffer));
     SetLength(FDecrBuffer.Data, FSizes.cbMaximumMessage);
@@ -482,7 +482,7 @@ end;
 procedure TSChannelWSocket.StartTLS;
 begin
     InitSession(FSessionData);
-    SChannelLog(loSslInfo, 'Credentials initialized');
+    SChannelLog(loSslInfo, S_Msg_CredsInited);
 
     FHandShakeData.ServerName := Addr;
     FhContext := Default(CtxtHandle);
@@ -494,13 +494,13 @@ procedure TSChannelWSocket.ShutdownTLS;
 var
     OutBuffer: SecBuffer;
 begin
-    SChannelLog(loSslInfo, 'Shutting down');
+    SChannelLog(loSslInfo, S_Msg_ShuttingDownTLS);
 
     // Send a close_notify alert to the server and close down the connection.
     GetShutdownData(FSessionData, FhContext, OutBuffer);
     if OutBuffer.cbBuffer > 0 then
     begin
-        SChannelLog(loSslDevel, Format('Sending shutdown notify - %d bytes of data', [OutBuffer.cbBuffer]));
+        SChannelLog(loSslDevel, Format(S_Msg_SendingShutdown, [OutBuffer.cbBuffer]));
         FChannelState := chsShutdown;
         Send(OutBuffer.pvBuffer, OutBuffer.cbBuffer);
         g_pSSPI.FreeContextBuffer(OutBuffer.pvBuffer);
@@ -516,7 +516,7 @@ procedure TSChannelWSocket.Listen;
 begin
     { Check if we really want to use SChannel in server }
     if FSecure then
-        raise ESocketException.Create('Listening is not supported with SChannel yet');
+        raise ESocketException.Create(S_Err_ListeningNotSupported);
 
     { No SChannel used, Listen as usual }
     inherited;

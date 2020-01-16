@@ -111,21 +111,20 @@ begin
   try try
     SessionData := Default(TSessionData);
     InitSession(SessionData);
-    LogFn('----- Credentials Initialized');
+    LogFn('----- ' + S_Msg_CredsInited);
 
     LogFn('~~~ Checking connect to '+URL);
 
     CheckWSResult(WSAStartup(MAKEWORD(2,2), WSAData) = 0, 'WSAStartup');
 
     sock := ConnectSocket(URL, 443);
-    LogFn('----- Connected, starting TLS');
+    LogFn('----- Connected, ' + S_Msg_StartingTLS);
     Result := resTLSErr;
 
     // Perform handshake
     PerformClientHandshake(SessionData, URL, LogFn, Pointer(sock), @SendFn, @RecvFn, hCtx);
-    LogFn('----- Client Handshake Performed');
     CheckServerCert(hCtx, URL);
-    LogFn(LogPrefix + 'Server credentials authenticated');
+    LogFn(LogPrefix + S_Msg_SrvCredsAuth);
     InitBuffers(hCtx, IoBuffer, Sizes);
     cbIoBufferLength := Length(IoBuffer);
 
@@ -133,18 +132,16 @@ begin
     // message begins after the header
     req := RawByteString(ReqStr);
     EncryptData(hCtx, Sizes, Pointer(req), Length(req), PByte(IoBuffer), cbIoBufferLength, cbData); {}// ? что если больше, за два захода понадобится
-    LogFn(Format('Sending %d bytes of plaintext, %d bytes encrypted', [Length(req), cbData])+
+    LogFn(Format(S_Msg_Sending, [Length(req), cbData])+
       IfThen(PrintData, sLineBreak+string(req)));
 
     // Send the encrypted data to the server.
     res := send(sock, Pointer(IoBuffer)^, cbData, 0);
-    if res = cbData then
-      LogFn(Format('%d bytes of encrypted data sent', [res]))
-    else
-    if (res = SOCKET_ERROR) or (res = 0) then
-      raise ESSPIError.CreateWinAPI('Error sending encrypted request to server', 'send', WSAGetLastError)
-    else
-      raise ESSPIError.Create('Error sending encrypted request to server: partial sent');
+    if res < cbData then
+      if (res = SOCKET_ERROR) or (res = 0) then
+        raise ESSPIError.CreateWinAPI('Error sending encrypted request to server', 'send', WSAGetLastError)
+      else
+        raise ESSPIError.Create('Error sending encrypted request to server: partial sent');
 
     // Receive a Response
     // cbData is the length of received data in IoBuffer
@@ -206,12 +203,12 @@ begin
           end;
         SEC_I_RENEGOTIATE:
           begin
-            LogFn('Renegotiate');
+            LogFn(S_Msg_Renegotiate);
             PerformClientHandshake(SessionData, URL, LogFn, Pointer(sock), @SendFn, @RecvFn, hCtx);
             cbData := 0;
           end;
         else
-          raise ESSPIError.CreateSecStatus('unexpected result', 'DecryptMessage', scRet);
+          raise ESSPIError.CreateFmt(S_Err_DecryptMessageUnexpRes, [SecStatusErrStr(scRet)]);
       end; // case
 
     until False;

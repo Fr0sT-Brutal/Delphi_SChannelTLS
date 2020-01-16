@@ -248,6 +248,30 @@ function WinVerifyTrustErrorStr(Status: DWORD): string;
 // This function only checks if parameter is one of these two values.
 function IsWinHandshakeBug(scRet: SECURITY_STATUS): Boolean;
 
+// Messages that could be written to log by various implementations
+const
+  S_Msg_Received = 'Received %d bytes of encrypted data / %d bytes of payload';
+  S_Msg_SessionClosed = 'Server closed the session [SEC_I_CONTEXT_EXPIRED]';
+  S_Msg_Renegotiate = 'Server requested renegotiate';
+  S_Err_DecryptMessageUnexpRes = 'DecryptMessage unexpected result %s';
+  S_Msg_Sending = 'Sending %d bytes of payload / %d bytes encrypted';
+  S_Err_Sending = 'Error sending payload to server: "%s"';
+  S_Msg_StartingTLS = 'Starting TLS handshake';
+  S_Msg_HandshakeTDAErr = 'Handshake - ! error [%d] in TriggerDataAvailable';
+  S_Msg_HShStageW1Success = 'Handshake @W1 - %d bytes sent';
+  S_Msg_HShStageW1Fail = 'Handshake @W1 - ! error sending data';
+  S_Msg_HShStageRFail = 'Handshake @R - no data received or error receiving [%d]';
+  S_Msg_HShStageRSuccess = 'Handshake @R - %d bytes received';
+  S_Msg_HandshakeBug = 'Handshake bug: "%s", retrying';
+  S_Msg_HShStageW2Success = 'Handshake @W2 - %d bytes sent';
+  S_Msg_HShStageW2Fail = 'Handshake @W2 - ! error sending data';
+  S_Msg_Established = 'Handshake established';
+  S_Msg_SrvCredsAuth = 'Server credentials authenticated';
+  S_Msg_CredsInited = 'Credentials initialized';
+  S_Msg_ShuttingDownTLS = 'Shutting down TLS';
+  S_Msg_SendingShutdown = 'Sending shutdown notify - %d bytes of data';
+  S_Err_ListeningNotSupported = 'Listening is not supported with SChannel yet';
+
 {$ENDIF MSWINDOWS}
 
 implementation

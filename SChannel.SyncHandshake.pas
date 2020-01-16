@@ -95,9 +95,9 @@ var
     // Send hello to server
     cbData := SendFn(Data, HandShakeData.OutBuffers[0].pvBuffer, HandShakeData.OutBuffers[0].cbBuffer);
     if cbData = Integer(HandShakeData.OutBuffers[0].cbBuffer) then
-      LogFn(Format('Handshake @W1 - %d bytes sent', [cbData]))
+      LogFn(Format(S_Msg_HShStageW1Success, [cbData]))
     else
-      LogFn('Handshake @W1 - ! data sent partially');
+      LogFn(S_Msg_HShStageW1Fail);
     g_pSSPI.FreeContextBuffer(HandShakeData.OutBuffers[0].pvBuffer); // Free output buffer.
     SetLength(HandShakeData.OutBuffers, 0);
     HandShakeData.Stage := hssReadSrvHello;
@@ -123,8 +123,8 @@ begin
         cbData := RecvFn(Data, (PByte(HandShakeData.IoBuffer) + HandShakeData.cbIoBuffer),
           Length(HandShakeData.IoBuffer) - HandShakeData.cbIoBuffer);
         if cbData <= 0 then // should not happen
-          raise ESSPIError.Create('Handshake @R - no data received or error receiving');
-        LogFn(Format('Handshake @R - %d bytes received', [cbData]));
+          raise ESSPIError.Create(S_Msg_HShStageRFail);
+        LogFn(Format(S_Msg_HShStageRSuccess, [cbData]));
         Inc(HandShakeData.cbIoBuffer, cbData);
       end;
 
@@ -136,7 +136,7 @@ begin
         if (HandShakeData.Stage = hssReadSrvHello) and IsWinHandshakeBug(E.SecStatus)
           and not HandshakeBug then
         begin
-          LogFn(Format('Handshake bug @R: "%s", retrying', [E.Message]));
+          LogFn(Format(S_Msg_HandshakeBug, [E.Message]));
           HandshakeBug := True;
           DeleteContext(HandShakeData.hContext);
           HandShakeData.Stage := hssNotStarted;
@@ -153,9 +153,9 @@ begin
         begin
           cbData := SendFn(Data, HandShakeData.OutBuffers[0].pvBuffer, HandShakeData.OutBuffers[0].cbBuffer);
           if cbData = Integer(HandShakeData.OutBuffers[0].cbBuffer) then
-            LogFn(Format('Handshake @W2 - %d bytes sent', [cbData]))
+            LogFn(Format(S_Msg_HShStageW2Success, [cbData]))
           else
-            LogFn('Handshake @W2 - ! data sent partially');
+            LogFn(S_Msg_HShStageW2Fail);
           g_pSSPI.FreeContextBuffer(HandShakeData.OutBuffers[0].pvBuffer); // Free output buffer
           SetLength(HandShakeData.OutBuffers, 0);
         end;
@@ -167,7 +167,7 @@ begin
         end
         else if HandShakeData.Stage = hssReadSrvHelloOK then
         begin
-          LogFn('Handshake - success');
+          LogFn(S_Msg_Established);
           HandShakeData.Stage := hssDone;
           Break;
         end;

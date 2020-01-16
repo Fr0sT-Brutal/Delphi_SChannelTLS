@@ -95,9 +95,9 @@ var
     // Send hello to server
     cbData := SendFn(Data, HandShakeData.OutBuffers[0].pvBuffer, HandShakeData.OutBuffers[0].cbBuffer);
     if cbData = Integer(HandShakeData.OutBuffers[0].cbBuffer) then
-      LogFn(LogPrefix + Format('Handshake @W1 - %d bytes sent', [cbData]))
+      LogFn(Format('Handshake @W1 - %d bytes sent', [cbData]))
     else
-      LogFn(LogPrefix + 'Handshake @W1 - ! data sent partially');
+      LogFn('Handshake @W1 - ! data sent partially');
     g_pSSPI.FreeContextBuffer(HandShakeData.OutBuffers[0].pvBuffer); // Free output buffer.
     SetLength(HandShakeData.OutBuffers, 0);
     HandShakeData.Stage := hssReadSrvHello;
@@ -124,7 +124,7 @@ begin
           Length(HandShakeData.IoBuffer) - HandShakeData.cbIoBuffer);
         if cbData <= 0 then // should not happen
           raise ESSPIError.Create('Handshake @R - no data received or error receiving');
-        LogFn(LogPrefix + Format('Handshake @R - %d bytes received', [cbData]));
+        LogFn(Format('Handshake @R - %d bytes received', [cbData]));
         Inc(HandShakeData.cbIoBuffer, cbData);
       end;
 
@@ -153,9 +153,9 @@ begin
         begin
           cbData := SendFn(Data, HandShakeData.OutBuffers[0].pvBuffer, HandShakeData.OutBuffers[0].cbBuffer);
           if cbData = Integer(HandShakeData.OutBuffers[0].cbBuffer) then
-            LogFn(LogPrefix + Format('Handshake @W2 - %d bytes sent', [cbData]))
+            LogFn(Format('Handshake @W2 - %d bytes sent', [cbData]))
           else
-            LogFn(LogPrefix + 'Handshake @W2 - ! data sent partially');
+            LogFn('Handshake @W2 - ! data sent partially');
           g_pSSPI.FreeContextBuffer(HandShakeData.OutBuffers[0].pvBuffer); // Free output buffer
           SetLength(HandShakeData.OutBuffers, 0);
         end;
@@ -167,7 +167,7 @@ begin
         end
         else if HandShakeData.Stage = hssReadSrvHelloOK then
         begin
-          LogFn(LogPrefix + 'Handshake - success');
+          LogFn('Handshake - success');
           HandShakeData.Stage := hssDone;
           Break;
         end;

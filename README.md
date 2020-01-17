@@ -17,6 +17,11 @@ Repo contains:
 
 - `Enable TLS 1.1 and 1.2 for W7.reg` - registry patch that enables TLS 1.1 and 1.2 on Windows 7 (these are actual protocol versions that are not enabled by default on W7)
 
+Developer note
+--------------
+
+This project was started because I needed TLS in my Delphi apps and didn't like shipping two OpenSSL libs. Initial version was 1:1 rewrite of SChannel sample found in Internet. Currently it is used in my 24*7 projects but I implemented only those functions which I needed. I'm not familiar with all this cryptostuff so don't expect advanced certificate validations, secure servers and so on. But if you wish to add something missing I'll consider your PR with pleasure :).
+
 Note - SChannel bug
 -------------------
 

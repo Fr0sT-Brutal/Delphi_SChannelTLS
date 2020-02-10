@@ -122,8 +122,8 @@ begin
       begin
         cbData := RecvFn(Data, (PByte(HandShakeData.IoBuffer) + HandShakeData.cbIoBuffer),
           Length(HandShakeData.IoBuffer) - HandShakeData.cbIoBuffer);
-        if cbData <= 0 then // should not happen
-          raise ESSPIError.Create(S_Msg_HShStageRFail);
+        if cbData <= 0 then
+          raise ESSPIError.CreateFmt(S_Msg_HShStageRFail, [cbData]);
         LogFn(Format(S_Msg_HShStageRSuccess, [cbData]));
         Inc(HandShakeData.cbIoBuffer, cbData);
       end;

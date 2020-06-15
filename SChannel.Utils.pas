@@ -4,9 +4,9 @@
   The functions are transport-agnostic so they could be applied to any socket
   implementation or even other transport.
 
-  Inspired by TLS-Sample from http://www.coastrd.com/c-schannel-smtp
+  Inspired by [TLS-Sample](http://www.coastrd.com/c-schannel-smtp)
 
-  Uses JEDI API units from https://jedi-apilib.sourceforge.net
+  Uses [JEDI API units](https://jedi-apilib.sourceforge.net)
 
   (c) Fr0sT-Brutal
   

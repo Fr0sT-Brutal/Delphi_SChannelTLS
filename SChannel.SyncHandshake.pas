@@ -4,9 +4,9 @@
   The function is transport-agnostic so it could be applied to any socket
   implementation or even other transport.
 
-  Inspired by TLS-Sample from http://www.coastrd.com/c-schannel-smtp
+  Inspired by [TLS-Sample](http://www.coastrd.com/c-schannel-smtp)
 
-  Uses JEDI API units from https://jedi-apilib.sourceforge.net
+  Uses [JEDI API units](https://jedi-apilib.sourceforge.net)
 
   (c) Fr0sT-Brutal
   
@@ -122,8 +122,8 @@ begin
       begin
         cbData := RecvFn(Data, (PByte(HandShakeData.IoBuffer) + HandShakeData.cbIoBuffer),
           Length(HandShakeData.IoBuffer) - HandShakeData.cbIoBuffer);
-        if cbData <= 0 then
-          raise ESSPIError.CreateFmt(S_Msg_HShStageRFail, [cbData]);
+        if cbData <= 0 then // should not happen
+          raise ESSPIError.Create(S_Msg_HShStageRFail);
         LogFn(Format(S_Msg_HShStageRSuccess, [cbData]));
         Inc(HandShakeData.cbIoBuffer, cbData);
       end;

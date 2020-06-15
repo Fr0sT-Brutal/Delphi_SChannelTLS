@@ -9,7 +9,7 @@
 </head>
 <body>
 <table class="container"><tr><td class="navigation">
-<h2>SChannel helper</h2><p><a href="AllUnits.html" class="navigation">Units</a></p><p><a href="ClassHierarchy.html" class="navigation">Class Hierarchy</a></p><p><a href="AllClasses.html" class="navigation">Classes, Interfaces, Objects and Records</a></p><p><a href="AllTypes.html" class="navigation">Types</a></p><p><a href="AllVariables.html" class="navigation">Variables</a></p><p><a href="AllConstants.html" class="navigation">Constants</a></p><p><a href="AllFunctions.html" class="navigation">Functions and Procedures</a></p><p><a href="AllIdentifiers.html" class="navigation">Identifiers</a></p></td><td class="content">
+<h2><a href="index.html" class="navigation">SChannel helper</a></h2><p><a href="AllUnits.html" class="navigation">Units</a></p><p><a href="ClassHierarchy.html" class="navigation">Class Hierarchy</a></p><p><a href="AllClasses.html" class="navigation">Classes, Interfaces, Objects and Records</a></p><p><a href="AllTypes.html" class="navigation">Types</a></p><p><a href="AllVariables.html" class="navigation">Variables</a></p><p><a href="AllConstants.html" class="navigation">Constants</a></p><p><a href="AllFunctions.html" class="navigation">Functions and Procedures</a></p><p><a href="AllIdentifiers.html" class="navigation">Identifiers</a></p></td><td class="content">
 <h1 class="unit">Unit SChannel.Utils</h1>
 <div class="sections">
 <div class="one_section"><a class="section" href="#PasDoc-Description">Description</a></div><div class="one_section">Uses</div><div class="one_section"><a class="section" href="#PasDoc-Classes">Classes, Interfaces, Objects and Records</a></div><div class="one_section"><a class="section" href="#PasDoc-FuncsProcs">Functions and Procedures</a></div><div class="one_section"><a class="section" href="#PasDoc-Types">Types</a></div><div class="one_section"><a class="section" href="#PasDoc-Constants">Constants</a></div><div class="one_section"><a class="section" href="#PasDoc-Variables">Variables</a></div></div>
@@ -17,9 +17,9 @@
 <p>
 Helper functions for easy implementation of TLS communication by means of Windows SChannel. The functions are transport-agnostic so they could be applied to any socket implementation or even other transport.
 
-<p>Inspired by TLS-Sample from <a  href="http://www.coastrd.com/c-schannel-smtp">http://www.coastrd.com/c-schannel-smtp</a>
+<p>Inspired by <a href="http://www.coastrd.com/c-schannel-smtp">TLS-Sample</a>
 
-<p>Uses JEDI API units from <a  href="https://jedi-apilib.sourceforge.net">https://jedi-apilib.sourceforge.net</a>
+<p>Uses <a href="https://jedi-apilib.sourceforge.net">JEDI API units</a>
 
 <p>(c) Fr0sT-Brutal
 
@@ -55,163 +55,163 @@ Helper functions for easy implementation of TLS communication by means of Window
 <span id="PasDoc-FuncsProcs"></span><h3 class="summary">Functions and Procedures</h3>
 <table class="summary wide_list">
 <tr class="list">
-<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#LoadSecurityLibrary">LoadSecurityLibrary</a></strong>;</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#LoadSecurityLibrary">LoadSecurityLibrary</a></strong>;</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#CreateCredentials">CreateCredentials</a></strong>(const User: string; out hCreds: CredHandle; var SchannelCred: SCHANNEL_CRED);</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#CreateCredentials">CreateCredentials</a></strong>(const User: string; out hCreds: CredHandle; var SchannelCred: SCHANNEL_CRED);</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#VerifyServerCertificate">VerifyServerCertificate</a></strong>(pServerCert: PCCERT_CONTEXT; const szServerName: string; dwCertFlags: DWORD);</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#VerifyServerCertificate">VerifyServerCertificate</a></strong>(pServerCert: PCCERT_CONTEXT; const szServerName: string; dwCertFlags: DWORD);</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#Init">Init</a></strong>;</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#Init">Init</a></strong>;</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#Fin">Fin</a></strong>;</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#Fin">Fin</a></strong>;</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#InitSession">InitSession</a></strong>(var SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#InitSession">InitSession</a></strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#FinSession">FinSession</a></strong>(var SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#FinSession">FinSession</a></strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#DoClientHandshake">DoClientHandshake</a></strong>(var SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>; var HandShakeData: <a  href="SChannel.Utils.THandShakeData.html">THandShakeData</a>): SECURITY_STATUS;</code></td>
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#DoClientHandshake">DoClientHandshake</a></strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; var HandShakeData: <a href="SChannel.Utils.THandShakeData.html">THandShakeData</a>): SECURITY_STATUS;</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#GetShutdownData">GetShutdownData</a></strong>(const SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>; const hContext: CtxtHandle; out OutBuffer: SecBuffer);</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#GetShutdownData">GetShutdownData</a></strong>(const SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; const hContext: CtxtHandle; out OutBuffer: SecBuffer);</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></strong>(const hContext: CtxtHandle; const ServerName: string);</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></strong>(const hContext: CtxtHandle; const ServerName: string);</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#DeleteContext">DeleteContext</a></strong>(var hContext: CtxtHandle);</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#DeleteContext">DeleteContext</a></strong>(var hContext: CtxtHandle);</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#InitBuffers">InitBuffers</a></strong>(const hContext: CtxtHandle; out pbIoBuffer: TBytes; out Sizes: SecPkgContext_StreamSizes);</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#InitBuffers">InitBuffers</a></strong>(const hContext: CtxtHandle; out pbIoBuffer: TBytes; out Sizes: SecPkgContext_StreamSizes);</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code>procedure <strong><a  href="SChannel.Utils.html#EncryptData">EncryptData</a></strong>(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes; pbMessage: PByte; cbMessage: DWORD; pbIoBuffer: PByte; pbIoBufferLength: DWORD; out cbWritten: DWORD);</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#EncryptData">EncryptData</a></strong>(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes; pbMessage: PByte; cbMessage: DWORD; pbIoBuffer: PByte; pbIoBufferLength: DWORD; out cbWritten: DWORD);</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#DecryptData">DecryptData</a></strong>(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes; pbIoBuffer: PByte; var cbEncData: DWORD; pbDecData: PByte; cbDecDataLength: DWORD; out cbWritten: DWORD): SECURITY_STATUS;</code></td>
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#DecryptData">DecryptData</a></strong>(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes; pbIoBuffer: PByte; var cbEncData: DWORD; pbDecData: PByte; cbDecDataLength: DWORD; out cbWritten: DWORD): SECURITY_STATUS;</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#SecIsNullHandle">SecIsNullHandle</a></strong>(const x: SecHandle): Boolean;</code></td>
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#SecIsNullHandle">SecIsNullHandle</a></strong>(const x: SecHandle): Boolean;</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#SecStatusErrStr">SecStatusErrStr</a></strong>(scRet: SECURITY_STATUS): string;</code></td>
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#SecStatusErrStr">SecStatusErrStr</a></strong>(scRet: SECURITY_STATUS): string;</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#WinVerifyTrustErrorStr">WinVerifyTrustErrorStr</a></strong>(Status: DWORD): string;</code></td>
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#WinVerifyTrustErrorStr">WinVerifyTrustErrorStr</a></strong>(Status: DWORD): string;</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code>function <strong><a  href="SChannel.Utils.html#IsWinHandshakeBug">IsWinHandshakeBug</a></strong>(scRet: SECURITY_STATUS): Boolean;</code></td>
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#IsWinHandshakeBug">IsWinHandshakeBug</a></strong>(scRet: SECURITY_STATUS): Boolean;</code></td>
 </tr>
 </table>
 <span id="PasDoc-Types"></span><h3 class="summary">Types</h3>
 <table class="summary wide_list">
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#THandShakeStage">THandShakeStage</a></strong> = (...);</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#THandShakeStage">THandShakeStage</a></strong> = (...);</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#TChannelState">TChannelState</a></strong> = (...);</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#TChannelState">TChannelState</a></strong> = (...);</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#TSessionFlag">TSessionFlag</a></strong> = (...);</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#TSessionFlag">TSessionFlag</a></strong> = (...);</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#TSessionFlags">TSessionFlags</a></strong> = set of <a  href="SChannel.Utils.html#TSessionFlag">TSessionFlag</a>;</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#TSessionFlags">TSessionFlags</a></strong> = set of <a href="SChannel.Utils.html#TSessionFlag">TSessionFlag</a>;</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#PSessionData">PSessionData</a></strong> = &circ;<a  href="SChannel.Utils.TSessionData.html">TSessionData</a>;</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#PSessionData">PSessionData</a></strong> = &circ;<a href="SChannel.Utils.TSessionData.html">TSessionData</a>;</code></td>
 </tr>
 </table>
 <span id="PasDoc-Constants"></span><h3 class="summary">Constants</h3>
 <table class="summary wide_list">
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#LogPrefix">LogPrefix</a></strong> = '[SChannel]: ';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#LogPrefix">LogPrefix</a></strong> = '[SChannel]: ';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#IO_BUFFER_SIZE">IO_BUFFER_SIZE</a></strong> = $10000;</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#IO_BUFFER_SIZE">IO_BUFFER_SIZE</a></strong> = $10000;</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#USED_PROTOCOLS">USED_PROTOCOLS</a></strong>: DWORD = SP_PROT_TLS1_1 or SP_PROT_TLS1_2;</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#USED_PROTOCOLS">USED_PROTOCOLS</a></strong>: DWORD = SP_PROT_TLS1_1 or SP_PROT_TLS1_2;</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#USED_ALGS">USED_ALGS</a></strong>: ALG_ID = 0;</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#USED_ALGS">USED_ALGS</a></strong>: ALG_ID = 0;</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_Received">S_Msg_Received</a></strong> = 'Received %d bytes of encrypted data / %d bytes of payload';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_Received">S_Msg_Received</a></strong> = 'Received %d bytes of encrypted data / %d bytes of payload';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_SessionClosed">S_Msg_SessionClosed</a></strong> = 'Server closed the session [SEC_I_CONTEXT_EXPIRED]';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_SessionClosed">S_Msg_SessionClosed</a></strong> = 'Server closed the session [SEC_I_CONTEXT_EXPIRED]';</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_Renegotiate">S_Msg_Renegotiate</a></strong> = 'Server requested renegotiate';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_Renegotiate">S_Msg_Renegotiate</a></strong> = 'Server requested renegotiate';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Err_DecryptMessageUnexpRes">S_Err_DecryptMessageUnexpRes</a></strong> = 'DecryptMessage unexpected result %s';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Err_DecryptMessageUnexpRes">S_Err_DecryptMessageUnexpRes</a></strong> = 'DecryptMessage unexpected result %s';</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_Sending">S_Msg_Sending</a></strong> = 'Sending %d bytes of payload / %d bytes encrypted';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_Sending">S_Msg_Sending</a></strong> = 'Sending %d bytes of payload / %d bytes encrypted';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Err_Sending">S_Err_Sending</a></strong> = 'Error sending payload to server: &quot;%s&quot;';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Err_Sending">S_Err_Sending</a></strong> = 'Error sending payload to server: &quot;%s&quot;';</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_StartingTLS">S_Msg_StartingTLS</a></strong> = 'Starting TLS handshake';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_StartingTLS">S_Msg_StartingTLS</a></strong> = 'Starting TLS handshake';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HandshakeTDAErr">S_Msg_HandshakeTDAErr</a></strong> = 'Handshake - ! error [%d] in TriggerDataAvailable';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HandshakeTDAErr">S_Msg_HandshakeTDAErr</a></strong> = 'Handshake - ! error [%d] in TriggerDataAvailable';</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HShStageW1Success">S_Msg_HShStageW1Success</a></strong> = 'Handshake @W1 - %d bytes sent';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW1Success">S_Msg_HShStageW1Success</a></strong> = 'Handshake @W1 - %d bytes sent';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HShStageW1Fail">S_Msg_HShStageW1Fail</a></strong> = 'Handshake @W1 - ! error sending data';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW1Fail">S_Msg_HShStageW1Fail</a></strong> = 'Handshake @W1 - ! error sending data';</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HShStageRFail">S_Msg_HShStageRFail</a></strong> = 'Handshake @R - no data received or error receiving [%d]';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageRFail">S_Msg_HShStageRFail</a></strong> = 'Handshake @R - no data received or error receiving [%d]';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HShStageRSuccess">S_Msg_HShStageRSuccess</a></strong> = 'Handshake @R - %d bytes received';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageRSuccess">S_Msg_HShStageRSuccess</a></strong> = 'Handshake @R - %d bytes received';</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HandshakeBug">S_Msg_HandshakeBug</a></strong> = 'Handshake bug: &quot;%s&quot;, retrying';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HandshakeBug">S_Msg_HandshakeBug</a></strong> = 'Handshake bug: &quot;%s&quot;, retrying';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HShStageW2Success">S_Msg_HShStageW2Success</a></strong> = 'Handshake @W2 - %d bytes sent';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW2Success">S_Msg_HShStageW2Success</a></strong> = 'Handshake @W2 - %d bytes sent';</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_HShStageW2Fail">S_Msg_HShStageW2Fail</a></strong> = 'Handshake @W2 - ! error sending data';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW2Fail">S_Msg_HShStageW2Fail</a></strong> = 'Handshake @W2 - ! error sending data';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_Established">S_Msg_Established</a></strong> = 'Handshake established';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_Established">S_Msg_Established</a></strong> = 'Handshake established';</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_SrvCredsAuth">S_Msg_SrvCredsAuth</a></strong> = 'Server credentials authenticated';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_SrvCredsAuth">S_Msg_SrvCredsAuth</a></strong> = 'Server credentials authenticated';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_CredsInited">S_Msg_CredsInited</a></strong> = 'Credentials initialized';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_CredsInited">S_Msg_CredsInited</a></strong> = 'Credentials initialized';</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_ShuttingDownTLS">S_Msg_ShuttingDownTLS</a></strong> = 'Shutting down TLS';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_ShuttingDownTLS">S_Msg_ShuttingDownTLS</a></strong> = 'Shutting down TLS';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Msg_SendingShutdown">S_Msg_SendingShutdown</a></strong> = 'Sending shutdown notify - %d bytes of data';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_SendingShutdown">S_Msg_SendingShutdown</a></strong> = 'Sending shutdown notify - %d bytes of data';</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#S_Err_ListeningNotSupported">S_Err_ListeningNotSupported</a></strong> = 'Listening is not supported with SChannel yet';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Err_ListeningNotSupported">S_Err_ListeningNotSupported</a></strong> = 'Listening is not supported with SChannel yet';</code></td>
 </tr>
 </table>
 <span id="PasDoc-Variables"></span><h3 class="summary">Variables</h3>
 <table class="summary wide_list">
 <tr class="list">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#hMYCertStore">hMYCertStore</a></strong>: HCERTSTORE = nil;</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#hMYCertStore">hMYCertStore</a></strong>: HCERTSTORE = nil;</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.html#g_pSSPI">g_pSSPI</a></strong>: PSecurityFunctionTable;</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#g_pSSPI">g_pSSPI</a></strong>: PSecurityFunctionTable;</code></td>
 </tr>
 </table>
 <h2 class="description">Description</h2>
@@ -288,7 +288,7 @@ Dispose and nullify global stuff. Could be called multiple times without checks.
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="InitSession"></span><code>procedure <strong>InitSession</strong>(var SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
+<td class="itemcode"><span id="InitSession"></span><code>procedure <strong>InitSession</strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
 </tr>
 <tr><td colspan="1">
 <p>
@@ -307,7 +307,7 @@ Init session, return data record to be used in calling other functions. Could be
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="FinSession"></span><code>procedure <strong>FinSession</strong>(var SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
+<td class="itemcode"><span id="FinSession"></span><code>procedure <strong>FinSession</strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
 </tr>
 <tr><td colspan="1">
 <p>
@@ -316,7 +316,7 @@ Finalize session</p>
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="DoClientHandshake"></span><code>function <strong>DoClientHandshake</strong>(var SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>; var HandShakeData: <a  href="SChannel.Utils.THandShakeData.html">THandShakeData</a>): SECURITY_STATUS;</code></td>
+<td class="itemcode"><span id="DoClientHandshake"></span><code>function <strong>DoClientHandshake</strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; var HandShakeData: <a href="SChannel.Utils.THandShakeData.html">THandShakeData</a>): SECURITY_STATUS;</code></td>
 </tr>
 <tr><td colspan="1">
 <p>
@@ -390,7 +390,7 @@ Function to prepare all necessary handshake data. No transport level actions.
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="GetShutdownData"></span><code>procedure <strong>GetShutdownData</strong>(const SessionData: <a  href="SChannel.Utils.TSessionData.html">TSessionData</a>; const hContext: CtxtHandle; out OutBuffer: SecBuffer);</code></td>
+<td class="itemcode"><span id="GetShutdownData"></span><code>procedure <strong>GetShutdownData</strong>(const SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; const hContext: CtxtHandle; out OutBuffer: SecBuffer);</code></td>
 </tr>
 <tr><td colspan="1">
 <p>
@@ -610,14 +610,14 @@ Session options</p>
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="TSessionFlags"></span><code><strong>TSessionFlags</strong> = set of <a  href="SChannel.Utils.html#TSessionFlag">TSessionFlag</a>;</code></td>
+<td class="itemcode"><span id="TSessionFlags"></span><code><strong>TSessionFlags</strong> = set of <a href="SChannel.Utils.html#TSessionFlag">TSessionFlag</a>;</code></td>
 </tr>
 <tr><td colspan="1">
 &nbsp;</td></tr>
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="PSessionData"></span><code><strong>PSessionData</strong> = &circ;<a  href="SChannel.Utils.TSessionData.html">TSessionData</a>;</code></td>
+<td class="itemcode"><span id="PSessionData"></span><code><strong>PSessionData</strong> = &circ;<a href="SChannel.Utils.TSessionData.html">TSessionData</a>;</code></td>
 </tr>
 <tr><td colspan="1">
 &nbsp;</td></tr>
@@ -823,6 +823,6 @@ Messages that could be written to log by various implementations</p>
 <tr><td colspan="1">
 &nbsp;</td></tr>
 </table>
-<hr><span class="appinfo"><em>Generated by <a  href="https://github.com/pasdoc/pasdoc/wiki">PasDoc 0.15.0</a>. </em>
+<hr><span class="appinfo"><em>Generated by <a href="https://github.com/pasdoc/pasdoc/wiki">PasDoc 0.15.0</a>. </em>
 </span>
 </td></tr></table></body></html>

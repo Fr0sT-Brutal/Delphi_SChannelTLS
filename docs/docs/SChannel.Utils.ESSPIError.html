@@ -9,13 +9,13 @@
 </head>
 <body>
 <table class="container"><tr><td class="navigation">
-<h2>SChannel helper</h2><p><a href="AllUnits.html" class="navigation">Units</a></p><p><a href="ClassHierarchy.html" class="navigation">Class Hierarchy</a></p><p><a href="AllClasses.html" class="navigation">Classes, Interfaces, Objects and Records</a></p><p><a href="AllTypes.html" class="navigation">Types</a></p><p><a href="AllVariables.html" class="navigation">Variables</a></p><p><a href="AllConstants.html" class="navigation">Constants</a></p><p><a href="AllFunctions.html" class="navigation">Functions and Procedures</a></p><p><a href="AllIdentifiers.html" class="navigation">Identifiers</a></p></td><td class="content">
+<h2><a href="index.html" class="navigation">SChannel helper</a></h2><p><a href="AllUnits.html" class="navigation">Units</a></p><p><a href="ClassHierarchy.html" class="navigation">Class Hierarchy</a></p><p><a href="AllClasses.html" class="navigation">Classes, Interfaces, Objects and Records</a></p><p><a href="AllTypes.html" class="navigation">Types</a></p><p><a href="AllVariables.html" class="navigation">Variables</a></p><p><a href="AllConstants.html" class="navigation">Constants</a></p><p><a href="AllFunctions.html" class="navigation">Functions and Procedures</a></p><p><a href="AllIdentifiers.html" class="navigation">Identifiers</a></p></td><td class="content">
 <span id="ESSPIError"></span><h1 class="cio">Class ESSPIError</h1>
 <div class="sections">
 <div class="one_section"><a class="section" href="#PasDoc-Description">Description</a></div><div class="one_section"><a class="section" href="#PasDoc-Hierarchy">Hierarchy</a></div><div class="one_section"><a class="section" href="#PasDoc-Fields">Fields</a></div><div class="one_section"><a class="section" href="#PasDoc-Methods">Methods</a></div><div class="one_section">Properties</div></div>
 <span id="PasDoc-Description"></span><h2 class="unit">Unit</h2>
 <p class="unitlink">
-<a  href="SChannel.Utils.html">SChannel.Utils</a></p>
+<a href="SChannel.Utils.html">SChannel.Utils</a></p>
 <h2 class="declaration">Declaration</h2>
 <p class="declaration">
 <code>type ESSPIError = class(Exception)</code></p>
@@ -28,30 +28,30 @@ Specific exception class. Could be created on WinAPI error, SChannel error or ge
 <span id="PasDoc-Fields"></span><h3 class="summary">Fields</h3>
 <table class="summary wide_list">
 <tr class="list">
-<td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.ESSPIError.html#WinAPIErr">WinAPIErr</a></strong>: DWORD;</code></td>
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.ESSPIError.html#WinAPIErr">WinAPIErr</a></strong>: DWORD;</code></td>
 </tr>
 <tr class="list2">
-<td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code><strong><a  href="SChannel.Utils.ESSPIError.html#SecStatus">SecStatus</a></strong>: SECURITY_STATUS;</code></td>
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.ESSPIError.html#SecStatus">SecStatus</a></strong>: SECURITY_STATUS;</code></td>
 </tr>
 </table>
 <span id="PasDoc-Methods"></span><h3 class="summary">Methods</h3>
 <table class="summary wide_list">
 <tr class="list">
-<td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code>constructor <strong><a  href="SChannel.Utils.ESSPIError.html#CreateWinAPI">CreateWinAPI</a></strong>(const Msg, Func: string; Err: DWORD);</code></td>
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>constructor <strong><a href="SChannel.Utils.ESSPIError.html#CreateWinAPI">CreateWinAPI</a></strong>(const Msg, Func: string; Err: DWORD);</code></td>
 </tr>
 <tr class="list2">
-<td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code>constructor <strong><a  href="SChannel.Utils.ESSPIError.html#CreateSecStatus">CreateSecStatus</a></strong>(const Msg, Func: string; Status: SECURITY_STATUS);</code></td>
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>constructor <strong><a href="SChannel.Utils.ESSPIError.html#CreateSecStatus">CreateSecStatus</a></strong>(const Msg, Func: string; Status: SECURITY_STATUS);</code></td>
 </tr>
 </table>
 <h2 class="description">Description</h2>
 <h3 class="detail">Fields</h3>
 <table class="detail wide_list">
 <tr class="list">
-<td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
 <td class="itemcode"><span id="WinAPIErr"></span><code><strong>WinAPIErr</strong>: DWORD;</code></td>
 </tr>
 <tr><td colspan="2">
@@ -61,7 +61,7 @@ If not zero, reason of exception is WinAPI and this field contains code of an er
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
 <td class="itemcode"><span id="SecStatus"></span><code><strong>SecStatus</strong>: SECURITY_STATUS;</code></td>
 </tr>
 <tr><td colspan="2">
@@ -72,7 +72,7 @@ If not zero, reason of exception is SChannel and this field contains security st
 <h3 class="detail">Methods</h3>
 <table class="detail wide_list">
 <tr class="list">
-<td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
 <td class="itemcode"><span id="CreateWinAPI"></span><code>constructor <strong>CreateWinAPI</strong>(const Msg, Func: string; Err: DWORD);</code></td>
 </tr>
 <tr><td colspan="2">
@@ -82,7 +82,7 @@ Create WinAPI exception based on Err code</p>
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="visibility"><a  href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
 <td class="itemcode"><span id="CreateSecStatus"></span><code>constructor <strong>CreateSecStatus</strong>(const Msg, Func: string; Status: SECURITY_STATUS);</code></td>
 </tr>
 <tr><td colspan="2">
@@ -90,6 +90,6 @@ Create WinAPI exception based on Err code</p>
 Create security status exception</p>
 </td></tr>
 </table>
-<hr><span class="appinfo"><em>Generated by <a  href="https://github.com/pasdoc/pasdoc/wiki">PasDoc 0.15.0</a>. </em>
+<hr><span class="appinfo"><em>Generated by <a href="https://github.com/pasdoc/pasdoc/wiki">PasDoc 0.15.0</a>. </em>
 </span>
 </td></tr></table></body></html>

@@ -133,7 +133,7 @@ type
 
     // Create WinAPI exception based on Err code
     constructor CreateWinAPI(const Action, Func: string; Err: DWORD);
-    // Create security status exception
+    // Create SChannel exception based on status
     constructor CreateSecStatus(const Action, Func: string; Status: SECURITY_STATUS);
   end;
 

@@ -132,9 +132,9 @@ type
     SecStatus: SECURITY_STATUS;
 
     // Create WinAPI exception based on Err code
-    constructor CreateWinAPI(const Msg, Func: string; Err: DWORD);
+    constructor CreateWinAPI(const Action, Func: string; Err: DWORD);
     // Create security status exception
-    constructor CreateSecStatus(const Msg, Func: string; Status: SECURITY_STATUS);
+    constructor CreateSecStatus(const Action, Func: string; Status: SECURITY_STATUS);
   end;
 
 var
@@ -278,7 +278,14 @@ implementation
 {$IFDEF MSWINDOWS}
 
 const
+  // %0s - current action, like 'sending data' or 'at Init'
+  // %1s - WinAPI method, like 'Send'
+  // %2d - error code
+  // %3s - error message for error code
   S_E_WinAPIErrPatt = 'Error %s calling WinAPI method "%s": [%d] %s';
+  // %0s - current action, like 'at CreateCredentials'
+  // %1s - SChannel method, like 'AcquireCredentialsHandle'
+  // %2s - error message
   S_E_SecStatusErrPatt = 'Error %s calling method "%s": %s';
 
 // ~~ Utils ~~
@@ -420,16 +427,28 @@ end;
 
 { ~~ ESSPIError ~~ }
 
-constructor ESSPIError.CreateWinAPI(const Msg, Func: string; Err: DWORD);
+{
+  Create WinAPI exception based on Err code
+    @param Action - current action, like `sending data` or `at Init`
+    @param Func - WinAPI method, like `Send`
+    @param Err - error code
+}
+constructor ESSPIError.CreateWinAPI(const Action, Func: string; Err: DWORD);
 begin
-  inherited CreateFmt(S_E_WinAPIErrPatt, [Msg, Func, Err, SysErrorMessage(Err)]);
+  inherited CreateFmt(S_E_WinAPIErrPatt, [Action, Func, Err, SysErrorMessage(Err)]);
   Self.WinAPIErr := Err;
 end;
 
-constructor ESSPIError.CreateSecStatus(const Msg, Func: string;
+{
+  Create SChannel exception based on status
+    @param Action - current action, like `at CreateCredentials`
+    @param Func - SChannel method, like `AcquireCredentialsHandle`
+    @param Status - SChannel status
+}
+constructor ESSPIError.CreateSecStatus(const Action, Func: string;
   Status: SECURITY_STATUS);
 begin
-  inherited CreateFmt(S_E_SecStatusErrPatt, [Msg, Func, SecStatusErrStr(Status)]);
+  inherited CreateFmt(S_E_SecStatusErrPatt, [Action, Func, SecStatusErrStr(Status)]);
   Self.SecStatus := Status;
 end;
 
@@ -445,15 +464,15 @@ begin
 end;
 
 // Create security status exception
-function ErrSecStatus(const Msg, Fn: string; Status: SECURITY_STATUS): ESSPIError;
+function ErrSecStatus(const Action, Func: string; Status: SECURITY_STATUS): ESSPIError;
 begin
-  Result := ESSPIError.CreateSecStatus(Msg, Fn, Status);
+  Result := ESSPIError.CreateSecStatus(Action, Func, Status);
 end;
 
 // Create WinAPI exception based on GetLastError
-function ErrWinAPI(const Msg, Fn: string): ESSPIError;
+function ErrWinAPI(const Action, Func: string): ESSPIError;
 begin
-  Result := ESSPIError.CreateWinAPI(Msg, Fn, GetLastError);
+  Result := ESSPIError.CreateWinAPI(Action, Func, GetLastError);
 end;
 
 procedure Debug(const Msg: string);

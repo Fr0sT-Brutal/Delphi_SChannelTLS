@@ -255,12 +255,11 @@ const
   S_Msg_Renegotiate = 'Server requested renegotiate';
   S_Err_DecryptMessageUnexpRes = 'DecryptMessage unexpected result %s';
   S_Msg_Sending = 'Sending %d bytes of payload / %d bytes encrypted';
-  S_Err_Sending = 'Error sending payload to server: "%s"';
   S_Msg_StartingTLS = 'Starting TLS handshake';
   S_Msg_HandshakeTDAErr = 'Handshake - ! error [%d] in TriggerDataAvailable';
   S_Msg_HShStageW1Success = 'Handshake @W1 - %d bytes sent';
   S_Msg_HShStageW1Fail = 'Handshake @W1 - ! error sending data';
-  S_Msg_HShStageRFail = 'Handshake @R - no data received or error receiving [%d]';
+  S_Msg_HShStageRFail = 'Handshake @R - no data received or error receiving';
   S_Msg_HShStageRSuccess = 'Handshake @R - %d bytes received';
   S_Msg_HandshakeBug = 'Handshake bug: "%s", retrying';
   S_Msg_HShStageW2Success = 'Handshake @W2 - %d bytes sent';

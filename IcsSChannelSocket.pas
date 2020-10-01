@@ -242,7 +242,7 @@ begin
 
     if Sent <= 0 then
     begin
-        raise ESSPIError.CreateWinAPI(S_Err_Sending, 'Send', WSocket_WSAGetLastError);
+        raise ESSPIError.CreateWinAPI('sending payload to server', 'Send', WSocket_WSAGetLastError);
         Result := Sent;
         Exit;
     end;
@@ -378,7 +378,7 @@ begin
         // WSAEWOULDBLOCK could happen so we just ignore receive errors
         if cbData <= 0 then
         begin
-            SChannelLog(loSslDevel, Format(S_Msg_HShStageRFail, [WSocket_WSAGetLastError]));
+            SChannelLog(loSslDevel, Format('%s [%d]', [S_Msg_HShStageRFail, WSocket_WSAGetLastError]));
             Exit;
         end;
         SChannelLog(loSslDevel, Format(S_Msg_HShStageRSuccess, [cbData]));

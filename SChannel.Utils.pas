@@ -215,7 +215,9 @@ procedure InitBuffers(const hContext: CtxtHandle; out pbIoBuffer: TBytes;
 procedure EncryptData(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes;
   pbMessage: PByte; cbMessage: DWORD; pbIoBuffer: PByte; pbIoBufferLength: DWORD;
   out cbWritten: DWORD);
-// Decrypt data received from server
+// Decrypt data received from server. If input data is not processed completely,
+// unprocessed chunk is copied to beginning of buffer. Thus subsequent call to
+// Recv could just receive to @Buffer[DataLength]
 //   @param hContext - current session context
 //   @param Sizes - current session sizes
 //   @param pbIoBuffer - input encrypted data to decrypt

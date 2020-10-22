@@ -725,7 +725,8 @@ end;
        - cbIoBuffer - size of data in buffer
 
      *Output data*:
-       - cbIoBuffer - length of unprocessed data in input buffer
+       - IoBuffer - buffer with unprocessed data from server
+       - cbIoBuffer - length of unprocessed data from server
        - OutBuffers - array with single item that must be finally disposed
          with `g_pSSPI.FreeContextBuffer` (hssReadSrvHelloContNeed, hssReadSrvHelloOK)
 
@@ -742,8 +743,10 @@ function DoClientHandshake(var SessionData: TSessionData; var HandShakeData: THa
   begin
     if InBuffer.BufferType = SECBUFFER_EXTRA then
     begin
-      MoveMemory(HandShakeData.IoBuffer,
-        PByte(HandShakeData.IoBuffer) + (HandShakeData.cbIoBuffer - InBuffer.cbBuffer), InBuffer.cbBuffer);
+      Move(
+        (PByte(HandShakeData.IoBuffer) + (HandShakeData.cbIoBuffer - InBuffer.cbBuffer))^,
+        Pointer(HandShakeData.IoBuffer)^,
+        InBuffer.cbBuffer);
       HandShakeData.cbIoBuffer := InBuffer.cbBuffer;
     end
     else

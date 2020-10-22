@@ -23,13 +23,6 @@ const
   WS_OK = 0; // WinSock success code
 
 type
-  // @exclude
-  TBuffer = record
-      Data: TBytes;
-      DataStartIdx: Integer;
-      DataLen: Cardinal;
-  end;
-
   // ICS TWSocket descendant supporting TLS
   TSChannelWSocket = class(TWSocket)
   strict protected
@@ -102,6 +95,9 @@ type
 
 implementation
 
+const
+  S_Msg_HandshakeTDAErr = 'Handshake - ! error [%d] in TriggerDataAvailable';
+
 constructor TSChannelWSocket.Create(AOwner: TComponent);
 begin
     SChannel.Utils.Init;
@@ -154,9 +150,9 @@ function TSChannelWSocket.DoRecv(var Buffer: TWSocketData; BufferSize,
 
 var
     res: Integer;
-    pCurrBuffer: TWSocketData;
+    pFreeSpace: TWSocketData;
     scRet: SECURITY_STATUS;
-    cbRead: DWORD;
+    cbWritten: DWORD;
 begin
     // SChannel not used - call inherited
     if not FSecure then begin
@@ -176,8 +172,8 @@ begin
     if FDecrBuffer.DataLen > 0 then
     begin
         Result := RecvFromBuffer;
-        pCurrBuffer := nil;
-        inherited DoRecv(pCurrBuffer, 0, Flags);
+        pFreeSpace := nil;
+        inherited DoRecv(pFreeSpace, 0, Flags);
         Exit;
     end;
 
@@ -188,21 +184,21 @@ begin
 
     // For some mysterious reason DoRecv requires "var"...
     // In FRecvBuffer data always starts from the beginning
-    pCurrBuffer := Pointer(@FRecvBuffer.Data[FRecvBuffer.DataLen]);
-    res := inherited DoRecv(pCurrBuffer, Length(FRecvBuffer.Data) - Integer(FRecvBuffer.DataLen), Flags);
+    pFreeSpace := Pointer(@FRecvBuffer.Data[FRecvBuffer.DataLen]);
+    res := inherited DoRecv(pFreeSpace, Length(FRecvBuffer.Data) - Integer(FRecvBuffer.DataLen), Flags);
     if res <= 0 then
         Exit(res);
     Inc(FRecvBuffer.DataLen, res);
     scRet := DecryptData(
         FhContext, FSizes, Pointer(FRecvBuffer.Data), FRecvBuffer.DataLen,
-        Pointer(FDecrBuffer.Data), Length(FDecrBuffer.Data), cbRead);
+        Pointer(FDecrBuffer.Data), Length(FDecrBuffer.Data), cbWritten);
     case scRet of
         SEC_E_OK, SEC_E_INCOMPLETE_MESSAGE, SEC_I_CONTEXT_EXPIRED:
             begin
-                SChannelLog(loSslDevel, Format(S_Msg_Received, [res, cbRead]));
+                SChannelLog(loSslDevel, Format(S_Msg_Received, [res, cbWritten]));
                 if scRet = SEC_I_CONTEXT_EXPIRED then
                     SChannelLog(loSslInfo, S_Msg_SessionClosed);
-                FDecrBuffer.DataLen := cbRead;
+                FDecrBuffer.DataLen := cbWritten;
                 Result := RecvFromBuffer;
             end;
         SEC_I_RENEGOTIATE:
@@ -212,7 +208,7 @@ begin
                 Result := 0;
             end;
         else
-            raise ESSPIError.CreateFmt(S_Err_DecryptMessageUnexpRes, [SecStatusErrStr(scRet)]);
+            Result := -1; // shouldn't happen
     end; // case
 end;
 

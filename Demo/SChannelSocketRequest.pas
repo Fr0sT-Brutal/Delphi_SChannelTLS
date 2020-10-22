@@ -207,8 +207,6 @@ begin
             PerformClientHandshake(SessionData, URL, LogFn, Pointer(sock), @SendFn, @RecvFn, hCtx);
             cbData := 0;
           end;
-        else
-          raise ESSPIError.CreateFmt(S_Err_DecryptMessageUnexpRes, [SecStatusErrStr(scRet)]);
       end; // case
 
     until False;

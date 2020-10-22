@@ -100,7 +100,7 @@ var
   req: RawByteString;
   scRet: SECURITY_STATUS;
   cbRead, cbData: DWORD;
-  buf: TBytes;
+  buf, ExtraData: TBytes;
   res: Integer;
   EncrCnt, DecrCnt: Cardinal;
 //  OutBuffer: SecBuffer;
@@ -122,7 +122,7 @@ begin
     Result := resTLSErr;
 
     // Perform handshake
-    PerformClientHandshake(SessionData, URL, LogFn, Pointer(sock), @SendFn, @RecvFn, hCtx);
+    PerformClientHandshake(SessionData, URL, LogFn, Pointer(sock), @SendFn, @RecvFn, hCtx, ExtraData);
     CheckServerCert(hCtx, URL);
     LogFn(LogPrefix + S_Msg_SrvCredsAuth);
     InitBuffers(hCtx, IoBuffer, Sizes);
@@ -147,6 +147,8 @@ begin
     // cbData is the length of received data in IoBuffer
     SetLength(buf, Sizes.cbMaximumMessage);
     cbData := 0; DecrCnt := 0;
+    Move(Pointer(ExtraData)^, Pointer(IoBuffer)^, Length(ExtraData));
+    Inc(cbData, Length(ExtraData));
     // Set socket non-blocking
     arg := 1;
     ioctlsocket(sock, FIONBIO, arg);
@@ -204,8 +206,10 @@ begin
         SEC_I_RENEGOTIATE:
           begin
             LogFn(S_Msg_Renegotiate);
-            PerformClientHandshake(SessionData, URL, LogFn, Pointer(sock), @SendFn, @RecvFn, hCtx);
+            PerformClientHandshake(SessionData, URL, LogFn, Pointer(sock), @SendFn, @RecvFn, hCtx, ExtraData);
             cbData := 0;
+            Move(Pointer(ExtraData)^, Pointer(IoBuffer)^, Length(ExtraData));
+            Inc(cbData, Length(ExtraData));
           end;
       end; // case
 

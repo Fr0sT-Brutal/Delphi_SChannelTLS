@@ -168,6 +168,8 @@ begin
         end
         else if HandShakeData.Stage = hssReadSrvHelloOK then
         begin
+          if HandShakeData.cbIoBuffer > 0 then
+            LogFn(Format(S_Msg_HShExtraData, [HandShakeData.cbIoBuffer]));
           LogFn(S_Msg_Established);
           HandShakeData.Stage := hssDone; // useless
           // Return extra data if any received. 0-length will work as well

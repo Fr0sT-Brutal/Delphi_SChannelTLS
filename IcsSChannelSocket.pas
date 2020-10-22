@@ -440,15 +440,20 @@ end;
 procedure TSChannelWSocket.DoHandshakeSuccess;
 begin
     FhContext := FHandShakeData.hContext;
-    FHandShakeData := Default(THandShakeData);
     FHandShakeData.Stage := hssDone;
     FChannelState := chsEstablished;
     SChannelLog(loSslInfo, S_Msg_Established);
+    if FHandShakeData.cbIoBuffer > 0 then
+        SChannelLog(loSslInfo, Format(S_Msg_HShExtraData, [FHandShakeData.cbIoBuffer]));
     CheckServerCert(FhContext, Addr);
     SChannelLog(loSslInfo, S_Msg_SrvCredsAuth);
     InitBuffers(FhContext, FSendBuffer, FSizes);
     SetLength(FRecvBuffer.Data, Length(FSendBuffer));
     SetLength(FDecrBuffer.Data, FSizes.cbMaximumMessage);
+    // Copy received extra data (0 length will work too)
+    Move(Pointer(FHandShakeData.IoBuffer)^, Pointer(FRecvBuffer.Data)^, FHandShakeData.cbIoBuffer);
+    Inc(FRecvBuffer.DataLen, FHandShakeData.cbIoBuffer);
+    FHandShakeData := Default(THandShakeData);
 
     if Assigned(FOnTLSDone) then
         FOnTLSDone(Self);

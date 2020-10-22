@@ -272,6 +272,7 @@ const
   S_Msg_HandshakeBug = 'Handshake bug: "%s", retrying';
   S_Msg_HShStageW2Success = 'Handshake @W2 - %d bytes sent';
   S_Msg_HShStageW2Fail = 'Handshake @W2 - ! error sending data';
+  S_Msg_HShExtraData = 'Handshake: got "%d" bytes of extra data';
   S_Msg_Established = 'Handshake established';
   S_Msg_SrvCredsAuth = 'Server credentials authenticated';
   S_Msg_CredsInited = 'Credentials initialized';

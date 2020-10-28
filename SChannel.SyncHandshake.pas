@@ -173,8 +173,7 @@ begin
           LogFn(S_Msg_Established);
           HandShakeData.Stage := hssDone; // useless
           // Return extra data if any received. 0-length will work as well
-          SetLength(ExtraData, HandShakeData.cbIoBuffer);
-          Move(Pointer(HandShakeData.IoBuffer)^, Pointer(ExtraData), HandShakeData.cbIoBuffer);
+          ExtraData := Copy(HandShakeData.IoBuffer, 0, HandShakeData.cbIoBuffer);
           Break;
         end;
       end;

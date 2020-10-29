@@ -1,6 +1,10 @@
 Notable changes
 ===============
 
+## 29.10.2020
+
+- [+] Sync handshake handles extra data that server could send
+
 ## 16.01.2020
 
 - [*] GetNewClientCredentials doesn't raise exception if no certificate chain found

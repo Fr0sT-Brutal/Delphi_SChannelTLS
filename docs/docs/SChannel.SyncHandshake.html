@@ -28,7 +28,7 @@ Helper function that implements synchronous TLS handshake by means of Windows SC
 <span id="PasDoc-FuncsProcs"></span><h3 class="summary">Functions and Procedures</h3>
 <table class="summary wide_list">
 <tr class="list">
-<td class="itemcode"><code>procedure <strong><a href="SChannel.SyncHandshake.html#PerformClientHandshake">PerformClientHandshake</a></strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; const ServerName: string; LogFn: <a href="SChannel.SyncHandshake.html#TLogFn">TLogFn</a>; Data: Pointer; SendFn: <a href="SChannel.SyncHandshake.html#TSendFn">TSendFn</a>; RecvFn: <a href="SChannel.SyncHandshake.html#TRecvFn">TRecvFn</a>; out hContext: CtxtHandle);</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.SyncHandshake.html#PerformClientHandshake">PerformClientHandshake</a></strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; const ServerName: string; LogFn: <a href="SChannel.SyncHandshake.html#TLogFn">TLogFn</a>; Data: Pointer; SendFn: <a href="SChannel.SyncHandshake.html#TSendFn">TSendFn</a>; RecvFn: <a href="SChannel.SyncHandshake.html#TRecvFn">TRecvFn</a>; out hContext: CtxtHandle; out ExtraData: TBytes);</code></td>
 </tr>
 </table>
 <span id="PasDoc-Types"></span><h3 class="summary">Types</h3>
@@ -47,11 +47,11 @@ Helper function that implements synchronous TLS handshake by means of Windows SC
 <h3 class="detail">Functions and Procedures</h3>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="PerformClientHandshake"></span><code>procedure <strong>PerformClientHandshake</strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; const ServerName: string; LogFn: <a href="SChannel.SyncHandshake.html#TLogFn">TLogFn</a>; Data: Pointer; SendFn: <a href="SChannel.SyncHandshake.html#TSendFn">TSendFn</a>; RecvFn: <a href="SChannel.SyncHandshake.html#TRecvFn">TRecvFn</a>; out hContext: CtxtHandle);</code></td>
+<td class="itemcode"><span id="PerformClientHandshake"></span><code>procedure <strong>PerformClientHandshake</strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; const ServerName: string; LogFn: <a href="SChannel.SyncHandshake.html#TLogFn">TLogFn</a>; Data: Pointer; SendFn: <a href="SChannel.SyncHandshake.html#TSendFn">TSendFn</a>; RecvFn: <a href="SChannel.SyncHandshake.html#TRecvFn">TRecvFn</a>; out hContext: CtxtHandle; out ExtraData: TBytes);</code></td>
 </tr>
 <tr><td colspan="1">
 <p>
-Synchronously perform full handshake process including communication with server. Communication is done via two callback functions.        </p>
+Synchronously perform full handshake process including communication with server. Communication is done via two callback functions.         </p>
 <h6 class="description_section">Parameters</h6>
 <dl class="parameters">
 <dt>SessionData</dt>
@@ -68,6 +68,8 @@ Synchronously perform full handshake process including communication with server
 <dd>- data read callback</dd>
 <dt>hContext</dt>
 <dd>- [OUT] receives current session context</dd>
+<dt>ExtraData</dt>
+<dd>- [OUT] receives extra data sent by server to be decrypted</dd>
 </dl>
 <h6 class="description_section">Exceptions raised</h6>
 <dl class="exceptions_raised">

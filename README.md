@@ -54,7 +54,7 @@ There's SChannel bug that causes functions rarely and randomly return `SEC_E_BUF
 IcsSChannelSocket
 -------------------
 
-Socket class descending from ICS `TWSocket` that does many things for you. Key features:
+Socket class descending from [ICS](http://www.overbyte.eu/frame_index.html) `TWSocket` that does many things for you. Key features:
 
 - Automatic handshake retry when handshake bug (see above) is encountered
 - TLS channel could be started/finished at any moment by setting `Secure` property; `OnTLSDone` and `OnTLSShutdown` events will signal channel state

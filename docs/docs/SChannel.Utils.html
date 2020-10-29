@@ -40,14 +40,18 @@ Helper functions for easy implementation of TLS communication by means of Window
 <td class="itemdesc">Data related to a session.</td>
 </tr>
 <tr class="list">
+<td class="itemname">Record&nbsp;<a class="bold" href="SChannel.Utils.TBuffer.html"><code>TBuffer</code></a></td>
+<td class="itemdesc">Trivial <a class="normal" href="SChannel.Utils.TBuffer.html#Data">data</a> storage</td>
+</tr>
+<tr class="list2">
 <td class="itemname">Interface&nbsp;<a class="bold" href="SChannel.Utils.ISharedSessionData.html"><code>ISharedSessionData</code></a></td>
 <td class="itemdesc">Interface with session data for sharing credentials</td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname">Class&nbsp;<a class="bold" href="SChannel.Utils.TSharedSessionData.html"><code>TSharedSessionData</code></a></td>
 <td class="itemdesc">Interfaced object with session data for sharing credentials</td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname">Class&nbsp;<a class="bold" href="SChannel.Utils.ESSPIError.html"><code>ESSPIError</code></a></td>
 <td class="itemdesc">Specific exception class.</td>
 </tr>
@@ -151,40 +155,34 @@ Helper functions for easy implementation of TLS communication by means of Window
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_Renegotiate">S_Msg_Renegotiate</a></strong> = 'Server requested renegotiate';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Err_DecryptMessageUnexpRes">S_Err_DecryptMessageUnexpRes</a></strong> = 'DecryptMessage unexpected result %s';</code></td>
-</tr>
-<tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_Sending">S_Msg_Sending</a></strong> = 'Sending %d bytes of payload / %d bytes encrypted';</code></td>
-</tr>
-<tr class="list2">
-<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Err_Sending">S_Err_Sending</a></strong> = 'Error sending payload to server: &quot;%s&quot;';</code></td>
 </tr>
 <tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_StartingTLS">S_Msg_StartingTLS</a></strong> = 'Starting TLS handshake';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HandshakeTDAErr">S_Msg_HandshakeTDAErr</a></strong> = 'Handshake - ! error [%d] in TriggerDataAvailable';</code></td>
-</tr>
-<tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW1Success">S_Msg_HShStageW1Success</a></strong> = 'Handshake @W1 - %d bytes sent';</code></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW1Fail">S_Msg_HShStageW1Fail</a></strong> = 'Handshake @W1 - ! error sending data';</code></td>
 </tr>
-<tr class="list">
-<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageRFail">S_Msg_HShStageRFail</a></strong> = 'Handshake @R - no data received or error receiving [%d]';</code></td>
-</tr>
 <tr class="list2">
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageRFail">S_Msg_HShStageRFail</a></strong> = 'Handshake @R - no data received or error receiving';</code></td>
+</tr>
+<tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageRSuccess">S_Msg_HShStageRSuccess</a></strong> = 'Handshake @R - %d bytes received';</code></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HandshakeBug">S_Msg_HandshakeBug</a></strong> = 'Handshake bug: &quot;%s&quot;, retrying';</code></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW2Success">S_Msg_HShStageW2Success</a></strong> = 'Handshake @W2 - %d bytes sent';</code></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW2Fail">S_Msg_HShStageW2Fail</a></strong> = 'Handshake @W2 - ! error sending data';</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShExtraData">S_Msg_HShExtraData</a></strong> = 'Handshake: got &quot;%d&quot; bytes of extra data';</code></td>
 </tr>
 <tr class="list2">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_Established">S_Msg_Established</a></strong> = 'Handshake established';</code></td>
@@ -362,7 +360,8 @@ Function to prepare all necessary handshake data. No transport level actions.
 <p> <em>Output data</em>: </p>
 
 <ul class="paragraph_spacing">
-  <li><p>cbIoBuffer - length of unprocessed data in input buffer</p></li>
+  <li><p>IoBuffer - buffer with unprocessed data from server</p></li>
+  <li><p>cbIoBuffer - length of unprocessed data from server</p></li>
   <li><p>OutBuffers - array with single item that must be finally disposed with <code>g_pSSPI.FreeContextBuffer</code> (<a class="normal" href="SChannel.Utils.html#hssReadSrvHelloContNeed">hssReadSrvHelloContNeed</a>, <a class="normal" href="SChannel.Utils.html#hssReadSrvHelloOK">hssReadSrvHelloOK</a>)</p></li>
 </ul>
 
@@ -476,7 +475,7 @@ Encrypt data (prepare for sending to server).        </p>
 </tr>
 <tr><td colspan="1">
 <p>
-Decrypt data received from server         </p>
+Decrypt data received from server. If input data is not processed completely, unprocessed chunk is copied to beginning of buffer. Thus subsequent call to Recv could just receive to @Buffer[DataLength]         </p>
 <h6 class="description_section">Parameters</h6>
 <dl class="parameters">
 <dt>hContext</dt>
@@ -507,7 +506,7 @@ Decrypt data received from server         </p>
 <p></p><h6 class="description_section">Exceptions raised</h6>
 <dl class="exceptions_raised">
 <dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
-<dd>on error</dd>
+<dd>on error or if Result is not one of above mentioned values</dd>
 </dl>
 </td></tr>
 </table>
@@ -665,7 +664,7 @@ Set of used algorithms. <code>0</code> means default. Add <code>CALG_DH_EPHEM</c
 </tr>
 <tr><td colspan="1">
 <p>
-Messages that could be written to log by various implementations</p>
+Messages that could be written to log by various implementations. None of these are used in this unit</p>
 </td></tr>
 </table>
 <table class="detail wide_list">
@@ -684,13 +683,6 @@ Messages that could be written to log by various implementations</p>
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="S_Err_DecryptMessageUnexpRes"></span><code><strong>S_Err_DecryptMessageUnexpRes</strong> = 'DecryptMessage unexpected result %s';</code></td>
-</tr>
-<tr><td colspan="1">
-&nbsp;</td></tr>
-</table>
-<table class="detail wide_list">
-<tr class="list">
 <td class="itemcode"><span id="S_Msg_Sending"></span><code><strong>S_Msg_Sending</strong> = 'Sending %d bytes of payload / %d bytes encrypted';</code></td>
 </tr>
 <tr><td colspan="1">
@@ -698,21 +690,7 @@ Messages that could be written to log by various implementations</p>
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="S_Err_Sending"></span><code><strong>S_Err_Sending</strong> = 'Error sending payload to server: &quot;%s&quot;';</code></td>
-</tr>
-<tr><td colspan="1">
-&nbsp;</td></tr>
-</table>
-<table class="detail wide_list">
-<tr class="list">
 <td class="itemcode"><span id="S_Msg_StartingTLS"></span><code><strong>S_Msg_StartingTLS</strong> = 'Starting TLS handshake';</code></td>
-</tr>
-<tr><td colspan="1">
-&nbsp;</td></tr>
-</table>
-<table class="detail wide_list">
-<tr class="list">
-<td class="itemcode"><span id="S_Msg_HandshakeTDAErr"></span><code><strong>S_Msg_HandshakeTDAErr</strong> = 'Handshake - ! error [%d] in TriggerDataAvailable';</code></td>
 </tr>
 <tr><td colspan="1">
 &nbsp;</td></tr>
@@ -733,7 +711,7 @@ Messages that could be written to log by various implementations</p>
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="S_Msg_HShStageRFail"></span><code><strong>S_Msg_HShStageRFail</strong> = 'Handshake @R - no data received or error receiving [%d]';</code></td>
+<td class="itemcode"><span id="S_Msg_HShStageRFail"></span><code><strong>S_Msg_HShStageRFail</strong> = 'Handshake @R - no data received or error receiving';</code></td>
 </tr>
 <tr><td colspan="1">
 &nbsp;</td></tr>
@@ -762,6 +740,13 @@ Messages that could be written to log by various implementations</p>
 <table class="detail wide_list">
 <tr class="list">
 <td class="itemcode"><span id="S_Msg_HShStageW2Fail"></span><code><strong>S_Msg_HShStageW2Fail</strong> = 'Handshake @W2 - ! error sending data';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_HShExtraData"></span><code><strong>S_Msg_HShExtraData</strong> = 'Handshake: got &quot;%d&quot; bytes of extra data';</code></td>
 </tr>
 <tr><td colspan="1">
 &nbsp;</td></tr>

@@ -16,7 +16,7 @@ interface
 uses
   SysUtils, Classes, Windows, WinSock,
   JwaWinError, JwaSspi,
-  OverbyteIcsWSocket, OverbyteIcsWSockBuf, OverbyteIcsLogger,
+  OverbyteIcsWSocket, OverbyteIcsWSockBuf, OverbyteIcsLogger, OverbyteIcsUtils,
   SChannel.Utils;
 
 const
@@ -64,6 +64,7 @@ type
       constructor Create(AOwner : TComponent); override;
       procedure   Listen; override;
       procedure   Shutdown(How : Integer); override;
+      procedure   PostFD_EVENT(Event: Cardinal);
   published
       // Indicates whether TLS is currently used. Effect of setting the property
       // depends on current state. @br
@@ -168,13 +169,12 @@ begin
         Exit;
     end;
 
-    // There's already decrypted data in buffer - copy from it and call empty
-    // Receive to re-launch FD_WRITE event
+    // There's already decrypted data in buffer - copy from it and imitate FD_READ event
     if FDecrBuffer.DataLen > 0 then
     begin
         Result := RecvFromBuffer;
-        pFreeSpace := nil;
-        inherited DoRecv(pFreeSpace, 0, Flags);
+        if FState = wsConnected then
+            PostFD_EVENT(FD_READ);
         Exit;
     end;
 
@@ -209,7 +209,7 @@ begin
                 Result := 0;
             end;
         else
-            Result := -1; // shouldn't happen
+            Result := SOCKET_ERROR; // shouldn't happen
     end; // case
 end;
 
@@ -479,6 +479,13 @@ begin
         if FState = wsConnected then
             ShutdownTLS;
     end;
+end;
+
+// Imitate FD_* event on a socket. Mostly useful with FD_READ to have DataAvailable
+// with buffering socket implementations
+procedure TSChannelWSocket.PostFD_EVENT(Event: Cardinal);
+begin
+    PostMessage(Handle, FMsg_WM_ASYNCSELECT, WPARAM(FHSocket), IcsMakeLong(Event, 0));
 end;
 
 // Start TLS handshake process

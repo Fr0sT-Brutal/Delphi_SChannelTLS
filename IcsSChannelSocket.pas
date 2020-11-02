@@ -397,7 +397,7 @@ begin
                 Exit;
             end
             else
-                raise E;
+                raise;
         end;
 
         // Send token if needed

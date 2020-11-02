@@ -145,7 +145,7 @@ begin
           Continue;
         end
         else
-          raise E;     // TODO: after this exc props are lost
+          raise;
       end;
       // Send token if needed
       if HandShakeData.Stage in [hssReadSrvHelloContNeed, hssReadSrvHelloOK] then

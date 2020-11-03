@@ -24,16 +24,16 @@ uses
   SChannel.Utils;
 
 type
-  // Logging function. All messages coming from functions of this unit are
-  // prefixed with `SChannel.Utils.LogPrefix` constant
+  // Logging method
   TLogFn = procedure (const Msg: string) of object;
   // Synchronous communication function.
   //   @param Data - the value of `Data` with which `PerformClientHandshake` was called \
   //     (Socket object, handle, etc)
   //   @param Buf - buffer with data
   //   @param BufLen - size of data in buffer
-  // @returns amount of data sent. Must try to send all data in full, as no \
-  //   retries or repeated sends is done.
+  // @returns amount of data sent if >= 0 or error code if < 0. \
+  //   Error code is reported to log function to track issues. \
+  //   Must try to send all data in full, as no retries or repeated sends is done.
   // @raises exception on error
   TSendFn = function (Data: Pointer; Buf: Pointer; BufLen: Integer): Integer;
   // Synchronous communication function.
@@ -41,7 +41,8 @@ type
   //     (Socket object, handle, etc)
   //   @param Buf - buffer to receive data
   //   @param BufLen - size of free space in buffer
-  // @returns amount of data read, `0` if no data read and `-1` on error.\
+  // @returns amount of data sent if >= 0 or error code if < 0. \
+  //   Error code is reported to log function to track issues. \
   //   Must try to send all data in full, as no retries or repeated sends is done.
   // @raises exception on error
   TRecvFn = function (Data: Pointer; Buf: Pointer; BufLen: Integer): Integer;
@@ -98,7 +99,7 @@ var
     if cbData = Integer(HandShakeData.OutBuffers[0].cbBuffer) then
       LogFn(Format(S_Msg_HShStageW1Success, [cbData]))
     else
-      LogFn(S_Msg_HShStageW1Fail);
+      LogFn(Format(S_Msg_HShStageW1Fail, [cbData]));
     g_pSSPI.FreeContextBuffer(HandShakeData.OutBuffers[0].pvBuffer); // Free output buffer.
     SetLength(HandShakeData.OutBuffers, 0);
     HandShakeData.Stage := hssReadSrvHello;
@@ -124,7 +125,7 @@ begin
         cbData := RecvFn(Data, (PByte(HandShakeData.IoBuffer) + HandShakeData.cbIoBuffer),
           Length(HandShakeData.IoBuffer) - HandShakeData.cbIoBuffer);
         if cbData <= 0 then // should not happen
-          raise ESSPIError.Create(S_Msg_HShStageRFail);
+          raise ESSPIError.Create(Format(S_Msg_HShStageRFail, [cbData]));
         LogFn(Format(S_Msg_HShStageRSuccess, [cbData]));
         Inc(HandShakeData.cbIoBuffer, cbData);
       end;
@@ -156,7 +157,7 @@ begin
           if cbData = Integer(HandShakeData.OutBuffers[0].cbBuffer) then
             LogFn(Format(S_Msg_HShStageW2Success, [cbData]))
           else
-            LogFn(S_Msg_HShStageW2Fail);
+            LogFn(Format(S_Msg_HShStageW2Fail, [cbData]));
           g_pSSPI.FreeContextBuffer(HandShakeData.OutBuffers[0].pvBuffer); // Free output buffer
           SetLength(HandShakeData.OutBuffers, 0);
         end;

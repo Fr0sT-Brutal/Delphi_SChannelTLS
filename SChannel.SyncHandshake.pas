@@ -26,30 +26,27 @@ uses
 type
   // Logging method
   TLogFn = procedure (const Msg: string) of object;
-  // Synchronous communication function.
-  //   @param Data - the value of `Data` with which `PerformClientHandshake` was called \
-  //     (Socket object, handle, etc)
+  // Synchronous communication method.
   //   @param Buf - buffer with data
   //   @param BufLen - size of data in buffer
   // @returns amount of data sent if >= 0 or error code if < 0. \
   //   Error code is reported to log function to track issues. \
   //   Must try to send all data in full, as no retries or repeated sends is done.
-  // @raises exception on error
-  TSendFn = function (Data: Pointer; Buf: Pointer; BufLen: Integer): Integer;
-  // Synchronous communication function.
-  //   @param Data - the value of `Data` with which `PerformClientHandshake` was called \
-  //     (Socket object, handle, etc)
+  // @raises exception on some non-network error
+  TSendFn = function (Buf: Pointer; BufLen: Integer): Integer of object;
+  // Synchronous communication method.
   //   @param Buf - buffer to receive data
   //   @param BufLen - size of free space in buffer
-  // @returns amount of data sent if >= 0 or error code if < 0. \
+  // @returns amount of data received if >= 0 or error code if < 0. \
   //   Error code is reported to log function to track issues. \
-  //   Must try to send all data in full, as no retries or repeated sends is done.
-  // @raises exception on error
-  TRecvFn = function (Data: Pointer; Buf: Pointer; BufLen: Integer): Integer;
+  //   Could receive only some of the data available as incomplete packet is
+  //   read in loop
+  // @raises exception on some non-network error
+  TRecvFn = function (Buf: Pointer; BufLen: Integer): Integer of object;
 
 // Synchronously perform full handshake process including communication with server.
 procedure PerformClientHandshake(var SessionData: TSessionData; const ServerName: string;
-  LogFn: TLogFn; Data: Pointer; SendFn: TSendFn; RecvFn: TRecvFn;
+  LogFn: TLogFn; SendFn: TSendFn; RecvFn: TRecvFn;
   out hContext: CtxtHandle; out ExtraData: TBytes);
 
 {$ENDIF MSWINDOWS}
@@ -81,7 +78,7 @@ end;
 //   @param ExtraData - [OUT] receives extra data sent by server to be decrypted
 // @raises ESSPIError on error
 procedure PerformClientHandshake(var SessionData: TSessionData; const ServerName: string;
-  LogFn: TLogFn; Data: Pointer; SendFn: TSendFn; RecvFn: TRecvFn;
+  LogFn: TLogFn; SendFn: TSendFn; RecvFn: TRecvFn;
   out hContext: CtxtHandle; out ExtraData: TBytes);
 var
   HandShakeData: THandShakeData;
@@ -95,11 +92,10 @@ var
     Assert(HandShakeData.Stage = hssSendCliHello);
 
     // Send hello to server
-    cbData := SendFn(Data, HandShakeData.OutBuffers[0].pvBuffer, HandShakeData.OutBuffers[0].cbBuffer);
-    if cbData = Integer(HandShakeData.OutBuffers[0].cbBuffer) then
-      LogFn(Format(S_Msg_HShStageW1Success, [cbData]))
-    else
-      LogFn(Format(S_Msg_HShStageW1Fail, [cbData]));
+    cbData := SendFn(HandShakeData.OutBuffers[0].pvBuffer, HandShakeData.OutBuffers[0].cbBuffer);
+    if cbData <> Integer(HandShakeData.OutBuffers[0].cbBuffer) then
+      raise ESSPIError.Create(Format(S_Msg_HShStageW1Fail, [cbData]));
+    LogFn(Format(S_Msg_HShStageW1Success, [cbData]));
     g_pSSPI.FreeContextBuffer(HandShakeData.OutBuffers[0].pvBuffer); // Free output buffer.
     SetLength(HandShakeData.OutBuffers, 0);
     HandShakeData.Stage := hssReadSrvHello;
@@ -122,9 +118,9 @@ begin
     repeat
       if HandShakeData.Stage = hssReadSrvHello then
       begin
-        cbData := RecvFn(Data, (PByte(HandShakeData.IoBuffer) + HandShakeData.cbIoBuffer),
+        cbData := RecvFn((PByte(HandShakeData.IoBuffer) + HandShakeData.cbIoBuffer),
           Length(HandShakeData.IoBuffer) - HandShakeData.cbIoBuffer);
-        if cbData <= 0 then // should not happen
+        if cbData <= 0 then
           raise ESSPIError.Create(Format(S_Msg_HShStageRFail, [cbData]));
         LogFn(Format(S_Msg_HShStageRSuccess, [cbData]));
         Inc(HandShakeData.cbIoBuffer, cbData);
@@ -153,11 +149,10 @@ begin
       begin
         if (HandShakeData.OutBuffers[0].cbBuffer > 0) and (HandShakeData.OutBuffers[0].pvBuffer <> nil) then
         begin
-          cbData := SendFn(Data, HandShakeData.OutBuffers[0].pvBuffer, HandShakeData.OutBuffers[0].cbBuffer);
-          if cbData = Integer(HandShakeData.OutBuffers[0].cbBuffer) then
-            LogFn(Format(S_Msg_HShStageW2Success, [cbData]))
-          else
-            LogFn(Format(S_Msg_HShStageW2Fail, [cbData]));
+          cbData := SendFn(HandShakeData.OutBuffers[0].pvBuffer, HandShakeData.OutBuffers[0].cbBuffer);
+          if cbData <> Integer(HandShakeData.OutBuffers[0].cbBuffer) then
+            raise ESSPIError.Create(Format(S_Msg_HShStageW2Fail, [cbData]));
+          LogFn(Format(S_Msg_HShStageW2Success, [cbData]));
           g_pSSPI.FreeContextBuffer(HandShakeData.OutBuffers[0].pvBuffer); // Free output buffer
           SetLength(HandShakeData.OutBuffers, 0);
         end;

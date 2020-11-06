@@ -58,4 +58,4 @@ Socket class descending from [ICS](http://www.overbyte.eu/frame_index.html) `TWS
 
 - Automatic handshake retry when handshake bug (see above) is encountered
 - TLS channel could be started/finished at any moment by setting `Secure` property; `OnTLSDone` and `OnTLSShutdown` events will signal channel state
-- Session data could be shared between multiple sockets with `SharedSessionData` property. When sessions are shared, handshake becomes significantly shorter so it worths it
+- Session data could be shared between multiple sockets with `SessionData.SharedCreds` property. When sessions are shared, handshake becomes significantly shorter so it worths it

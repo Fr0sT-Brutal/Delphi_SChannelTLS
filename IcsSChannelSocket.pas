@@ -28,7 +28,7 @@ type
   strict protected
       FSecure: Boolean;
       FChannelState: TChannelState;
-      FSharedSessionData: ISharedSessionData;
+      FSessionData: TSessionData;
       FHandShakeData: THandShakeData;
       FhContext: CtxtHandle;
       FHandshakeBug: Boolean;
@@ -84,9 +84,10 @@ type
       // Traffic counter for outgoing payload.
       // `TWSocket.WriteCount` property reflects encrypted traffic
       property PayloadWriteCount: Int64 read FPayloadWriteCount;
-      // Session data that could be shared between multiple sockets. To share a session,
-      // assign this property before starting TLS handshake
-      property SharedSessionData: ISharedSessionData read FSharedSessionData write FSharedSessionData;
+      // TLS Session data that allows fine tuning of TLS handshake. Also it could
+      // contain shared credentials used by multiple sockets. Fields must be
+      // assigned before starting TLS handshake
+      property SessionData: TSessionData read FSessionData write FSessionData;
       // Event is called when TLS handshake is established successfully
       property OnTLSDone: TNotifyEvent read FOnTLSDone write FOnTLSDone;
       // Event is called when TLS handshake is shut down
@@ -339,7 +340,7 @@ begin
 
     try
         // Generate hello
-        DoClientHandshake(SharedSessionData.GetSessionDataPtr^, FHandShakeData);
+        DoClientHandshake(FSessionData, FHandShakeData);
         Assert(FHandShakeData.Stage = hssSendCliHello);
 
         // Send hello to server
@@ -384,7 +385,7 @@ begin
     // Decode hello
     try
         try
-            DoClientHandshake(SharedSessionData.GetSessionDataPtr^, FHandShakeData);
+            DoClientHandshake(FSessionData, FHandShakeData);
         except on E: ESSPIError do
             // Hide Windows handshake bug and restart the process for the first time
             if (FHandShakeData.Stage = hssReadSrvHello) and IsWinHandshakeBug(E.SecStatus)
@@ -482,22 +483,13 @@ end;
 
 // Start TLS handshake process
 procedure TSChannelWSocket.StartTLS;
-var
-    SessData: TSessionData;
+var pCreds: PSessionCreds;
 begin
-    // Create and init shared session data if not created yet
-    if SharedSessionData = nil then
+    // Create and init session data if not inited yet or finished (unlikely)
+    pCreds := GetSessionCredsPtr(FSessionData);
+    if SecIsNullHandle(pCreds.hCreds) then
     begin
-      SessData := Default(TSessionData);
-      InitSession(SessData);
-      SChannelLog(loSslInfo, S_Msg_CredsInited);
-      SharedSessionData := TSharedSessionData.Create(SessData);
-    end;
-
-    // Init session data if not inited yet or finished (unlikely)
-    if SecIsNullHandle(SharedSessionData.GetSessionDataPtr.hCreds) then
-    begin
-      InitSession(SharedSessionData.GetSessionDataPtr^);
+      CreateSessionCreds(pCreds^);
       SChannelLog(loSslInfo, S_Msg_CredsInited);
     end;
 
@@ -514,7 +506,7 @@ begin
     SChannelLog(loSslInfo, S_Msg_ShuttingDownTLS);
 
     // Send a close_notify alert to the server and close down the connection.
-    GetShutdownData(SharedSessionData.GetSessionDataPtr^, FhContext, OutBuffer);
+    GetShutdownData(FSessionData, FhContext, OutBuffer);
     if OutBuffer.cbBuffer > 0 then
     begin
         SChannelLog(loSslDevel, Format(S_Msg_SendingShutdown, [OutBuffer.cbBuffer]));

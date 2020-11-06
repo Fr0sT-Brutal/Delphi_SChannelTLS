@@ -31,6 +31,15 @@ const
   // Set of used algorithms.
   // `0` means default. Add `CALG_DH_EPHEM`, `CALG_RSA_KEYX`, etc if needed
   USED_ALGS: ALG_ID = 0;
+  // Default flags used in `InitializeSecurityContextW` call. User can define
+  // alternative value in session data.
+  SSPI_FLAGS =
+    ISC_REQ_SEQUENCE_DETECT or   // Detect messages received out of sequence
+    ISC_REQ_REPLAY_DETECT or     // Detect replayed messages that have been encoded by using the EncryptMessage or MakeSignature functions
+    ISC_REQ_CONFIDENTIALITY or   // Encrypt messages by using the EncryptMessage function
+    ISC_RET_EXTENDED_ERROR or    // When errors occur, the remote party will be notified
+    ISC_REQ_ALLOCATE_MEMORY or   // The security package allocates output buffers for you. When you have finished using the output buffers, free them by calling the FreeContextBuffer function
+    ISC_REQ_STREAM;              // Support a stream-oriented connection
 
 type
   // Stage of handshake
@@ -96,6 +105,11 @@ type
   TSessionData = record
     // Options
     Flags: TSessionFlags;
+    // User-defined SSPI-specific flags to use in `InitializeSecurityContextW` call.
+    // Default value `SSPI_FLAGS` is used if this value is `0`. \
+    // **Warning**: `ISC_REQ_ALLOCATE_MEMORY` flag is supposed to be always enabled,
+    // otherwise correct work is not guaranteed
+    SSPIFlags: DWORD;
     // Handle of credentials, mainly for internal use
     hCreds: CredHandle;
     // SChannel credentials, mainly for internal use but could be init-ed by user
@@ -760,9 +774,9 @@ var
   InBuffers: array [0..1] of SecBuffer;
   OutBuffer, InBuffer: SecBufferDesc;
 begin
-  dwSSPIFlags :=
-    ISC_REQ_SEQUENCE_DETECT or ISC_REQ_REPLAY_DETECT or ISC_REQ_CONFIDENTIALITY or
-    ISC_RET_EXTENDED_ERROR or ISC_REQ_ALLOCATE_MEMORY or ISC_REQ_STREAM;
+  dwSSPIFlags := SessionData.SSPIFlags;
+  if dwSSPIFlags = 0 then
+    dwSSPIFlags := SSPI_FLAGS;
   if sfNoServerVerify in SessionData.Flags then
     dwSSPIFlags := dwSSPIFlags or ISC_REQ_MANUAL_CRED_VALIDATION;
 
@@ -935,9 +949,9 @@ begin
     raise ErrSecStatus('@ GetShutdownData', 'ApplyControlToken', Status);
 
   // Build an SSL close notify message.
-  dwSSPIFlags :=
-    ISC_REQ_SEQUENCE_DETECT or ISC_REQ_REPLAY_DETECT or ISC_REQ_CONFIDENTIALITY or
-    ISC_RET_EXTENDED_ERROR or ISC_REQ_ALLOCATE_MEMORY or ISC_REQ_STREAM;
+  dwSSPIFlags := SessionData.SSPIFlags;
+  if dwSSPIFlags = 0 then
+    dwSSPIFlags := SSPI_FLAGS;
 
   OutBuffers[0] := Default(SecBuffer);
   OutBuffers[0].BufferType := SECBUFFER_TOKEN;

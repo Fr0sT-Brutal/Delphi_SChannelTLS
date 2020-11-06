@@ -27,6 +27,10 @@ type
     btnReqAsync: TButton;
     lbl: TLabel;
     chbData: TCheckBox;
+    Memo1: TMemo;
+    chbReuseSessions: TCheckBox;
+    gb: TGroupBox;
+    chb: TCheckBox;
     procedure chbDumpsClick(Sender: TObject);
     procedure btnReqSyncClick(Sender: TObject);
     procedure btnReqAsyncClick(Sender: TObject);
@@ -42,6 +46,7 @@ type
     procedure WSocketDataSent(Sender: TObject; ErrCode: Word);
     procedure WSocketException(Sender: TObject; SocExcept: ESocketException);
     procedure WSocketSessionClosed(Sender: TObject; ErrCode: Word);
+    procedure WSocketTLSDone(Sender: TObject);
     {$ENDIF}
     procedure Log(const s: string; AddStamp: Boolean); overload;
     procedure Log(const s: string); overload;
@@ -52,6 +57,7 @@ var
   hClientCreds: CredHandle = ();
   PrintDumps: Boolean = False;
   PrintData: Boolean = False;
+  SharedSessionCreds: ISharedSessionCreds;
 
 const
   DefaultReq = 'HEAD / HTTP/1.1'+sLineBreak+'Connection: close'+sLineBreak+sLineBreak;
@@ -109,6 +115,12 @@ begin
     TButton(Sender).Caption := SLblBtnSync[True];
     SChannel.Utils.Init;
     SChannelSocketRequest.LogFn := Self.Log;
+    if chbReuseSessions.Checked then
+      if SharedSessionCreds = nil then
+        SharedSessionCreds := CreateSharedCreds
+      else
+    else
+      SChannelSocketRequest.SharedSessionCreds := nil;
     try
       Request(eURL.Text, IfThen(mReq.Lines.Count > 0, mReq.Text, DefaultReq));
     finally
@@ -121,6 +133,7 @@ begin
 end;
 
 procedure TForm2.btnReqAsyncClick(Sender: TObject);
+var SessionData: TSessionData;
 begin
   {$IFDEF ICS}
   // Cancel
@@ -136,6 +149,12 @@ begin
   if TButton(Sender).Caption = SLblBtnAsync[False] then
   begin
     TButton(Sender).Caption := SLblBtnAsync[True];
+    if chbReuseSessions.Checked then
+      if SharedSessionCreds = nil then
+        SharedSessionCreds := CreateSharedCreds
+      else
+    else
+      SharedSessionCreds := nil;
     icsSock := TSChannelWSocket.Create(Self);
     icsSock.OnBgException := WSocketBgException;
     icsSock.OnDataAvailable := WSocketDataAvailable;
@@ -143,6 +162,7 @@ begin
     icsSock.OnDataSent := WSocketDataSent;
     icsSock.onException := WSocketException;
     icsSock.OnSessionClosed := WSocketSessionClosed;
+    icsSock.OnTLSDone := WSocketTLSDone;
     icsSock.IcsLogger := TIcsLogger.Create(icsSock);
     icsSock.IcsLogger.LogOptions := LogAllOptDump + [loSslDevel, loDestEvent, loDestFile, loAddStamp];
     icsSock.IcsLogger.LogFileName := 'socket.log';
@@ -151,6 +171,9 @@ begin
     icsSock.Port := '443';
     icsSock.ComponentOptions := [wsoAsyncDnsLookup{, wsoNoReceiveLoop}];
     icsSock.Secure := True;
+    SessionData := icsSock.SessionData;
+    SessionData.SharedCreds := SharedSessionCreds;
+    icsSock.SessionData := SessionData;
     icsSock.Connect;
   end;
   {$ENDIF}
@@ -185,7 +208,8 @@ begin
   // Could be WSAEWOULDBLOCK
   if res = SOCKET_ERROR then
   begin
-    Log(Format('Error reading data from server: %s', [SysErrorMessage(WSAGetLastError)]));
+    if WSAGetLastError <> WSAEWOULDBLOCK then
+      Log(Format('Error reading data from server: %s', [SysErrorMessage(WSAGetLastError)]));
     Exit;
   end;
 
@@ -210,6 +234,8 @@ end;
 procedure TForm2.IcsLoggerLogEvent(Sender: TObject; LogOption: TLogOption; const Msg: string);
 begin
   Log(Msg, False);
+  if Pos('Handshake bug', Msg) <> 0 then
+    Memo1.Lines.Add(Msg);
 end;
 
 procedure TForm2.WSocketDataSent(Sender: TObject; ErrCode: Word);
@@ -228,6 +254,11 @@ begin
   Log(Format('Traffic: %d total / %d payload', [TSChannelWSocket(Sender).ReadCount, TSChannelWSocket(Sender).PayloadReadCount]));
   FreeAndNil(icsSock);
   btnReqAsync.Caption := SLblBtnAsync[False];
+end;
+
+procedure TForm2.WSocketTLSDone(Sender: TObject);
+begin
+  Log('WSocket.TLSDone');
 end;
 
 {$ENDIF}

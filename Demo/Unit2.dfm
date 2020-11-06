@@ -3,7 +3,7 @@ object Form2: TForm2
   Top = 0
   Caption = 'TLS test'
   ClientHeight = 734
-  ClientWidth = 652
+  ClientWidth = 646
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -13,25 +13,25 @@ object Form2: TForm2
   OldCreateOrder = False
   OnCreate = FormCreate
   DesignSize = (
-    652
+    646
     734)
   PixelsPerInch = 120
   TextHeight = 16
   object lblProgress: TLabel
-    Left = 152
-    Top = 47
+    Left = 146
+    Top = 43
     Width = 4
     Height = 16
   end
   object lblTraf: TLabel
-    Left = 390
-    Top = 40
-    Width = 75
+    Left = 384
+    Top = 36
+    Width = 4
     Height = 16
   end
   object lbl: TLabel
-    Left = 16
-    Top = 40
+    Left = 10
+    Top = 36
     Width = 149
     Height = 16
     Caption = 'Request (default if empty)'
@@ -48,15 +48,15 @@ object Form2: TForm2
   end
   object mLog: TMemo
     Left = 16
-    Top = 264
-    Width = 621
-    Height = 462
+    Top = 335
+    Width = 615
+    Height = 391
     Anchors = [akLeft, akTop, akRight, akBottom]
     ScrollBars = ssVertical
     TabOrder = 1
   end
   object eURL: TEdit
-    Left = 16
+    Left = 8
     Top = 8
     Width = 241
     Height = 24
@@ -64,8 +64,8 @@ object Form2: TForm2
     Text = 'google.com'
   end
   object mReq: TMemo
-    Left = 16
-    Top = 66
+    Left = 10
+    Top = 62
     Width = 368
     Height = 185
     ScrollBars = ssVertical
@@ -73,8 +73,8 @@ object Form2: TForm2
     WordWrap = False
   end
   object chbDumps: TCheckBox
-    Left = 390
-    Top = 70
+    Left = 384
+    Top = 66
     Width = 227
     Height = 17
     Caption = 'Print handshake dumps (sync only)'
@@ -87,17 +87,33 @@ object Form2: TForm2
     Width = 105
     Height = 26
     Caption = 'Request async'
-    Default = True
     TabOrder = 5
     OnClick = btnReqAsyncClick
   end
   object chbData: TCheckBox
-    Left = 390
-    Top = 93
+    Left = 384
+    Top = 89
     Width = 227
     Height = 17
     Caption = 'Print data'
     TabOrder = 6
     OnClick = chbDataClick
+  end
+  object Memo1: TMemo
+    Left = 384
+    Top = 116
+    Width = 254
+    Height = 131
+    ScrollBars = ssVertical
+    TabOrder = 7
+    WordWrap = False
+  end
+  object chbReuseSessions: TCheckBox
+    Left = 504
+    Top = 12
+    Width = 121
+    Height = 17
+    Caption = 'Reuse sessions'
+    TabOrder = 8
   end
 end

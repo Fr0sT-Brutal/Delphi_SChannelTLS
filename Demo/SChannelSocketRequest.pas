@@ -21,6 +21,7 @@ var
   PrintData: Boolean = False;
   Cancel: Boolean = False;
   LogFn: TLogFn;
+  SharedSessionCreds: ISharedSessionCreds;
 
 function Request(const URL, ReqStr: string): TReqResult;
 
@@ -108,6 +109,7 @@ end;
 
 function Request(const URL, ReqStr: string): TReqResult;
 var
+  pCreds: PSessionCreds;
   WSAData: TWSAData;
   socket: TSyncSocket;
   hCtx: CtxtHandle;
@@ -128,8 +130,15 @@ begin
   socket := TSyncSocket.Create;
   try try
     SessionData := Default(TSessionData);
-    InitSession(SessionData);
-    LogFn('----- ' + S_Msg_CredsInited);
+    SessionData.SharedCreds := SharedSessionCreds;
+    pCreds := GetSessionCredsPtr(SessionData);
+    if SecIsNullHandle(pCreds.hCreds) then
+    begin
+      CreateSessionCreds(pCreds^);
+      LogFn('----- ' + S_Msg_CredsInited);
+    end
+    else
+      LogFn('----- Reusing session');
 
     LogFn('~~~ Checking connect to '+URL);
 
@@ -155,7 +164,7 @@ begin
 
     // Send the encrypted data to the server.
     res := socket.Send(Pointer(IoBuffer), cbData);
-    if res < cbData then
+    if res < Integer(cbData) then
       if res <= 0 then
         raise ESSPIError.CreateWinAPI('sending encrypted request to server', 'send', res)
       else

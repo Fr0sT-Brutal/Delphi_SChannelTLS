@@ -203,9 +203,10 @@ procedure Fin;
 //     with desired values to tune channel properties.
 // @raises ESSPIError on error
 procedure CreateSessionCreds(var SessionCreds: TSessionCreds);
+// Shared creds factory
+function CreateSharedCreds: ISharedSessionCreds;
 // Finalize session creds
 procedure FreeSessionCreds(var SessionCreds: TSessionCreds);
-
 // Finalize session, free credentials
 procedure FinSession(var SessionData: TSessionData);
 
@@ -314,7 +315,6 @@ type
   strict private
     FSessionCreds: TSessionCreds;
   public
-    constructor Create(const SessionCreds: TSessionCreds);
     destructor Destroy; override;
     function GetSessionCredsPtr: PSessionCreds;
   end;
@@ -456,12 +456,6 @@ begin
 end;
 
 { ~~ TSharedSessionData ~~ }
-
-constructor TSharedSessionCreds.Create(const SessionCreds: TSessionCreds);
-begin
-  inherited Create;
-  FSessionCreds := SessionCreds;
-end;
 
 // Return pointer to `TSessionData` record
 function TSharedSessionCreds.GetSessionCredsPtr: PSessionCreds;
@@ -664,6 +658,11 @@ begin
     // Create credentials
     CreateCredentials('', SessionCreds.hCreds, SessionCreds.SchannelCred);
   end;
+end;
+
+function CreateSharedCreds: ISharedSessionCreds;
+begin
+  Result := TSharedSessionCreds.Create;
 end;
 
 procedure FreeSessionCreds(var SessionCreds: TSessionCreds);

@@ -26,30 +26,20 @@ function Request(const URL, ReqStr: string): TReqResult;
 
 implementation
 
+type
+  // Elementary socket class
+  TSyncSocket = class
+    HSocket: TSocket;
+    procedure Connect(const Addr: string; Port: Word);
+    function Send(Buf: Pointer; BufLen: Integer): Integer;
+    function Recv(Buf: Pointer; BufLen: Integer): Integer;
+    procedure Close;
+  end;
+
 function BinToHex(Buf: Pointer; BufLen: NativeUInt): string;
 begin
   SetLength(Result, BufLen*2);
   Classes.BinToHex(PAnsiChar(Buf), PChar(Pointer(Result)), BufLen);
-end;
-
-function SendFn(Data: Pointer; Buf: Pointer; BufLen: Integer): Integer;
-begin
-  Result := send(TSocket(Data), Buf^, BufLen, 0);
-  if (Result = SOCKET_ERROR) or (Result = 0) then
-    raise ESSPIError.CreateWinAPI('Error sending data to server', 'send', WSAGetLastError);
-  if PrintDumps then
-    LogFn(BinToHex(PAnsiChar(Buf), Result));
-end;
-
-function RecvFn(Data: Pointer; Buf: Pointer; BufLen: Integer): Integer;
-begin
-  Result := recv(TSocket(Data), Buf^, BufLen, 0);
-  if Result = SOCKET_ERROR then
-    raise ESSPIError.CreateWinAPI('Error reading data from server', 'recv', WSAGetLastError);
-  if Result = 0 then
-    raise ESSPIError.Create('Server unexpectedly disconnected');
-  if PrintDumps then
-    LogFn(BinToHex(PAnsiChar(Buf), Result));
 end;
 
 procedure CheckWSResult(Res: Boolean; const Method: string);
@@ -63,16 +53,17 @@ begin
       else raise Exception.CreateFmt(SShortErrorMsg, [WSAGetLastError, SysErrorMessage(WSAGetLastError)]);
 end;
 
-function ConnectSocket(const Addr: string; Port: Word): TSocket;
+{ TSyncSocket }
+
+procedure TSyncSocket.Connect(const Addr: string; Port: Word);
 var
   SockAddr: TSockAddr;
   HostEnt: PHostEnt;
 begin
-  Result := INVALID_SOCKET;
   try
     // create socket handle
-    Result := socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    CheckWSResult(Result <> INVALID_SOCKET, 'socket');
+    HSocket := socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    CheckWSResult(HSocket <> INVALID_SOCKET, 'socket');
 
     HostEnt := gethostbyname(PAnsiChar(AnsiString(Addr)));
     CheckWSResult(HostEnt <> nil, 'gethostbyname');
@@ -82,17 +73,43 @@ begin
     Port := htons(Port); // network byte order, short int
     SockAddr.sin_port := Port;
 
-    CheckWSResult(connect(Result, SockAddr, SizeOf(TSockAddr)) <> SOCKET_ERROR, 'connect');
+    CheckWSResult(WinSock.connect(HSocket, SockAddr, SizeOf(TSockAddr)) <> SOCKET_ERROR, 'connect');
   except   // error - close socket
-    closesocket(Result);
+    closesocket(HSocket);
     raise;
   end;
+end;
+
+function TSyncSocket.Send(Buf: Pointer; BufLen: Integer): Integer;
+begin
+  Result := WinSock.send(HSocket, Buf^, BufLen, 0);
+  if (Result = SOCKET_ERROR) or (Result = 0) then
+    Exit(-WSAGetLastError);
+  if PrintDumps then
+    LogFn(BinToHex(PAnsiChar(Buf), Result));
+end;
+
+function TSyncSocket.Recv(Buf: Pointer; BufLen: Integer): Integer;
+begin
+  Result := WinSock.recv(HSocket, Buf^, BufLen, 0);
+  if (Result = SOCKET_ERROR) and (WSAGetLastError = WSAEWOULDBLOCK) then
+    Exit(0);
+  if Result = SOCKET_ERROR then
+    Exit(-WSAGetLastError);
+  if (Result > 0) and PrintDumps then
+    LogFn(BinToHex(PAnsiChar(Buf), Result));
+end;
+
+procedure TSyncSocket.Close;
+begin
+  closesocket(HSocket);
+  HSocket := 0;
 end;
 
 function Request(const URL, ReqStr: string): TReqResult;
 var
   WSAData: TWSAData;
-  sock: TSocket;
+  socket: TSyncSocket;
   hCtx: CtxtHandle;
   IoBuffer: TBytes;
   cbIoBufferLength: DWORD;
@@ -107,7 +124,8 @@ var
   SessionData: TSessionData;
   arg: u_long;
 begin
-  Result := resConnErr; EncrCnt := 0; DecrCnt := 0; sock := INVALID_SOCKET;
+  Result := resConnErr; EncrCnt := 0; DecrCnt := 0;
+  socket := TSyncSocket.Create;
   try try
     SessionData := Default(TSessionData);
     InitSession(SessionData);
@@ -117,12 +135,12 @@ begin
 
     CheckWSResult(WSAStartup(MAKEWORD(2,2), WSAData) = 0, 'WSAStartup');
 
-    sock := ConnectSocket(URL, 443);
+    socket.Connect(URL, 443);
     LogFn('----- Connected, ' + S_Msg_StartingTLS);
     Result := resTLSErr;
 
     // Perform handshake
-    PerformClientHandshake(SessionData, URL, LogFn, Pointer(sock), @SendFn, @RecvFn, hCtx, ExtraData);
+    PerformClientHandshake(SessionData, URL, LogFn, socket.Send, socket.Recv, hCtx, ExtraData);
     CheckServerCert(hCtx, URL);
     LogFn(LogPrefix + S_Msg_SrvCredsAuth);
     InitBuffers(hCtx, IoBuffer, Sizes);
@@ -136,10 +154,10 @@ begin
       IfThen(PrintData, sLineBreak+string(req)));
 
     // Send the encrypted data to the server.
-    res := send(sock, Pointer(IoBuffer)^, cbData, 0);
+    res := socket.Send(Pointer(IoBuffer), cbData);
     if res < cbData then
-      if (res = SOCKET_ERROR) or (res = 0) then
-        raise ESSPIError.CreateWinAPI('Error sending encrypted request to server', 'send', WSAGetLastError)
+      if res <= 0 then
+        raise ESSPIError.CreateWinAPI('sending encrypted request to server', 'send', res)
       else
         raise ESSPIError.Create('Error sending encrypted request to server: partial sent');
 
@@ -151,33 +169,33 @@ begin
     Inc(cbData, Length(ExtraData));
     // Set socket non-blocking
     arg := 1;
-    ioctlsocket(sock, FIONBIO, arg);
+    ioctlsocket(socket.HSocket, FIONBIO, arg);
 
     repeat
       Application.ProcessMessages;
       if Cancel then
       begin
         LogFn('~~~ Closed by user request');
-        closesocket(sock);
+        socket.Close;
         Break;
       end;
 
       // get the data
-      res := recv(sock, (PByte(IoBuffer) + cbData)^, cbIoBufferLength - cbData, 0);
-      if res = SOCKET_ERROR then
+      res := socket.Recv((PByte(IoBuffer) + cbData), cbIoBufferLength - cbData);
+      if res <= 0 then
       begin
-        if WSAGetLastError = WSAEWOULDBLOCK then
+        if (res = 0) and (WSAGetLastError = WSAEWOULDBLOCK) then
         begin
           Sleep(100);
           Continue;
         end;
-        raise ESSPIError.CreateWinAPI('Error reading data from server', 'recv', WSAGetLastError);
+        raise ESSPIError.CreateWinAPI('reading data from server', 'recv', res);
       end
       else // success / disconnect
       begin
         if res = 0 then   // Server disconnected.
         begin
-          closesocket(sock);
+          socket.Close;
           Break;
         end;
         LogFn(Format('%d bytes of encrypted application data received', [res]));
@@ -199,14 +217,14 @@ begin
             if scRet = SEC_I_CONTEXT_EXPIRED then
             begin
               LogFn('SEC_I_CONTEXT_EXPIRED');
-              closesocket(sock);
+              socket.Close;
               Break;
             end;
           end;
         SEC_I_RENEGOTIATE:
           begin
             LogFn(S_Msg_Renegotiate);
-            PerformClientHandshake(SessionData, URL, LogFn, Pointer(sock), @SendFn, @RecvFn, hCtx, ExtraData);
+            PerformClientHandshake(SessionData, URL, LogFn, socket.Send, socket.Recv, hCtx, ExtraData);
             cbData := 0;
             Move(Pointer(ExtraData)^, Pointer(IoBuffer)^, Length(ExtraData));
             Inc(cbData, Length(ExtraData));
@@ -232,13 +250,13 @@ begin
   end;
   finally
     LogFn(Format('~~~ Traffic: %d total / %d payload', [EncrCnt, DecrCnt]));
-    closesocket(sock);
+    socket.Close;
+    FreeAndNil(socket);
     DeleteContext(hCtx);
     LogFn('----- Begin Cleanup');
     FinSession(SessionData);
     LogFn('----- All Done -----');
   end;
 end;
-
 
 end.

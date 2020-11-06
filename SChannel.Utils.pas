@@ -92,6 +92,22 @@ type
     OutBuffers: array of SecBuffer;
   end;
 
+  // Credentials related to a connection
+  TSessionCreds = record
+    // Handle of credentials, mainly for internal use
+    hCreds: CredHandle;
+    // SChannel credentials, mainly for internal use but could be init-ed by user
+    // to tune specific channel properties.
+    SchannelCred: SCHANNEL_CRED;
+  end;
+  PSessionCreds = ^TSessionCreds;
+
+  // Interface with session creds for sharing between multiple sessions
+  ISharedSessionCreds = interface
+    // Return pointer to `TSessionCreds` record
+    function GetSessionCredsPtr: PSessionCreds;
+  end;
+
   // Session options
   TSessionFlag = (
     // If @true, SChannel won't verify server certificate (use with care! Though
@@ -100,8 +116,9 @@ type
   );
   TSessionFlags = set of TSessionFlag;
 
-  // Data related to a session. Using a variable of this type allows thread-safe
-  // usage
+  TDebugFn = procedure (const Msg: string) of object;
+
+  // Data related to a session
   TSessionData = record
     // Options
     Flags: TSessionFlags;
@@ -110,11 +127,14 @@ type
     // **Warning**: `ISC_REQ_ALLOCATE_MEMORY` flag is supposed to be always enabled,
     // otherwise correct work is not guaranteed
     SSPIFlags: DWORD;
-    // Handle of credentials, mainly for internal use
-    hCreds: CredHandle;
-    // SChannel credentials, mainly for internal use but could be init-ed by user
-    // to tune specific channel properties.
-    SchannelCred: SCHANNEL_CRED;
+    // Callback function that reports some internal events. If not specified,
+    // default global function will be used that reports time and message via
+    // OutputDebugString
+    DebugFn: TDebugFn;
+    // Pointer to credentials shared between multiple sessions
+    SharedCreds: ISharedSessionCreds;
+    // Non-shared session credentials. It is used if `SharedCreds` is @nil
+    SessionCreds: TSessionCreds;
   end;
   PSessionData = ^TSessionData;
 
@@ -123,22 +143,6 @@ type
     Data: TBytes;          // Buffer for data
     DataStartIdx: Integer; // Index in buffer the unprocessed data starts from
     DataLen: Cardinal;     // Length of unprocessed data
-  end;
-
-  // Interface with session data for sharing credentials
-  ISharedSessionData = interface
-    // Return pointer to `TSessionData` record
-    function GetSessionDataPtr: PSessionData;
-  end;
-
-  // Interfaced object with session data for sharing credentials
-  TSharedSessionData = class(TInterfacedObject, ISharedSessionData)
-  strict private
-    FSessionData: TSessionData;
-  public
-    constructor Create(const SessionData: TSessionData);
-    destructor Destroy; override;
-    function GetSessionDataPtr: PSessionData;
   end;
 
   // Specific exception class. Could be created on WinAPI error, SChannel error
@@ -192,14 +196,17 @@ procedure Fin;
 
 // ~~ Session init and fin ~~
 
-// Init session, return data record to be used in calling other functions.
+// Init session creds, return data record to be used in calling other functions.
 // Could be called multiple times (nothing will be done on already init-ed record)
-//   @param SessionData - [IN, OUT] record that receives values. On first call   \
-//     must be zeroed. Alternatively, user could fill `SessionData.SchannelCred` \
+//   @param SessionCreds - [IN, OUT] record that receives values. On first call   \
+//     must be zeroed. Alternatively, user could fill `SessionCreds.SchannelCred` \
 //     with desired values to tune channel properties.
 // @raises ESSPIError on error
-procedure InitSession(var SessionData: TSessionData);
-// Finalize session
+procedure CreateSessionCreds(var SessionCreds: TSessionCreds);
+// Finalize session creds
+procedure FreeSessionCreds(var SessionCreds: TSessionCreds);
+
+// Finalize session, free credentials
 procedure FinSession(var SessionData: TSessionData);
 
 // ~~ Start/close connection ~~
@@ -270,6 +277,8 @@ function WinVerifyTrustErrorStr(Status: DWORD): string;
 //  or `SEC_E_MESSAGE_ALTERED` status is returned by `InitializeSecurityContext` on handshake).
 // This function only checks if parameter is one of these two values.
 function IsWinHandshakeBug(scRet: SECURITY_STATUS): Boolean;
+// Return effective pointer to session credentials - either personal or shared
+function GetSessionCredsPtr(const SessionData: TSessionData): PSessionCreds;
 
 // Messages that could be written to log by various implementations. None of these
 // are used in this unit
@@ -298,6 +307,17 @@ const
 
 implementation
 {$IFDEF MSWINDOWS}
+
+type
+  // Interfaced object with session data for sharing credentials
+  TSharedSessionCreds = class(TInterfacedObject, ISharedSessionCreds)
+  strict private
+    FSessionCreds: TSessionCreds;
+  public
+    constructor Create(const SessionCreds: TSessionCreds);
+    destructor Destroy; override;
+    function GetSessionCredsPtr: PSessionCreds;
+  end;
 
 const
   // %0s - current action, like 'sending data' or 'at Init'
@@ -427,23 +447,31 @@ begin
   Result := (scRet = SEC_E_BUFFER_TOO_SMALL) or (scRet = SEC_E_MESSAGE_ALTERED);
 end;
 
+function GetSessionCredsPtr(const SessionData: TSessionData): PSessionCreds;
+begin
+  if SessionData.SharedCreds <> nil then
+    Result := SessionData.SharedCreds.GetSessionCredsPtr
+  else
+    Result := @SessionData.SessionCreds;
+end;
+
 { ~~ TSharedSessionData ~~ }
 
-constructor TSharedSessionData.Create(const SessionData: TSessionData);
+constructor TSharedSessionCreds.Create(const SessionCreds: TSessionCreds);
 begin
   inherited Create;
-  FSessionData := SessionData;
+  FSessionCreds := SessionCreds;
 end;
 
 // Return pointer to `TSessionData` record
-function TSharedSessionData.GetSessionDataPtr: PSessionData;
+function TSharedSessionCreds.GetSessionCredsPtr: PSessionCreds;
 begin
-  Result := @FSessionData;
+  Result := @FSessionCreds;
 end;
 
-destructor TSharedSessionData.Destroy;
+destructor TSharedSessionCreds.Destroy;
 begin
-  FinSession(FSessionData);
+  FreeSessionCreds(FSessionCreds);
   inherited;
 end;
 
@@ -497,9 +525,23 @@ begin
   Result := ESSPIError.CreateWinAPI(Action, Func, GetLastError);
 end;
 
-procedure Debug(const Msg: string);
+type
+  TDefaultDebugFnHoster = class
+    class procedure Debug(const Msg: string);
+  end;
+
+class procedure TDefaultDebugFnHoster.Debug(const Msg: string);
 begin
-  OutputDebugString(PChar(Msg));
+  OutputDebugString(PChar(FormatDateTime('yyyy.mm.dd hh:mm:ss.zzz', Now) + ' ' + LogPrefix + Msg));
+end;
+
+// Print debug message either with session-defined function or default one
+procedure Debug(const SessionData: TSessionData; const Msg: string);
+begin
+  if Assigned(SessionData.DebugFn) then
+    SessionData.DebugFn(Msg)
+  else
+    TDefaultDebugFnHoster.Debug(Msg);
 end;
 
 // ~~ Init & fin ~~
@@ -615,24 +657,30 @@ begin
   g_pSSPI := nil;
 end;
 
-procedure InitSession(var SessionData: TSessionData);
+procedure CreateSessionCreds(var SessionCreds: TSessionCreds);
 begin
-  if SecIsNullHandle(SessionData.hCreds) then
+  if SecIsNullHandle(SessionCreds.hCreds) then
   begin
     // Create credentials
-    CreateCredentials('', SessionData.hCreds, SessionData.SchannelCred);
+    CreateCredentials('', SessionCreds.hCreds, SessionCreds.SchannelCred);
+  end;
+end;
+
+procedure FreeSessionCreds(var SessionCreds: TSessionCreds);
+begin
+  if not SecIsNullHandle(SessionCreds.hCreds) then
+  begin
+    // Free SSPI credentials handle.
+    g_pSSPI.FreeCredentialsHandle(@SessionCreds.hCreds);
+    SessionCreds.hCreds := Default(CredHandle);
+    SessionCreds.SchannelCred := Default(SCHANNEL_CRED);
   end;
 end;
 
 procedure FinSession(var SessionData: TSessionData);
 begin
-  if not SecIsNullHandle(SessionData.hCreds) then
-  begin
-    // Free SSPI credentials handle.
-    g_pSSPI.FreeCredentialsHandle(@SessionData.hCreds);
-    SessionData.hCreds := Default(CredHandle);
-    SessionData.SchannelCred := Default(SCHANNEL_CRED);
-  end;
+  SessionData.SharedCreds := nil;
+  FreeSessionCreds(SessionData.SessionCreds);
 end;
 
 // ~~ Connect & close ~~
@@ -640,6 +688,7 @@ end;
 // Try to get new client credentials, leaving old value on error
 procedure GetNewClientCredentials(var SessionData: TSessionData; const hContext: CtxtHandle);
 var
+  pCreds: PSessionCreds;
   IssuerListInfo: SecPkgContext_IssuerListInfoEx;
   pChainContext: PCCERT_CHAIN_CONTEXT;
   FindByIssuerPara: CERT_CHAIN_FIND_BY_ISSUER_PARA;
@@ -674,7 +723,10 @@ begin
                                           pChainContext);
     if pChainContext = nil then
     begin
-      Debug('GetNewClientCredentials: error in CertFindChainInStore finding cert chain - ' + SysErrorMessage(GetLastError));
+      Debug(SessionData,
+        'GetNewClientCredentials: error in CertFindChainInStore finding cert chain - #' +
+        IntToStr(GetLastError) + ' ' +
+        SysErrorMessage(GetLastError));
       Break;
     end;
 
@@ -682,15 +734,16 @@ begin
     pCertContext := pChainContext.rgpChain^.rgpElement^.pCertContext;
 
     // Create schannel credential.
-    SessionData.SchannelCred.dwVersion := SCHANNEL_CRED_VERSION;
-    SessionData.SchannelCred.cCreds := 1;
-    SessionData.SchannelCred.paCred := @pCertContext;
+    pCreds := GetSessionCredsPtr(SessionData);
+    pCreds.SchannelCred.dwVersion := SCHANNEL_CRED_VERSION;
+    pCreds.SchannelCred.cCreds := 1;
+    pCreds.SchannelCred.paCred := @pCertContext;
 
     Status := g_pSSPI.AcquireCredentialsHandleW(nil,                          // Name of principal
                                                 PSecWChar(PChar(UNISP_NAME)), // Name of package
                                                 SECPKG_CRED_OUTBOUND,         // Flags indicating use
                                                 nil,                          // Pointer to logon ID
-                                                @SessionData.SchannelCred,    // Package specific data
+                                                @pCreds.SchannelCred,         // Package specific data
                                                 nil,                          // Pointer to GetKey() func
                                                 nil,                          // Value to pass to GetKey()
                                                 @hCreds,                      // (out) Cred Handle
@@ -699,8 +752,8 @@ begin
     if Status <> SEC_E_OK then
       Continue;
 
-    g_pSSPI.FreeCredentialsHandle(@SessionData.hCreds); // Destroy the old credentials.
-    SessionData.hCreds := hCreds;
+    g_pSSPI.FreeCredentialsHandle(@pCreds.hCreds); // Destroy the old credentials.
+    pCreds.hCreds := hCreds;
   end; // while
 end;
 
@@ -770,6 +823,7 @@ function DoClientHandshake(var SessionData: TSessionData; var HandShakeData: THa
 
 var
   dwSSPIFlags, dwSSPIOutFlags: DWORD;
+  pCreds: PSessionCreds;
   tsExpiry: TimeStamp;
   InBuffers: array [0..1] of SecBuffer;
   OutBuffer, InBuffer: SecBufferDesc;
@@ -779,6 +833,8 @@ begin
     dwSSPIFlags := SSPI_FLAGS;
   if sfNoServerVerify in SessionData.Flags then
     dwSSPIFlags := dwSSPIFlags or ISC_REQ_MANUAL_CRED_VALIDATION;
+
+  pCreds := GetSessionCredsPtr(SessionData);
 
   case HandShakeData.Stage of
     hssNotStarted:
@@ -792,7 +848,7 @@ begin
         OutBuffer.cBuffers  := Length(HandShakeData.OutBuffers);
         OutBuffer.pBuffers  := PSecBuffer(HandShakeData.OutBuffers);
 
-        Result := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
+        Result := g_pSSPI.InitializeSecurityContextW(@pCreds.hCreds,
                                                      nil,  // NULL on the first call
                                                      PSecWChar(Pointer(HandShakeData.ServerName)), // ! PChar('') <> nil !
                                                      dwSSPIFlags,
@@ -855,7 +911,7 @@ begin
         OutBuffer.cBuffers  := Length(HandShakeData.OutBuffers);
         OutBuffer.pBuffers  := PSecBuffer(HandShakeData.OutBuffers);
 
-        Result := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
+        Result := g_pSSPI.InitializeSecurityContextW(@pCreds.hCreds,
                                                      @HandShakeData.hContext,
                                                      PSecWChar(Pointer(HandShakeData.ServerName)),
                                                      dwSSPIFlags,
@@ -893,7 +949,7 @@ begin
           // the server just requested client authentication.
           SEC_I_INCOMPLETE_CREDENTIALS:
             begin
-              Debug(LogPrefix + '!! SEC_I_INCOMPLETE_CREDENTIALS !!');
+              Debug(SessionData, 'DoClientHandshake @ server hello - InitializeSecurityContext returned SEC_I_INCOMPLETE_CREDENTIALS');
               // Busted. The server has requested client authentication and
               // the credential we supplied didn't contain a client certificate.
               // This function will read the list of trusted certificate
@@ -960,7 +1016,7 @@ begin
   OutBufferDesc.cBuffers  := Length(OutBuffers);
   OutBufferDesc.pBuffers  := @OutBuffers;
 
-  Status := g_pSSPI.InitializeSecurityContextW(@SessionData.hCreds,
+  Status := g_pSSPI.InitializeSecurityContextW(@GetSessionCredsPtr(SessionData).hCreds,
                                                @hContext,
                                                nil,
                                                dwSSPIFlags,

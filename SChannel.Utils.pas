@@ -110,8 +110,10 @@ type
 
   // Session options
   TSessionFlag = (
-    // If @true, SChannel won't verify server certificate (use with care! Though
-    // this could help when connecting by IP)
+    // If @true, SChannel won't automatically verify server certificate setting
+    // `ISC_REQ_MANUAL_CRED_VALIDATION` flag in `InitializeSecurityContextW` call.
+    // User has to call manual verification via `CheckServerCert` after handshake
+    // is established (this allows connecting to an IP)
     sfNoServerVerify
   );
   TSessionFlags = set of TSessionFlag;
@@ -181,6 +183,11 @@ procedure LoadSecurityLibrary;
 procedure CreateCredentials(const User: string; out hCreds: CredHandle; var SchannelCred: SCHANNEL_CRED);
 // Mainly for internal use. Gets called by `CheckServerCert`
 // @raises ESSPIError on error
+//   @param pServerCert - pointer to cert context
+//   @param szServerName - host name of the server to check. Could be empty but appropriate
+//     flags must be set as well, otherwise the function will raise error
+//   @param dwCertFlags - value of `SSL_EXTRA_CERT_CHAIN_POLICY_PARA.fdwChecks` field:
+//     flags defining errors to ignore. 0 to ignore nothing
 procedure VerifyServerCertificate(pServerCert: PCCERT_CONTEXT; const szServerName: string; dwCertFlags: DWORD);
 
 // ~~ Global init and fin ~~
@@ -221,6 +228,10 @@ procedure GetShutdownData(const SessionData: TSessionData; const hContext: CtxtH
   out OutBuffer: SecBuffer);
 // Check server certificate
 // @raises ESSPIError on error
+//   @param hContext - current session context
+//   @param ServerName - host name of the server to check. If empty, errors associated
+//     with a certificate that contains a common name that is not valid will be ignored.
+//     (`SECURITY_FLAG_IGNORE_CERT_CN_INVALID` flag will be set calling `CertVerifyCertificateChainPolicy`)
 procedure CheckServerCert(const hContext: CtxtHandle; const ServerName: string);
 // Dispose and nullify security context
 procedure DeleteContext(var hContext: CtxtHandle);
@@ -300,6 +311,7 @@ const
   S_Msg_Established = 'Handshake established';
   S_Msg_SrvCredsAuth = 'Server credentials authenticated';
   S_Msg_CredsInited = 'Credentials initialized';
+  S_Msg_AddrIsIP = 'Address "%s" is IP, verification by name is disabled';
   S_Msg_ShuttingDownTLS = 'Shutting down TLS';
   S_Msg_SendingShutdown = 'Sending shutdown notify - %d bytes of data';
   S_Err_ListeningNotSupported = 'Listening is not supported with SChannel yet';
@@ -1108,6 +1120,7 @@ procedure CheckServerCert(const hContext: CtxtHandle; const ServerName: string);
 var
   Status: SECURITY_STATUS;
   pRemoteCertContext: PCCERT_CONTEXT;
+  dwCertFlags: DWORD;
 begin
   pRemoteCertContext := nil;
   // Authenticate server's credentials. Get server's certificate.
@@ -1115,9 +1128,14 @@ begin
   if Status <> SEC_E_OK then
     raise ErrSecStatus('@ CheckServerCert', 'QueryContextAttributesW', Status);
 
+  if ServerName = '' then
+    dwCertFlags := SECURITY_FLAG_IGNORE_CERT_CN_INVALID
+  else
+    dwCertFlags := 0;
+
   try
     // Attempt to validate server certificate.
-    VerifyServerCertificate(pRemoteCertContext, ServerName, 0);
+    VerifyServerCertificate(pRemoteCertContext, ServerName, dwCertFlags);
   finally
     // Free the server certificate context.
     CertFreeCertificateContext(pRemoteCertContext);

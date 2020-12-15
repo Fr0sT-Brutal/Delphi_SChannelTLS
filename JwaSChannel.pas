@@ -104,6 +104,13 @@ const
   SCH_CRED_CACHE_ONLY_URL_RETRIEVAL_ON_CREATE  = $00020000;
   SCH_SEND_ROOT_CERT                           = $00040000;
 
+// Constants for SSL_EXTRA_CERT_CHAIN_POLICY_PARA.fdwChecks field
+  SECURITY_FLAG_IGNORE_REVOCATION = $00000080;        // Ignore errors associated with a revoked certificate.
+  SECURITY_FLAG_IGNORE_UNKNOWN_CA = $00000100;        // Ignore errors associated with an unknown certification authority.
+  SECURITY_FLAG_IGNORE_WRONG_USAGE = $00000200;       // Ignore errors associated with the use of a certificate.
+  SECURITY_FLAG_IGNORE_CERT_CN_INVALID = $00001000;   // Ignore errors associated with a certificate that contains a common name that is not valid.
+  SECURITY_FLAG_IGNORE_CERT_DATE_INVALID = $00002000; // Ignore errors associated with an expired certificate.
+
 implementation
 
 end.

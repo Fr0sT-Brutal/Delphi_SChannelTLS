@@ -29,10 +29,11 @@ type
     chbData: TCheckBox;
     Memo1: TMemo;
     chbReuseSessions: TCheckBox;
+    procedure FormCreate(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure chbDumpsClick(Sender: TObject);
     procedure btnReqSyncClick(Sender: TObject);
     procedure btnReqAsyncClick(Sender: TObject);
-    procedure FormCreate(Sender: TObject);
     procedure chbDataClick(Sender: TObject);
   public
     {$IFDEF ICS}
@@ -68,6 +69,13 @@ procedure TForm2.FormCreate(Sender: TObject);
 begin
   if mReq.Lines.Count = 0 then
     mReq.Text := DefaultReq;
+end;
+
+procedure TForm2.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  SChannelSocketRequest.SharedSessionCreds := nil;
+  SharedSessionCreds := nil;
+  SChannel.Utils.Fin;
 end;
 
 procedure TForm2.Log(const s: string; AddStamp: Boolean);
@@ -118,15 +126,14 @@ begin
         SharedSessionCreds := CreateSharedCreds
       else
     else
-      SChannelSocketRequest.SharedSessionCreds := nil;
-    try
-      Request(eURL.Text, IfThen(mReq.Lines.Count > 0, mReq.Text, DefaultReq));
-    finally
-      SChannel.Utils.Fin;
-    end;
+      SharedSessionCreds := nil;
+    SChannelSocketRequest.SharedSessionCreds := SharedSessionCreds;
+
+    Request(eURL.Text, IfThen(mReq.Lines.Count > 0, mReq.Text, DefaultReq));
+
     SChannelSocketRequest.Cancel := False;
+    SChannelSocketRequest.SharedSessionCreds := nil; // important to nil all refs before SChannel.Utils.Fin is called
     TButton(Sender).Caption := SLblBtnSync[False];
-    Exit;
   end;
 end;
 

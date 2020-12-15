@@ -65,6 +65,7 @@ type
       procedure   SetSessionData(const SessionData: TSessionData);
   public
       constructor Create(AOwner : TComponent); override;
+      destructor  Destroy; override;
       procedure   Listen; override;
       procedure   Shutdown(How : Integer); override;
       procedure   PostFD_EVENT(Event: Cardinal);
@@ -94,6 +95,8 @@ type
       // Note that some fields are assigned internally based on other values
       // (f.ex., `sfNoServerVerify` flag is enabled if connecting to IP).
       // Initial values are returned when secure connection is finished.
+      // ! Session data is finalized in destructor, closing and zeroing any
+      // non-shared handles.
       property SessionData: TSessionData read FSessionData write SetSessionData;
       // Event is called when TLS handshake is established successfully
       property OnTLSDone: TNotifyEvent read FOnTLSDone write FOnTLSDone;
@@ -104,8 +107,8 @@ type
 implementation
 
 const
-  S_Msg_HandshakeTDAErr = 'Handshake - ! error [%d] in TriggerDataAvailable';
-  S_Msg_SettingSessionData = 'Setting SessionData is prohibited when secure channel is active';
+    S_Msg_HandshakeTDAErr = 'Handshake - ! error [%d] in TriggerDataAvailable';
+    S_Msg_SettingSessionData = 'Setting SessionData is prohibited when secure channel is active';
 
 // Check if address is a dotted numeric address like 192.161.124.32
 function AddrIsIP(const Addr: string): Boolean;
@@ -120,6 +123,12 @@ constructor TSChannelWSocket.Create(AOwner: TComponent);
 begin
     SChannel.Utils.Init;
     inherited Create(AOwner);
+end;
+
+destructor TSChannelWSocket.Destroy;
+begin
+    inherited;
+    FinSession(FSessionData);
 end;
 
 // Cleanup on creation and before connection

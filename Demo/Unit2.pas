@@ -29,8 +29,6 @@ type
     chbData: TCheckBox;
     Memo1: TMemo;
     chbReuseSessions: TCheckBox;
-    gb: TGroupBox;
-    chb: TCheckBox;
     procedure chbDumpsClick(Sender: TObject);
     procedure btnReqSyncClick(Sender: TObject);
     procedure btnReqAsyncClick(Sender: TObject);

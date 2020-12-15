@@ -32,6 +32,8 @@ type
       FHandShakeData: THandShakeData;
       FhContext: CtxtHandle;
       FHandshakeBug: Boolean;
+      FPrevFlags: TSessionFlags; // previous state of session flags
+      FAddrIsIP: Boolean;
       FSendBuffer: TBytes;  // buffer that receives encrypted data to be sent
       FRecvBuffer: TBuffer; // buffer that receives encrypted data from server
       FDecrBuffer: TBuffer; // buffer that receives decrypted data from server
@@ -60,6 +62,7 @@ type
       procedure   StartTLS;
       procedure   ShutdownTLS;
       procedure   SetSecure(const Value: Boolean);
+      procedure   SetSessionData(const SessionData: TSessionData);
   public
       constructor Create(AOwner : TComponent); override;
       procedure   Listen; override;
@@ -87,8 +90,11 @@ type
       property PayloadWriteCount: Int64 read FPayloadWriteCount;
       // TLS Session data that allows fine tuning of TLS handshake. Also it could
       // contain shared credentials used by multiple sockets. Fields must be
-      // assigned before starting TLS handshake
-      property SessionData: TSessionData read FSessionData write FSessionData;
+      // assigned before starting TLS handshake (otherwise exception is raised).
+      // Note that some fields are assigned internally based on other values
+      // (f.ex., `sfNoServerVerify` flag is enabled if connecting to IP).
+      // Initial values are returned when secure connection is finished.
+      property SessionData: TSessionData read FSessionData write SetSessionData;
       // Event is called when TLS handshake is established successfully
       property OnTLSDone: TNotifyEvent read FOnTLSDone write FOnTLSDone;
       // Event is called when TLS handshake is shut down
@@ -99,6 +105,16 @@ implementation
 
 const
   S_Msg_HandshakeTDAErr = 'Handshake - ! error [%d] in TriggerDataAvailable';
+  S_Msg_SettingSessionData = 'Setting SessionData is prohibited when secure channel is active';
+
+// Check if address is a dotted numeric address like 192.161.124.32
+function AddrIsIP(const Addr: string): Boolean;
+var
+    IPAddr  : u_long;
+begin
+    IPAddr := WSocket_inet_addr(PAnsiChar(AnsiString(Addr)));
+    Result := (IPAddr <> u_long(INADDR_NONE));
+end;
 
 constructor TSChannelWSocket.Create(AOwner: TComponent);
 begin
@@ -121,6 +137,8 @@ begin
     FSizes := Default(SecPkgContext_StreamSizes);
     FPayloadReadCount := 0;
     FPayloadWriteCount := 0;
+    FPrevFlags := [];
+    FAddrIsIP := False;
 end;
 
 // Get the number of bytes received, decrypted and waiting to be read
@@ -375,7 +393,7 @@ begin
         // WSAEWOULDBLOCK could happen so we just ignore receive errors
         if cbData <= 0 then
         begin
-            SChannelLog(loSslDevel, Format('%s [%d]', [S_Msg_HShStageRFail, WSocket_WSAGetLastError]));
+            SChannelLog(loSslDevel, Format(S_Msg_HShStageRFail, [WSocket_WSAGetLastError]));
             Exit;
         end;
         SChannelLog(loSslDevel, Format(S_Msg_HShStageRSuccess, [cbData]));
@@ -446,7 +464,13 @@ begin
     SChannelLog(loSslInfo, S_Msg_Established);
     if FHandShakeData.cbIoBuffer > 0 then
         SChannelLog(loSslInfo, Format(S_Msg_HShExtraData, [FHandShakeData.cbIoBuffer]));
-    CheckServerCert(FhContext, Addr);
+
+    // Don't pass host addr if it's IP otherwise verification would fail
+    if FAddrIsIP then
+        CheckServerCert(FhContext, '')
+    else
+        CheckServerCert(FhContext, Addr);
+
     SChannelLog(loSslInfo, S_Msg_SrvCredsAuth);
     InitBuffers(FhContext, FSendBuffer, FSizes);
     SetLength(FRecvBuffer.Data, Length(FSendBuffer));
@@ -500,6 +524,16 @@ begin
       SChannelLog(loSslInfo, S_Msg_CredsInited);
     end;
 
+    // Save initial flags
+    FPrevFlags := FSessionData.Flags;
+    // Check if Addr is IP and set flag if yes
+    FAddrIsIP := AddrIsIP(Addr);
+    if FAddrIsIP then
+    begin
+        SChannelLog(loSslInfo, Format(S_Msg_AddrIsIP, [Addr]));
+        Include(FSessionData.Flags, sfNoServerVerify);
+    end;
+
     FHandShakeData.ServerName := Addr;
     FhContext := Default(CtxtHandle);
     DoHandshakeStart;
@@ -511,6 +545,10 @@ var
     OutBuffer: SecBuffer;
 begin
     SChannelLog(loSslInfo, S_Msg_ShuttingDownTLS);
+
+    // Restore previous value of flags that could've been auto-set by
+    // current connect to an IP
+    FSessionData.Flags := FPrevFlags;
 
     // Send a close_notify alert to the server and close down the connection.
     GetShutdownData(FSessionData, FhContext, OutBuffer);
@@ -525,6 +563,8 @@ begin
 
     if Assigned(FOnTLSShutdown) then
         FOnTLSShutdown(Self);
+
+    FChannelState := chsNotStarted;
 end;
 
 // Override for inherited method - deny listening in secure mode
@@ -543,7 +583,7 @@ end;
 procedure TSChannelWSocket.Shutdown(How: Integer);
 begin
     // Secure channel not established - run default
-    if not FSecure or not (FChannelState in [chsEstablished, chsShutdown]) then begin
+    if FChannelState <> chsEstablished then begin
         inherited ShutDown(How);
         Exit;
     end;
@@ -557,6 +597,15 @@ begin
     except on E: Exception do
         SChannelLog(loSslErr, E.Message);
     end;
+end;
+
+procedure TSChannelWSocket.SetSessionData(const SessionData: TSessionData);
+begin
+    // Allow setting only when channel is not established
+    if FChannelState <> chsNotStarted then
+        raise ESocketException.Create(S_Msg_SettingSessionData);
+
+    FSessionData := SessionData;
 end;
 
 end.

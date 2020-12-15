@@ -111,6 +111,7 @@ function Request(const URL, ReqStr: string): TReqResult;
 var
   pCreds: PSessionCreds;
   WSAData: TWSAData;
+  HostAddr : TInAddr;
   socket: TSyncSocket;
   hCtx: CtxtHandle;
   IoBuffer: TBytes;
@@ -144,13 +145,22 @@ begin
 
     CheckWSResult(WSAStartup(MAKEWORD(2,2), WSAData) = 0, 'WSAStartup');
 
+    // check if hostname is an IP
+    HostAddr.S_addr := inet_addr(Pointer(AnsiString(URL)));
+    // Hostname is IP - don't verify it
+    if DWORD(HostAddr.S_addr) <> INADDR_NONE then
+    begin
+      LogFn(Format(S_Msg_AddrIsIP, [URL]));
+      Include(SessionData.Flags, sfNoServerVerify);
+    end;
+
     socket.Connect(URL, 443);
     LogFn('----- Connected, ' + S_Msg_StartingTLS);
     Result := resTLSErr;
 
     // Perform handshake
     PerformClientHandshake(SessionData, URL, LogFn, socket.Send, socket.Recv, hCtx, ExtraData);
-    CheckServerCert(hCtx, URL);
+    CheckServerCert(hCtx, IfThen(sfNoServerVerify in SessionData.Flags, '', URL)); // don't check host name if sfNoServerVerify is set
     LogFn(LogPrefix + S_Msg_SrvCredsAuth);
     InitBuffers(hCtx, IoBuffer, Sizes);
     cbIoBufferLength := Length(IoBuffer);
@@ -191,7 +201,7 @@ begin
 
       // get the data
       res := socket.Recv((PByte(IoBuffer) + cbData), cbIoBufferLength - cbData);
-      if res <= 0 then
+      if res < 0 then
       begin
         if (res = 0) and (WSAGetLastError = WSAEWOULDBLOCK) then
         begin

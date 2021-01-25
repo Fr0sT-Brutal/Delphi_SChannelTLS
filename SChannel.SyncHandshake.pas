@@ -30,7 +30,8 @@ type
   //   @param Buf - buffer with data
   //   @param BufLen - size of data in buffer
   // @returns amount of data sent if >= 0 or error code if < 0. \
-  //   Error code is reported to log function to track issues. \
+  //   Error code is used to log and create exception. FormatMessage is used to
+  //   generate a string from error code. \
   //   Must try to send all data in full, as no retries or repeated sends is done.
   // @raises exception on some non-network error
   TSendFn = function (Buf: Pointer; BufLen: Integer): Integer of object;
@@ -38,11 +39,19 @@ type
   //   @param Buf - buffer to receive data
   //   @param BufLen - size of free space in buffer
   // @returns amount of data received if >= 0 or error code if < 0. \
-  //   Error code is reported to log function to track issues. \
+  //   Error code is used to log and create exception. FormatMessage is used to
+  //   generate a string from error code. \
   //   Could receive only some of the data available as incomplete packet is
   //   read in loop
   // @raises exception on some non-network error
   TRecvFn = function (Buf: Pointer; BufLen: Integer): Integer of object;
+
+  // Specific exception class raised by PerformClientHandshake on communication failures.
+  // Just to distinguish SChannel-level errors from recv/send failures
+  EHandshakeCommError = class(Exception)
+  public
+    ErrCode: DWORD;
+  end;
 
 // Synchronously perform full handshake process including communication with server.
 procedure PerformClientHandshake(var SessionData: TSessionData; const ServerName: string;
@@ -66,6 +75,14 @@ class procedure TLogFnHoster.DefLogFn(const Msg: string);
 begin
 end;
 
+function CommError(ErrCode: DWORD; const Msg: string): EHandshakeCommError;
+begin
+  if ErrCode <> 0
+    then Result := EHandshakeCommError.CreateFmt(Msg, [ErrCode, SysErrorMessage(ErrCode)])
+    else Result := EHandshakeCommError.Create(Msg);
+  Result.ErrCode := ErrCode;
+end;
+
 // Synchronously perform full handshake process including communication with server.
 // Communication is done via two callback functions.
 //   @param SessionData - [IN/OUT] record with session data
@@ -76,7 +93,8 @@ end;
 //   @param RecvFn - data read callback
 //   @param hContext - [OUT] receives current session context
 //   @param ExtraData - [OUT] receives extra data sent by server to be decrypted
-// @raises ESSPIError on error
+// @raises ESSPIError on SChannel-related failure,
+//         EHandshakeCommError on communication failure
 procedure PerformClientHandshake(var SessionData: TSessionData; const ServerName: string;
   LogFn: TLogFn; SendFn: TSendFn; RecvFn: TRecvFn;
   out hContext: CtxtHandle; out ExtraData: TBytes);
@@ -94,7 +112,9 @@ var
     // Send hello to server
     cbData := SendFn(HandShakeData.OutBuffers[0].pvBuffer, HandShakeData.OutBuffers[0].cbBuffer);
     if cbData <> Integer(HandShakeData.OutBuffers[0].cbBuffer) then
-      raise ESSPIError.Create(Format(S_Msg_HShStageW1Fail, [cbData]));
+      if cbData < 0
+        then raise CommError(Abs(cbData), S_Msg_HShStageW1Fail)
+        else raise CommError(0, S_Msg_HShStageW1Incomplete);
     LogFn(Format(S_Msg_HShStageW1Success, [cbData]));
     g_pSSPI.FreeContextBuffer(HandShakeData.OutBuffers[0].pvBuffer); // Free output buffer.
     SetLength(HandShakeData.OutBuffers, 0);
@@ -121,7 +141,7 @@ begin
         cbData := RecvFn((PByte(HandShakeData.IoBuffer) + HandShakeData.cbIoBuffer),
           Length(HandShakeData.IoBuffer) - HandShakeData.cbIoBuffer);
         if cbData <= 0 then
-          raise ESSPIError.Create(Format(S_Msg_HShStageRFail, [cbData]));
+          raise CommError(Abs(cbData), S_Msg_HShStageRFail);
         LogFn(Format(S_Msg_HShStageRSuccess, [cbData]));
         Inc(HandShakeData.cbIoBuffer, cbData);
       end;
@@ -151,7 +171,9 @@ begin
         begin
           cbData := SendFn(HandShakeData.OutBuffers[0].pvBuffer, HandShakeData.OutBuffers[0].cbBuffer);
           if cbData <> Integer(HandShakeData.OutBuffers[0].cbBuffer) then
-            raise ESSPIError.Create(Format(S_Msg_HShStageW2Fail, [cbData]));
+            if cbData < 0
+              then raise CommError(Abs(cbData), S_Msg_HShStageW2Fail)
+              else raise CommError(0, S_Msg_HShStageW2Incomplete);
           LogFn(Format(S_Msg_HShStageW2Success, [cbData]));
           g_pSSPI.FreeContextBuffer(HandShakeData.OutBuffers[0].pvBuffer); // Free output buffer
           SetLength(HandShakeData.OutBuffers, 0);

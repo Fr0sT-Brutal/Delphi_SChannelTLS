@@ -149,6 +149,12 @@ type
 
   // Specific exception class. Could be created on WinAPI error, SChannel error
   // or general internal error.
+  // * WinAPI errors are used when a SChannel function returns result code via `GetLastError`.
+  //   Non-zero `WinAPIErr` field is set then.
+  // * SChannel errors are used when a SChannel function returns status code of type `SECURITY_STATUS`
+  //   OR it succeedes but something went wrong.
+  //   Non-zero `SecStatus` field is set then.
+  // * General errors are used in other cases, like incorrect arguments.
   ESSPIError = class(Exception)
   public
     // If not zero, reason of exception is WinAPI and this field contains code of
@@ -161,7 +167,9 @@ type
     // Create WinAPI exception based on Err code
     constructor CreateWinAPI(const Action, Func: string; Err: DWORD);
     // Create SChannel exception based on status
-    constructor CreateSecStatus(const Action, Func: string; Status: SECURITY_STATUS);
+    constructor CreateSecStatus(const Action, Func: string; Status: SECURITY_STATUS); overload;
+    // Create SChannel exception based on custom info message
+    constructor CreateSecStatus(const Action, Func, Info: string); overload;
   end;
 
 var
@@ -485,7 +493,7 @@ end;
 
 {
   Create WinAPI exception based on Err code
-    @param Action - current action, like `sending data` or `at Init`
+    @param Action - current action, like `sending data` or `@ Init`
     @param Func - WinAPI method, like `Send`
     @param Err - error code
 }
@@ -497,7 +505,7 @@ end;
 
 {
   Create SChannel exception based on status
-    @param Action - current action, like `at CreateCredentials`
+    @param Action - current action, like `@ CreateCredentials`
     @param Func - SChannel method, like `AcquireCredentialsHandle`
     @param Status - SChannel status
 }
@@ -506,6 +514,19 @@ constructor ESSPIError.CreateSecStatus(const Action, Func: string;
 begin
   inherited CreateFmt(S_E_SecStatusErrPatt, [Action, Func, SecStatusErrStr(Status)]);
   Self.SecStatus := Status;
+end;
+
+{
+  Create SChannel exception based on custom info message. Sets `SecStatus` to
+  `SEC_E_INTERNAL_ERROR`.
+    @param Action - current action, like `@ CreateCredentials`
+    @param Func - SChannel method, like `AcquireCredentialsHandle`
+    @param Info - SChannel status
+}
+constructor ESSPIError.CreateSecStatus(const Action, Func, Info: string);
+begin
+  inherited CreateFmt(S_E_SecStatusErrPatt, [Action, Func, Info]);
+  Self.SecStatus := SEC_E_INTERNAL_ERROR;
 end;
 
 // Create general exception
@@ -520,9 +541,15 @@ begin
 end;
 
 // Create security status exception
-function ErrSecStatus(const Action, Func: string; Status: SECURITY_STATUS): ESSPIError;
+function ErrSecStatus(const Action, Func: string; Status: SECURITY_STATUS): ESSPIError; overload;
 begin
   Result := ESSPIError.CreateSecStatus(Action, Func, Status);
+end;
+
+// Create security status exception with custom message
+function ErrSecStatus(const Action, Func, Info: string): ESSPIError; overload;
+begin
+  Result := ESSPIError.CreateSecStatus(Action, Func, Info);
 end;
 
 // Create WinAPI exception based on GetLastError
@@ -574,12 +601,12 @@ begin
     // Find client certificate. Note that this sample just searches for a
     // certificate that contains the user name somewhere in the subject name.
     // A real application should be a bit less casual.
-    pCertContext := CertFindCertificateInStore(hMyCertStore,                     // hCertStore
-                                               X509_ASN_ENCODING,             // dwCertEncodingType
-                                               0,                                             // dwFindFlags
-                                               CERT_FIND_SUBJECT_STR_A,// dwFindType
-                                               Pointer(User),                         // *pvFindPara
-                                               nil);                                 // pPrevCertContext
+    pCertContext := CertFindCertificateInStore(hMyCertStore,             // hCertStore
+                                               X509_ASN_ENCODING,        // dwCertEncodingType
+                                               0,                        // dwFindFlags
+                                               CERT_FIND_SUBJECT_STR_A,  // dwFindType
+                                               Pointer(User),            // *pvFindPara
+                                               nil);                     // pPrevCertContext
 
     if pCertContext = nil then
       raise ErrWinAPI('@ CreateCredentials', 'CertFindCertificateInStore');
@@ -875,7 +902,7 @@ begin
         if Result <> SEC_I_CONTINUE_NEEDED then
           raise ErrSecStatus('@ DoClientHandshake @ client hello', 'InitializeSecurityContext', Result);
         if (HandShakeData.OutBuffers[0].cbBuffer = 0) or (HandShakeData.OutBuffers[0].pvBuffer = nil) then
-          raise Error('Error @ DoClientHandshake @ client hello: InitializeSecurityContext generated empty buffer');
+          raise ErrSecStatus('@ DoClientHandshake @ client hello', 'InitializeSecurityContext', 'generated empty buffer');
 
         HandShakeData.Stage := hssSendCliHello;
       end;
@@ -1108,8 +1135,8 @@ begin
       raise ErrWinAPI('@ VerifyServerCertificate', 'CertVerifyCertificateChainPolicy');
 
     if PolicyStatus.dwError <> NO_ERROR then
-      raise Error('Error @ VerifyServerCertificate verifying cert chain calling method "CertVerifyCertificateChainPolicy": %s',
-        [WinVerifyTrustErrorStr(PolicyStatus.dwError)]);
+      raise ErrSecStatus('@ VerifyServerCertificate', 'CertVerifyCertificateChainPolicy',
+        WinVerifyTrustErrorStr(PolicyStatus.dwError));
   finally
     if pChainContext <> nil then
       CertFreeCertificateChain(pChainContext);
@@ -1206,7 +1233,7 @@ begin
   // Resulting Buffers: header, data, trailer
   cbWritten := Buffers[0].cbBuffer + Buffers[1].cbBuffer + Buffers[2].cbBuffer;
   if cbWritten = 0 then
-    raise Error('EncryptData: zero data');
+    raise ErrSecStatus('@ EncryptData', 'EncryptMessage', 'zero data');
 end;
 
 function DecryptData(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes;

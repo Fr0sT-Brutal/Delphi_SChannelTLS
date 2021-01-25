@@ -309,12 +309,14 @@ const
   S_Msg_Sending = 'Sending %d bytes of payload / %d bytes encrypted';
   S_Msg_StartingTLS = 'Starting TLS handshake';
   S_Msg_HShStageW1Success = 'Handshake @W1 - %d bytes sent';
-  S_Msg_HShStageW1Fail = 'Handshake @W1 - ! error sending data (#%d)';
-  S_Msg_HShStageRFail = 'Handshake @R - ! no data received or error receiving (#%d)';
+  S_Msg_HShStageW1Incomplete = 'Handshake @W1 - ! incomplete data sent';
+  S_Msg_HShStageW1Fail = 'Handshake @W1 - ! error sending data ([#%d] %s)';
+  S_Msg_HShStageRFail = 'Handshake @R - ! no data received or error receiving ([#%d] %s)';
   S_Msg_HShStageRSuccess = 'Handshake @R - %d bytes received';
   S_Msg_HandshakeBug = 'Handshake bug: "%s", retrying';
   S_Msg_HShStageW2Success = 'Handshake @W2 - %d bytes sent';
-  S_Msg_HShStageW2Fail = 'Handshake @W2 - ! error sending data (#%d)';
+  S_Msg_HShStageW2Incomplete = 'Handshake @W2 - ! incomplete data sent';
+  S_Msg_HShStageW2Fail = 'Handshake @W2 - ! error sending data ([#%d] %s)';
   S_Msg_HShExtraData = 'Handshake: got "%d" bytes of extra data';
   S_Msg_Established = 'Handshake established';
   S_Msg_SrvCredsAuth = 'Server credentials authenticated';

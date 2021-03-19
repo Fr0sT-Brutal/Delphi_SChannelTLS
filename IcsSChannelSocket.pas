@@ -4,6 +4,13 @@
   Automatically processes SChannel connection bug.
   Supports establishing and finishing TLS channel over existing connection.
 
+  Requires at least **ICS V8.66 - Part 10** for HTTP tunnel support. For older
+  versions either:
+
+    - Comment out usage of `HttpTunnelState`
+    - Modify ICS `TCustomHttpTunnelWSocket` class to have public `HttpTunnelState` property:
+      `property HttpTunnelState : THttpTunnelState read FHttpTunnelState;`
+
   (c) Fr0sT-Brutal
   
   License MIT
@@ -268,9 +275,8 @@ end;
 procedure TSChannelWSocket.TriggerSessionConnectedSpecial(Error: Word);
 begin
     { Error occured / no SChannel used / HTTP tunnel or Socks isn't ready yet, signal connect as usual }
-    if not FSecure or (Error <> WS_OK) or (FSocksState <> socksData)
-      // TODO: change in parent class is required
-      {or (FHttpTunnelState <> htsData) } then begin
+    if not FSecure or (Error <> WS_OK) or (FSocksState <> socksData) or (HttpTunnelState <> htsData) then
+    begin
         inherited;
         Exit;
     end;

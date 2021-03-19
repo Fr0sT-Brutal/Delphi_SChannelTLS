@@ -183,13 +183,7 @@ var
     scRet: SECURITY_STATUS;
     cbWritten: DWORD;
 begin
-    // SChannel not used - call inherited
-    if not FSecure then begin
-        Result := inherited;
-        Exit;
-    end;
-
-    // Channel not established yet - receive raw
+    // SChannel not used or not established yet - call inherited to receive raw
     if FChannelState <> chsEstablished then
     begin
         Result := inherited;
@@ -246,13 +240,7 @@ var
     EncryptedLen: Cardinal;
     Sent: Integer;
 begin
-    // SChannel not used - call inherited
-    if not FSecure then begin
-        Result := inherited;
-        Exit;
-    end;
-
-    // Channel not established yet - send raw
+    // SChannel not used or not established yet - call inherited to send raw
     if FChannelState <> chsEstablished then
     begin
         Result := inherited;
@@ -279,8 +267,10 @@ end;
 // Socket connected - internal event. Start handshake
 procedure TSChannelWSocket.TriggerSessionConnectedSpecial(Error: Word);
 begin
-    { Error occured / no SChannel used, signal connect as usual }
-    if not FSecure or (Error <> WS_OK) then begin
+    { Error occured / no SChannel used / HTTP tunnel or Socks isn't ready yet, signal connect as usual }
+    if not FSecure or (Error <> WS_OK) or (FSocksState <> socksData)
+      // TODO: change in parent class is required
+      {or (FHttpTunnelState <> htsData) } then begin
         inherited;
         Exit;
     end;
@@ -375,7 +365,7 @@ begin
         if BytesSent > 0 then
             SChannelLog(loSslDevel, Format(S_Msg_HShStageW1Success, [BytesSent]))
         else
-            SChannelLog(loSslErr, S_Msg_HShStageW1Fail);
+            SChannelLog(loSslErr, Format(S_Msg_HShStageW1Fail, [WSocket_WSAGetLastError, WSocketErrorMsgFromErrorCode(WSocket_WSAGetLastError)]));
 
         // Prepare to read hello from server
         SetLength(FHandShakeData.IoBuffer, IO_BUFFER_SIZE);
@@ -402,7 +392,7 @@ begin
         // WSAEWOULDBLOCK could happen so we just ignore receive errors
         if cbData <= 0 then
         begin
-            SChannelLog(loSslDevel, Format(S_Msg_HShStageRFail, [WSocket_WSAGetLastError]));
+            SChannelLog(loSslDevel, Format(S_Msg_HShStageRFail, [WSocket_WSAGetLastError, WSocketErrorMsgFromErrorCode(WSocket_WSAGetLastError)]));
             Exit;
         end;
         SChannelLog(loSslDevel, Format(S_Msg_HShStageRSuccess, [cbData]));
@@ -437,7 +427,7 @@ begin
                 if cbData = Integer(FHandShakeData.OutBuffers[0].cbBuffer) then
                     SChannelLog(loSslDevel, Format(S_Msg_HShStageW2Success, [cbData]))
                 else
-                    SChannelLog(loSslErr, S_Msg_HShStageW2Fail);
+                    SChannelLog(loSslErr, Format(S_Msg_HShStageW2Fail, [WSocket_WSAGetLastError, WSocketErrorMsgFromErrorCode(WSocket_WSAGetLastError)]));
                 g_pSSPI.FreeContextBuffer(FHandShakeData.OutBuffers[0].pvBuffer); // Free output buffer
                 SetLength(FHandShakeData.OutBuffers, 0);
             end;
@@ -498,9 +488,7 @@ procedure TSChannelWSocket.SetSecure(const Value: Boolean);
 begin
     if FSecure = Value then Exit; // no change
 
-    FSecure := Value;
-
-    if FSecure then
+    if Value then
     begin
         // already connected - start handshake
         if FState = wsConnected then
@@ -512,6 +500,9 @@ begin
         if FState = wsConnected then
             ShutdownTLS;
     end;
+
+    // Only set field if no exceptions happened
+    FSecure := Value;
 end;
 
 // Imitate FD_* event on a socket. Mostly useful with FD_READ to have DataAvailable

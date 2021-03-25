@@ -19,20 +19,20 @@ object Form2: TForm2
   PixelsPerInch = 120
   TextHeight = 16
   object lblProgress: TLabel
-    Left = 146
-    Top = 43
+    Left = 144
+    Top = 125
     Width = 4
     Height = 16
   end
   object lblTraf: TLabel
-    Left = 384
-    Top = 36
+    Left = 382
+    Top = 118
     Width = 4
     Height = 16
   end
   object lbl: TLabel
-    Left = 10
-    Top = 36
+    Left = 8
+    Top = 118
     Width = 149
     Height = 16
     Caption = 'Request (default if empty)'
@@ -48,9 +48,9 @@ object Form2: TForm2
     OnClick = btnReqSyncClick
   end
   object mLog: TMemo
-    Left = 16
+    Left = 8
     Top = 335
-    Width = 615
+    Width = 630
     Height = 391
     Anchors = [akLeft, akTop, akRight, akBottom]
     ScrollBars = ssVertical
@@ -65,8 +65,8 @@ object Form2: TForm2
     Text = 'google.com'
   end
   object mReq: TMemo
-    Left = 10
-    Top = 62
+    Left = 8
+    Top = 144
     Width = 368
     Height = 185
     ScrollBars = ssVertical
@@ -74,8 +74,8 @@ object Form2: TForm2
     WordWrap = False
   end
   object chbDumps: TCheckBox
-    Left = 384
-    Top = 66
+    Left = 382
+    Top = 148
     Width = 227
     Height = 17
     Caption = 'Print handshake dumps (sync only)'
@@ -92,8 +92,8 @@ object Form2: TForm2
     OnClick = btnReqAsyncClick
   end
   object chbData: TCheckBox
-    Left = 384
-    Top = 89
+    Left = 382
+    Top = 171
     Width = 227
     Height = 17
     Caption = 'Print data'
@@ -101,9 +101,9 @@ object Form2: TForm2
     OnClick = chbDataClick
   end
   object Memo1: TMemo
-    Left = 384
-    Top = 116
-    Width = 254
+    Left = 382
+    Top = 198
+    Width = 256
     Height = 131
     ScrollBars = ssVertical
     TabOrder = 7
@@ -116,5 +116,21 @@ object Form2: TForm2
     Height = 17
     Caption = 'Reuse sessions'
     TabOrder = 8
+  end
+  object chbUseProxy: TCheckBox
+    Left = 16
+    Top = 40
+    Width = 81
+    Height = 17
+    Caption = 'Use proxy'
+    TabOrder = 9
+  end
+  object eProxy: TEdit
+    Left = 31
+    Top = 63
+    Width = 218
+    Height = 24
+    TabOrder = 10
+    TextHint = '(socks5|http)://host:port'
   end
 end

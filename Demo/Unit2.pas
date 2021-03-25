@@ -29,6 +29,8 @@ type
     chbData: TCheckBox;
     Memo1: TMemo;
     chbReuseSessions: TCheckBox;
+    chbUseProxy: TCheckBox;
+    eProxy: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure chbDumpsClick(Sender: TObject);
@@ -175,6 +177,10 @@ begin
     icsSock.Addr := eURL.Text;
     icsSock.Port := '443';
     icsSock.ComponentOptions := [wsoAsyncDnsLookup{, wsoNoReceiveLoop}];
+    if chbUseProxy.Checked then
+      icsSock.ProxyURL := eProxy.Text // Feature added in "ICS V8.66 - Part 10"
+    else
+      icsSock.ProxyURL := '';
     icsSock.Secure := True;
     SessionData := icsSock.SessionData;
     SessionData.SharedCreds := SharedSessionCreds;

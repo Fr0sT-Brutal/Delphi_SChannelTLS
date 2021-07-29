@@ -17,7 +17,16 @@
 <p>
 ICS TWSocket descendant that performs TLS communication by means of Windows SChannel. Automatically processes SChannel connection bug. Supports establishing and finishing TLS channel over existing connection.
 
-<p>(c) Fr0sT-Brutal
+<p>Requires at least <strong>ICS V8.66 - Part 10</strong> for HTTP tunnel support. For older versions either:
+
+<p></p>
+
+<ul class="paragraph_spacing">
+  <li><p>Comment out usage of <code>HttpTunnelState</code></p></li>
+  <li><p>Modify ICS <code>TCustomHttpTunnelWSocket</code> class to have public <code>HttpTunnelState</code> property: <code>property HttpTunnelState : THttpTunnelState read FHttpTunnelState;</code></p></li>
+</ul>
+
+<p> (c) Fr0sT-Brutal
 
 <p>License MIT</p>
 <span id="PasDoc-Uses"></span><h2 class="overview">Overview</h2>

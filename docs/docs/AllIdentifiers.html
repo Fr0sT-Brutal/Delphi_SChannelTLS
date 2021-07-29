@@ -20,12 +20,22 @@
 <tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
-<td class="itemdesc"><p>Check server certificate </p></td>
+<td class="itemdesc"><p>Check server certificate    with a certificate that contains a common name that is not valid will be ignored.</p></td>
 </tr>
 <tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#CreateCredentials">CreateCredentials</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Mainly for internal use  </p></td>
+</tr>
+<tr class="list">
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#CreateSessionCreds">CreateSessionCreds</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>Init session creds, return data record to be used in calling other functions.</p></td>
+</tr>
+<tr class="list2">
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#CreateSharedCreds">CreateSharedCreds</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>Shared creds factory</p></td>
 </tr>
 <tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#DecryptData">DecryptData</a></td>
@@ -43,54 +53,64 @@
 <td class="itemdesc"><p>Function to prepare all necessary handshake data.</p></td>
 </tr>
 <tr class="list2">
+<td class="itemname"><a class="bold" href="SChannel.SyncHandshake.EHandshakeCommError.html">EHandshakeCommError</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.SyncHandshake.html">SChannel.SyncHandshake</a></td>
+<td class="itemdesc"><p>Specific exception class raised by <a class="normal" href="SChannel.SyncHandshake.html#PerformClientHandshake">PerformClientHandshake</a> on communication failures.</p></td>
+</tr>
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#EncryptData">EncryptData</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Encrypt data (prepare for sending to server).</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Specific exception class.</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#Fin">Fin</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Dispose and nullify global stuff.</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#FinSession">FinSession</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
-<td class="itemdesc"><p>Finalize session</p></td>
+<td class="itemdesc"><p>Finalize session, free credentials</p></td>
+</tr>
+<tr class="list">
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#FreeSessionCreds">FreeSessionCreds</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>Finalize session creds</p></td>
 </tr>
 <tr class="list2">
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#GetSessionCredsPtr">GetSessionCredsPtr</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>Return effective pointer to session credentials - either personal or shared</p></td>
+</tr>
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#GetShutdownData">GetShutdownData</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Generate data to send to a server on connection shutdown </p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#g_pSSPI">g_pSSPI</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#hMYCertStore">hMYCertStore</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#Init">Init</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Load global stuff.</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#InitBuffers">InitBuffers</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Receive size values for current session and init buffer length to contain full message including header and trailer </p></td>
-</tr>
-<tr class="list">
-<td class="itemname"><a class="bold" href="SChannel.Utils.html#InitSession">InitSession</a></td>
-<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
-<td class="itemdesc"><p>Init session, return data record to be used in calling other functions.</p></td>
 </tr>
 <tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#IO_BUFFER_SIZE">IO_BUFFER_SIZE</a></td>
@@ -98,9 +118,9 @@
 <td class="itemdesc"><p>Size of handshake buffer</p></td>
 </tr>
 <tr class="list">
-<td class="itemname"><a class="bold" href="SChannel.Utils.ISharedSessionData.html">ISharedSessionData</a></td>
+<td class="itemname"><a class="bold" href="SChannel.Utils.ISharedSessionCreds.html">ISharedSessionCreds</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
-<td class="itemdesc"><p>Interface with session data for sharing credentials</p></td>
+<td class="itemdesc"><p>Interface with session creds for sharing between multiple sessions</p></td>
 </tr>
 <tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#IsWinHandshakeBug">IsWinHandshakeBug</a></td>
@@ -123,19 +143,29 @@
 <td class="itemdesc"><p>Synchronously perform full handshake process including communication with server.</p></td>
 </tr>
 <tr class="list2">
-<td class="itemname"><a class="bold" href="SChannel.Utils.html#PSessionData">PSessionData</a></td>
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#PSessionCreds">PSessionCreds</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
 <tr class="list">
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#PSessionData">PSessionData</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>&nbsp;</p></td>
+</tr>
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#SecIsNullHandle">SecIsNullHandle</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Check if handle <code>x</code> is null (has both fields equal to zero)</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#SecStatusErrStr">SecStatusErrStr</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Returns string representaion of given security status</p></td>
+</tr>
+<tr class="list2">
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#SSPI_FLAGS">SSPI_FLAGS</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>Support a stream-oriented connection</p></td>
 </tr>
 <tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Err_ListeningNotSupported">S_Err_ListeningNotSupported</a></td>
@@ -143,37 +173,47 @@
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
 <tr class="list2">
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_AddrIsIP">S_Msg_AddrIsIP</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>&nbsp;</p></td>
+</tr>
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_CredsInited">S_Msg_CredsInited</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_Established">S_Msg_Established</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_HandshakeBug">S_Msg_HandshakeBug</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_HShExtraData">S_Msg_HShExtraData</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_HShStageRFail">S_Msg_HShStageRFail</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_HShStageRSuccess">S_Msg_HShStageRSuccess</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_HShStageW1Fail">S_Msg_HShStageW1Fail</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>&nbsp;</p></td>
+</tr>
+<tr class="list2">
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_HShStageW1Incomplete">S_Msg_HShStageW1Incomplete</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
@@ -188,59 +228,69 @@
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
 <tr class="list">
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_HShStageW2Incomplete">S_Msg_HShStageW2Incomplete</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>&nbsp;</p></td>
+</tr>
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_HShStageW2Success">S_Msg_HShStageW2Success</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_Received">S_Msg_Received</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Messages that could be written to log by various implementations.</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_Renegotiate">S_Msg_Renegotiate</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_Sending">S_Msg_Sending</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_SendingShutdown">S_Msg_SendingShutdown</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_SessionClosed">S_Msg_SessionClosed</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_ShuttingDownTLS">S_Msg_ShuttingDownTLS</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_SrvCredsAuth">S_Msg_SrvCredsAuth</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#S_Msg_StartingTLS">S_Msg_StartingTLS</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.TBuffer.html">TBuffer</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Trivial <a class="normal" href="SChannel.Utils.TBuffer.html#Data">data</a> storage</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#TChannelState">TChannelState</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>State of secure channel</p></td>
+</tr>
+<tr class="list">
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#TDebugFn">TDebugFn</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
 <tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.THandShakeData.html">THandShakeData</a></td>
@@ -250,17 +300,17 @@
 <tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#THandShakeStage">THandShakeStage</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
-<td class="itemdesc"><p>Stage of handshake</p></td>
+<td class="itemdesc"><p>Detect replayed messages that have been encoded by using the EncryptMessage or MakeSignature functions Encrypt messages by using the EncryptMessage function When errors occur, the remote party will be notified The security package allocates output buffers for you.</p></td>
 </tr>
 <tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.SyncHandshake.html#TLogFn">TLogFn</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.SyncHandshake.html">SChannel.SyncHandshake</a></td>
-<td class="itemdesc"><p>Logging function.</p></td>
+<td class="itemdesc"><p>Logging method</p></td>
 </tr>
 <tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.SyncHandshake.html#TRecvFn">TRecvFn</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.SyncHandshake.html">SChannel.SyncHandshake</a></td>
-<td class="itemdesc"><p>Synchronous communication function.</p></td>
+<td class="itemdesc"><p>Synchronous communication method.</p></td>
 </tr>
 <tr class="list2">
 <td class="itemname"><a class="bold" href="IcsSChannelSocket.TSChannelWSocket.html">TSChannelWSocket</a></td>
@@ -270,32 +320,32 @@
 <tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.SyncHandshake.html#TSendFn">TSendFn</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.SyncHandshake.html">SChannel.SyncHandshake</a></td>
-<td class="itemdesc"><p>Synchronous communication function.</p></td>
+<td class="itemdesc"><p>Synchronous communication method.</p></td>
 </tr>
 <tr class="list2">
-<td class="itemname"><a class="bold" href="SChannel.Utils.TSessionData.html">TSessionData</a></td>
+<td class="itemname"><a class="bold" href="SChannel.Utils.TSessionCreds.html">TSessionCreds</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
-<td class="itemdesc"><p>Data related to a session.</p></td>
+<td class="itemdesc"><p>Credentials related to a connection</p></td>
 </tr>
 <tr class="list">
+<td class="itemname"><a class="bold" href="SChannel.Utils.TSessionData.html">TSessionData</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>Data related to a session</p></td>
+</tr>
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#TSessionFlag">TSessionFlag</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Session options</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#TSessionFlags">TSessionFlags</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
-<tr class="list">
-<td class="itemname"><a class="bold" href="SChannel.Utils.TSharedSessionData.html">TSharedSessionData</a></td>
-<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
-<td class="itemdesc"><p>Interfaced object with session data for sharing credentials</p></td>
-</tr>
 <tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#USED_ALGS">USED_ALGS</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
-<td class="itemdesc"><p>Set of used algorithms.</p></td>
+<td class="itemdesc"><p>Detect messages received out of sequence</p></td>
 </tr>
 <tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#USED_PROTOCOLS">USED_PROTOCOLS</a></td>

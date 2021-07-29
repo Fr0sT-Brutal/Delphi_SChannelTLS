@@ -30,7 +30,7 @@ type
   //   @param Buf - buffer with data
   //   @param BufLen - size of data in buffer
   // @returns amount of data sent if >= 0 or error code if < 0. \
-  //   Error code is used to log and create exception. FormatMessage is used to
+  //   Error code is used to log and create exception. FormatMessage is used to \
   //   generate a string from error code. \
   //   Must try to send all data in full, as no retries or repeated sends is done.
   // @raises exception on some non-network error
@@ -39,9 +39,9 @@ type
   //   @param Buf - buffer to receive data
   //   @param BufLen - size of free space in buffer
   // @returns amount of data received if >= 0 or error code if < 0. \
-  //   Error code is used to log and create exception. FormatMessage is used to
+  //   Error code is used to log and create exception. FormatMessage is used to \
   //   generate a string from error code. \
-  //   Could receive only some of the data available as incomplete packet is
+  //   Could receive only some of the data available as incomplete packet is \
   //   read in loop
   // @raises exception on some non-network error
   TRecvFn = function (Buf: Pointer; BufLen: Integer): Integer of object;

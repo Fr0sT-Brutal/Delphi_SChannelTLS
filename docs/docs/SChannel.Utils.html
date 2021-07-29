@@ -36,20 +36,20 @@ Helper functions for easy implementation of TLS communication by means of Window
 <td class="itemdesc">United state and data for TLS handshake</td>
 </tr>
 <tr class="list2">
+<td class="itemname">Record&nbsp;<a class="bold" href="SChannel.Utils.TSessionCreds.html"><code>TSessionCreds</code></a></td>
+<td class="itemdesc">Credentials related to a connection</td>
+</tr>
+<tr class="list">
+<td class="itemname">Interface&nbsp;<a class="bold" href="SChannel.Utils.ISharedSessionCreds.html"><code>ISharedSessionCreds</code></a></td>
+<td class="itemdesc">Interface with session creds for sharing between multiple sessions</td>
+</tr>
+<tr class="list2">
 <td class="itemname">Record&nbsp;<a class="bold" href="SChannel.Utils.TSessionData.html"><code>TSessionData</code></a></td>
-<td class="itemdesc">Data related to a session.</td>
+<td class="itemdesc">Data related to a session</td>
 </tr>
 <tr class="list">
 <td class="itemname">Record&nbsp;<a class="bold" href="SChannel.Utils.TBuffer.html"><code>TBuffer</code></a></td>
 <td class="itemdesc">Trivial <a class="normal" href="SChannel.Utils.TBuffer.html#Data">data</a> storage</td>
-</tr>
-<tr class="list2">
-<td class="itemname">Interface&nbsp;<a class="bold" href="SChannel.Utils.ISharedSessionData.html"><code>ISharedSessionData</code></a></td>
-<td class="itemdesc">Interface with session data for sharing credentials</td>
-</tr>
-<tr class="list">
-<td class="itemname">Class&nbsp;<a class="bold" href="SChannel.Utils.TSharedSessionData.html"><code>TSharedSessionData</code></a></td>
-<td class="itemdesc">Interfaced object with session data for sharing credentials</td>
 </tr>
 <tr class="list2">
 <td class="itemname">Class&nbsp;<a class="bold" href="SChannel.Utils.ESSPIError.html"><code>ESSPIError</code></a></td>
@@ -74,7 +74,13 @@ Helper functions for easy implementation of TLS communication by means of Window
 <td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#Fin">Fin</a></strong>;</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#InitSession">InitSession</a></strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#CreateSessionCreds">CreateSessionCreds</a></strong>(var SessionCreds: <a href="SChannel.Utils.TSessionCreds.html">TSessionCreds</a>);</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#CreateSharedCreds">CreateSharedCreds</a></strong>: <a href="SChannel.Utils.ISharedSessionCreds.html">ISharedSessionCreds</a>;</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#FreeSessionCreds">FreeSessionCreds</a></strong>(var SessionCreds: <a href="SChannel.Utils.TSessionCreds.html">TSessionCreds</a>);</code></td>
 </tr>
 <tr class="list">
 <td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#FinSession">FinSession</a></strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
@@ -112,6 +118,9 @@ Helper functions for easy implementation of TLS communication by means of Window
 <tr class="list2">
 <td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#IsWinHandshakeBug">IsWinHandshakeBug</a></strong>(scRet: SECURITY_STATUS): Boolean;</code></td>
 </tr>
+<tr class="list">
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#GetSessionCredsPtr">GetSessionCredsPtr</a></strong>(const SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>): <a href="SChannel.Utils.html#PSessionCreds">PSessionCreds</a>;</code></td>
+</tr>
 </table>
 <span id="PasDoc-Types"></span><h3 class="summary">Types</h3>
 <table class="summary wide_list">
@@ -122,10 +131,16 @@ Helper functions for easy implementation of TLS communication by means of Window
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#TChannelState">TChannelState</a></strong> = (...);</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a href="SChannel.Utils.html#TSessionFlag">TSessionFlag</a></strong> = (...);</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#PSessionCreds">PSessionCreds</a></strong> = &circ;<a href="SChannel.Utils.TSessionCreds.html">TSessionCreds</a>;</code></td>
 </tr>
 <tr class="list2">
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#TSessionFlag">TSessionFlag</a></strong> = (...);</code></td>
+</tr>
+<tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#TSessionFlags">TSessionFlags</a></strong> = set of <a href="SChannel.Utils.html#TSessionFlag">TSessionFlag</a>;</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#TDebugFn">TDebugFn</a></strong> = procedure (const Msg: string) of object;</code></td>
 </tr>
 <tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#PSessionData">PSessionData</a></strong> = &circ;<a href="SChannel.Utils.TSessionData.html">TSessionData</a>;</code></td>
@@ -146,28 +161,40 @@ Helper functions for easy implementation of TLS communication by means of Window
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#USED_ALGS">USED_ALGS</a></strong>: ALG_ID = 0;</code></td>
 </tr>
 <tr class="list">
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#SSPI_FLAGS">SSPI_FLAGS</a></strong> =
+    ISC_REQ_SEQUENCE_DETECT or   
+    ISC_REQ_REPLAY_DETECT or     
+    ISC_REQ_CONFIDENTIALITY or   
+    ISC_RET_EXTENDED_ERROR or    
+    ISC_REQ_ALLOCATE_MEMORY or   
+    ISC_REQ_STREAM;</code></td>
+</tr>
+<tr class="list2">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_Received">S_Msg_Received</a></strong> = 'Received %d bytes of encrypted data / %d bytes of payload';</code></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_SessionClosed">S_Msg_SessionClosed</a></strong> = 'Server closed the session [SEC_I_CONTEXT_EXPIRED]';</code></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_Renegotiate">S_Msg_Renegotiate</a></strong> = 'Server requested renegotiate';</code></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_Sending">S_Msg_Sending</a></strong> = 'Sending %d bytes of payload / %d bytes encrypted';</code></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_StartingTLS">S_Msg_StartingTLS</a></strong> = 'Starting TLS handshake';</code></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW1Success">S_Msg_HShStageW1Success</a></strong> = 'Handshake @W1 - %d bytes sent';</code></td>
 </tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW1Incomplete">S_Msg_HShStageW1Incomplete</a></strong> = 'Handshake @W1 - ! incomplete data sent';</code></td>
+</tr>
 <tr class="list">
-<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW1Fail">S_Msg_HShStageW1Fail</a></strong> = 'Handshake @W1 - ! error sending data';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW1Fail">S_Msg_HShStageW1Fail</a></strong> = 'Handshake @W1 - ! error sending data ([#%d] %s)';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageRFail">S_Msg_HShStageRFail</a></strong> = 'Handshake @R - no data received or error receiving';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageRFail">S_Msg_HShStageRFail</a></strong> = 'Handshake @R - ! no data received or error receiving ([#%d] %s)';</code></td>
 </tr>
 <tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageRSuccess">S_Msg_HShStageRSuccess</a></strong> = 'Handshake @R - %d bytes received';</code></td>
@@ -179,19 +206,25 @@ Helper functions for easy implementation of TLS communication by means of Window
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW2Success">S_Msg_HShStageW2Success</a></strong> = 'Handshake @W2 - %d bytes sent';</code></td>
 </tr>
 <tr class="list2">
-<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW2Fail">S_Msg_HShStageW2Fail</a></strong> = 'Handshake @W2 - ! error sending data';</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW2Incomplete">S_Msg_HShStageW2Incomplete</a></strong> = 'Handshake @W2 - ! incomplete data sent';</code></td>
 </tr>
 <tr class="list">
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShStageW2Fail">S_Msg_HShStageW2Fail</a></strong> = 'Handshake @W2 - ! error sending data ([#%d] %s)';</code></td>
+</tr>
+<tr class="list2">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_HShExtraData">S_Msg_HShExtraData</a></strong> = 'Handshake: got &quot;%d&quot; bytes of extra data';</code></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_Established">S_Msg_Established</a></strong> = 'Handshake established';</code></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_SrvCredsAuth">S_Msg_SrvCredsAuth</a></strong> = 'Server credentials authenticated';</code></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_CredsInited">S_Msg_CredsInited</a></strong> = 'Credentials initialized';</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_AddrIsIP">S_Msg_AddrIsIP</a></strong> = 'Address &quot;%s&quot; is IP, verification by name is disabled';</code></td>
 </tr>
 <tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_ShuttingDownTLS">S_Msg_ShuttingDownTLS</a></strong> = 'Shutting down TLS';</code></td>
@@ -253,7 +286,16 @@ Mainly for internal use  </p>
 </tr>
 <tr><td colspan="1">
 <p>
-Mainly for internal use. Gets called by <code><a class="normal" href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></code> </p>
+Mainly for internal use. Gets called by <code><a class="normal" href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></code>    flags must be set as well, otherwise the function will raise error  flags defining errors to ignore. 0 to ignore nothing</p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>pServerCert</dt>
+<dd>- pointer to cert context</dd>
+<dt>szServerName</dt>
+<dd>- host name of the server to check. Could be empty but appropriate</dd>
+<dt>dwCertFlags</dt>
+<dd>- value of <code>SSL_EXTRA_CERT_CHAIN_POLICY_PARA.fdwChecks</code> field:</dd>
+</dl>
 <h6 class="description_section">Exceptions raised</h6>
 <dl class="exceptions_raised">
 <dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
@@ -286,15 +328,15 @@ Dispose and nullify global stuff. Could be called multiple times without checks.
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="InitSession"></span><code>procedure <strong>InitSession</strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
+<td class="itemcode"><span id="CreateSessionCreds"></span><code>procedure <strong>CreateSessionCreds</strong>(var SessionCreds: <a href="SChannel.Utils.TSessionCreds.html">TSessionCreds</a>);</code></td>
 </tr>
 <tr><td colspan="1">
 <p>
-Init session, return data record to be used in calling other functions. Could be called multiple times (nothing will be done on already init-ed record)  </p>
+Init session creds, return data record to be used in calling other functions. Could be called multiple times (nothing will be done on already init-ed record)  </p>
 <h6 class="description_section">Parameters</h6>
 <dl class="parameters">
-<dt>SessionData</dt>
-<dd>- [IN, OUT] record that receives values. On first call must be zeroed. Alternatively, user could fill <code>SessionData.SchannelCred</code> with desired values to tune channel properties.</dd>
+<dt>SessionCreds</dt>
+<dd>- [IN, OUT] record that receives values. On first call must be zeroed. Alternatively, user could fill <code>SessionCreds.SchannelCred</code> with desired values to tune channel properties.</dd>
 </dl>
 <h6 class="description_section">Exceptions raised</h6>
 <dl class="exceptions_raised">
@@ -305,11 +347,29 @@ Init session, return data record to be used in calling other functions. Could be
 </table>
 <table class="detail wide_list">
 <tr class="list">
+<td class="itemcode"><span id="CreateSharedCreds"></span><code>function <strong>CreateSharedCreds</strong>: <a href="SChannel.Utils.ISharedSessionCreds.html">ISharedSessionCreds</a>;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Shared creds factory</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="FreeSessionCreds"></span><code>procedure <strong>FreeSessionCreds</strong>(var SessionCreds: <a href="SChannel.Utils.TSessionCreds.html">TSessionCreds</a>);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Finalize session creds</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
 <td class="itemcode"><span id="FinSession"></span><code>procedure <strong>FinSession</strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
 </tr>
 <tr><td colspan="1">
 <p>
-Finalize session</p>
+Finalize session, free credentials</p>
 </td></tr>
 </table>
 <table class="detail wide_list">
@@ -407,7 +467,14 @@ Generate data to send to a server on connection shutdown </p>
 </tr>
 <tr><td colspan="1">
 <p>
-Check server certificate </p>
+Check server certificate    with a certificate that contains a common name that is not valid will be ignored. (<code>SECURITY_FLAG_IGNORE_CERT_CN_INVALID</code> flag will be set calling <code>CertVerifyCertificateChainPolicy</code>)</p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>hContext</dt>
+<dd>- current session context</dd>
+<dt>ServerName</dt>
+<dd>- host name of the server to check. If empty, errors associated</dd>
+</dl>
 <h6 class="description_section">Exceptions raised</h6>
 <dl class="exceptions_raised">
 <dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
@@ -546,6 +613,15 @@ Returns string representaion of given verify trust error</p>
 Check if status is likely a Windows TLS v1.2 handshake bug (<code>SEC_E_BUFFER_TOO_SMALL</code> or <code>SEC_E_MESSAGE_ALTERED</code> status is returned by <code>InitializeSecurityContext</code> on handshake). This function only checks if parameter is one of these two values.</p>
 </td></tr>
 </table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="GetSessionCredsPtr"></span><code>function <strong>GetSessionCredsPtr</strong>(const SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>): <a href="SChannel.Utils.html#PSessionCreds">PSessionCreds</a>;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Return effective pointer to session credentials - either personal or shared</p>
+</td></tr>
+</table>
 <h3 class="detail">Types</h3>
 <table class="detail wide_list">
 <tr class="list">
@@ -553,7 +629,7 @@ Check if status is likely a Windows TLS v1.2 handshake bug (<code>SEC_E_BUFFER_T
 </tr>
 <tr><td colspan="1">
 <p>
-Stage of handshake</p>
+Detect replayed messages that have been encoded by using the EncryptMessage or MakeSignature functions Encrypt messages by using the EncryptMessage function When errors occur, the remote party will be notified The security package allocates output buffers for you. When you have finished using the output buffers, free them by calling the FreeContextBuffer function Stage of handshake</p>
 <h6 class="description_section">Values</h6>
 <ul>
 <li>
@@ -595,6 +671,13 @@ State of secure channel</p>
 </table>
 <table class="detail wide_list">
 <tr class="list">
+<td class="itemcode"><span id="PSessionCreds"></span><code><strong>PSessionCreds</strong> = &circ;<a href="SChannel.Utils.TSessionCreds.html">TSessionCreds</a>;</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
 <td class="itemcode"><span id="TSessionFlag"></span><code><strong>TSessionFlag</strong> = (...);</code></td>
 </tr>
 <tr><td colspan="1">
@@ -603,13 +686,20 @@ Session options</p>
 <h6 class="description_section">Values</h6>
 <ul>
 <li>
-<span id="sfNoServerVerify">sfNoServerVerify</span>: If <code>True</code>, SChannel won't verify server certificate (use with care! Though this could help when connecting by IP)</li>
+<span id="sfNoServerVerify">sfNoServerVerify</span>: If <code>True</code>, SChannel won't automatically verify server certificate setting <code>ISC_REQ_MANUAL_CRED_VALIDATION</code> flag in <code>InitializeSecurityContextW</code> call. User has to call manual verification via <code><a class="normal" href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></code> after handshake is established (this allows connecting to an IP)</li>
 </ul>
 </td></tr>
 </table>
 <table class="detail wide_list">
 <tr class="list">
 <td class="itemcode"><span id="TSessionFlags"></span><code><strong>TSessionFlags</strong> = set of <a href="SChannel.Utils.html#TSessionFlag">TSessionFlag</a>;</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="TDebugFn"></span><code><strong>TDebugFn</strong> = procedure (const Msg: string) of object;</code></td>
 </tr>
 <tr><td colspan="1">
 &nbsp;</td></tr>
@@ -655,7 +745,22 @@ Set of used protocols. Note: TLS 1.0 is not used by default, add <code>SP_PROT_T
 </tr>
 <tr><td colspan="1">
 <p>
-Set of used algorithms. <code>0</code> means default. Add <code>CALG_DH_EPHEM</code>, <code>CALG_RSA_KEYX</code>, etc if needed</p>
+Detect messages received out of sequence</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="SSPI_FLAGS"></span><code><strong>SSPI_FLAGS</strong> =
+    ISC_REQ_SEQUENCE_DETECT or   
+    ISC_REQ_REPLAY_DETECT or     
+    ISC_REQ_CONFIDENTIALITY or   
+    ISC_RET_EXTENDED_ERROR or    
+    ISC_REQ_ALLOCATE_MEMORY or   
+    ISC_REQ_STREAM;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Support a stream-oriented connection</p>
 </td></tr>
 </table>
 <table class="detail wide_list">
@@ -704,14 +809,21 @@ Messages that could be written to log by various implementations. None of these 
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="S_Msg_HShStageW1Fail"></span><code><strong>S_Msg_HShStageW1Fail</strong> = 'Handshake @W1 - ! error sending data';</code></td>
+<td class="itemcode"><span id="S_Msg_HShStageW1Incomplete"></span><code><strong>S_Msg_HShStageW1Incomplete</strong> = 'Handshake @W1 - ! incomplete data sent';</code></td>
 </tr>
 <tr><td colspan="1">
 &nbsp;</td></tr>
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="S_Msg_HShStageRFail"></span><code><strong>S_Msg_HShStageRFail</strong> = 'Handshake @R - no data received or error receiving';</code></td>
+<td class="itemcode"><span id="S_Msg_HShStageW1Fail"></span><code><strong>S_Msg_HShStageW1Fail</strong> = 'Handshake @W1 - ! error sending data ([#%d] %s)';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_HShStageRFail"></span><code><strong>S_Msg_HShStageRFail</strong> = 'Handshake @R - ! no data received or error receiving ([#%d] %s)';</code></td>
 </tr>
 <tr><td colspan="1">
 &nbsp;</td></tr>
@@ -739,7 +851,14 @@ Messages that could be written to log by various implementations. None of these 
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="S_Msg_HShStageW2Fail"></span><code><strong>S_Msg_HShStageW2Fail</strong> = 'Handshake @W2 - ! error sending data';</code></td>
+<td class="itemcode"><span id="S_Msg_HShStageW2Incomplete"></span><code><strong>S_Msg_HShStageW2Incomplete</strong> = 'Handshake @W2 - ! incomplete data sent';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_HShStageW2Fail"></span><code><strong>S_Msg_HShStageW2Fail</strong> = 'Handshake @W2 - ! error sending data ([#%d] %s)';</code></td>
 </tr>
 <tr><td colspan="1">
 &nbsp;</td></tr>
@@ -768,6 +887,13 @@ Messages that could be written to log by various implementations. None of these 
 <table class="detail wide_list">
 <tr class="list">
 <td class="itemcode"><span id="S_Msg_CredsInited"></span><code><strong>S_Msg_CredsInited</strong> = 'Credentials initialized';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_AddrIsIP"></span><code><strong>S_Msg_AddrIsIP</strong> = 'Address &quot;%s&quot; is IP, verification by name is disabled';</code></td>
 </tr>
 <tr><td colspan="1">
 &nbsp;</td></tr>

@@ -21,7 +21,15 @@
 <code>type ESSPIError = class(Exception)</code></p>
 <h2 class="description">Description</h2>
 <p>
-Specific exception class. Could be created on WinAPI error, SChannel error or general internal error.</p>
+Specific exception class. Could be created on WinAPI error, SChannel error or general internal error. </p>
+
+<ul class="paragraph_spacing">
+  <li><p>WinAPI errors are used when a SChannel function returns result code via <code>GetLastError</code>. Non-zero <code><a class="normal" href="SChannel.Utils.ESSPIError.html#WinAPIErr">WinAPIErr</a></code> field is set then.</p></li>
+  <li><p>SChannel errors are used when a SChannel function returns status code of type <code>SECURITY_STATUS</code> OR it succeedes but something went wrong. Non-zero <code><a class="normal" href="SChannel.Utils.ESSPIError.html#SecStatus">SecStatus</a></code> field is set then.</p></li>
+  <li><p>General errors are used in other cases, like incorrect arguments.</p></li>
+</ul>
+
+<p></p>
 <span id="PasDoc-Hierarchy"></span><h2 class="hierarchy">Hierarchy</h2>
 <ul class="hierarchy"><li class="ancestor">TObject</li>
 <li class="ancestor">Exception</li>
@@ -45,7 +53,11 @@ Specific exception class. Could be created on WinAPI error, SChannel error or ge
 </tr>
 <tr class="list2">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code>constructor <strong><a href="SChannel.Utils.ESSPIError.html#CreateSecStatus">CreateSecStatus</a></strong>(const Action, Func: string; Status: SECURITY_STATUS);</code></td>
+<td class="itemcode"><code>constructor <strong><a href="SChannel.Utils.ESSPIError.html#CreateSecStatus">CreateSecStatus</a></strong>(const Action, Func: string; Status: SECURITY_STATUS); overload;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>constructor <strong><a href="SChannel.Utils.ESSPIError.html#CreateSecStatus">CreateSecStatus</a></strong>(const Action, Func, Info: string); overload;</code></td>
 </tr>
 </table>
 <h2 class="description">Description</h2>
@@ -82,7 +94,7 @@ Create WinAPI exception based on Err code   </p>
 <h6 class="description_section">Parameters</h6>
 <dl class="parameters">
 <dt>Action</dt>
-<dd>- current action, like <code>sending data</code> or <code>at Init</code></dd>
+<dd>- current action, like <code>sending data</code> or <code>@ Init</code></dd>
 <dt>Func</dt>
 <dd>- WinAPI method, like <code>Send</code></dd>
 <dt>Err</dt>
@@ -93,7 +105,7 @@ Create WinAPI exception based on Err code   </p>
 <table class="detail wide_list">
 <tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><span id="CreateSecStatus"></span><code>constructor <strong>CreateSecStatus</strong>(const Action, Func: string; Status: SECURITY_STATUS);</code></td>
+<td class="itemcode"><span id="CreateSecStatus"></span><code>constructor <strong>CreateSecStatus</strong>(const Action, Func: string; Status: SECURITY_STATUS); overload;</code></td>
 </tr>
 <tr><td colspan="2">
 <p>
@@ -101,10 +113,29 @@ Create SChannel exception based on status   </p>
 <h6 class="description_section">Parameters</h6>
 <dl class="parameters">
 <dt>Action</dt>
-<dd>- current action, like <code>at <a class="normal" href="SChannel.Utils.html#CreateCredentials">CreateCredentials</a></code></dd>
+<dd>- current action, like <code>@ <a class="normal" href="SChannel.Utils.html#CreateCredentials">CreateCredentials</a></code></dd>
 <dt>Func</dt>
 <dd>- SChannel method, like <code>AcquireCredentialsHandle</code></dd>
 <dt>Status</dt>
+<dd>- SChannel status</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="CreateSecStatus"></span><code>constructor <strong>CreateSecStatus</strong>(const Action, Func, Info: string); overload;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Create SChannel exception based on custom info message. Sets <code><a class="normal" href="SChannel.Utils.ESSPIError.html#SecStatus">SecStatus</a></code> to <code>SEC_E_INTERNAL_ERROR</code>.   </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>Action</dt>
+<dd>- current action, like <code>@ <a class="normal" href="SChannel.Utils.html#CreateCredentials">CreateCredentials</a></code></dd>
+<dt>Func</dt>
+<dd>- SChannel method, like <code>AcquireCredentialsHandle</code></dd>
+<dt>Info</dt>
 <dd>- SChannel status</dd>
 </dl>
 </td></tr>

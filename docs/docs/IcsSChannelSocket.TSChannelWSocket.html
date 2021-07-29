@@ -33,11 +33,19 @@ ICS TWSocket descendant supporting TLS</p>
 </tr>
 <tr class="list2">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code>procedure <strong><a href="IcsSChannelSocket.TSChannelWSocket.html#Listen">Listen</a></strong>; override;</code></td>
+<td class="itemcode"><code>destructor <strong><a href="IcsSChannelSocket.TSChannelWSocket.html#Destroy">Destroy</a></strong>; override;</code></td>
 </tr>
 <tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>procedure <strong><a href="IcsSChannelSocket.TSChannelWSocket.html#Listen">Listen</a></strong>; override;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
 <td class="itemcode"><code>procedure <strong><a href="IcsSChannelSocket.TSChannelWSocket.html#Shutdown">Shutdown</a></strong>(How : Integer); override;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>procedure <strong><a href="IcsSChannelSocket.TSChannelWSocket.html#PostFD_EVENT">PostFD_EVENT</a></strong>(Event: Cardinal);</code></td>
 </tr>
 </table>
 <span id="PasDoc-Properties"></span><h3 class="summary">Properties</h3>
@@ -56,7 +64,7 @@ ICS TWSocket descendant supporting TLS</p>
 </tr>
 <tr class="list2">
 <td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
-<td class="itemcode"><code>property <strong><a href="IcsSChannelSocket.TSChannelWSocket.html#SharedSessionData">SharedSessionData</a></strong>: <a href="SChannel.Utils.ISharedSessionData.html">ISharedSessionData</a> read FSharedSessionData write FSharedSessionData;</code></td>
+<td class="itemcode"><code>property <strong><a href="IcsSChannelSocket.TSChannelWSocket.html#SessionData">SessionData</a></strong>: <a href="SChannel.Utils.TSessionData.html">TSessionData</a> read FSessionData write SetSessionData;</code></td>
 </tr>
 <tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
@@ -80,6 +88,14 @@ ICS TWSocket descendant supporting TLS</p>
 <table class="detail wide_list">
 <tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="Destroy"></span><code>destructor <strong>Destroy</strong>; override;</code></td>
+</tr>
+<tr><td colspan="2">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
 <td class="itemcode"><span id="Listen"></span><code>procedure <strong>Listen</strong>; override;</code></td>
 </tr>
 <tr><td colspan="2">
@@ -95,6 +111,16 @@ Override for inherited method - deny listening in secure mode</p>
 <tr><td colspan="2">
 <p>
 Override for inherited method - shutdown TLS channel before closing the connection (ignoring exceptions and don't waiting for peer response)</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="PostFD_EVENT"></span><code>procedure <strong>PostFD_EVENT</strong>(Event: Cardinal);</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Imitate FD_* event on a socket. Mostly useful with FD_READ to have DataAvailable with buffering socket implementations</p>
 </td></tr>
 </table>
 <h3 class="detail">Properties</h3>
@@ -145,11 +171,11 @@ Traffic counter for outgoing payload. <code>TWSocket.WriteCount</code> property 
 <table class="detail wide_list">
 <tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="published.gif" alt="Published" title="Published"></a></td>
-<td class="itemcode"><span id="SharedSessionData"></span><code>property <strong>SharedSessionData</strong>: <a href="SChannel.Utils.ISharedSessionData.html">ISharedSessionData</a> read FSharedSessionData write FSharedSessionData;</code></td>
+<td class="itemcode"><span id="SessionData"></span><code>property <strong>SessionData</strong>: <a href="SChannel.Utils.TSessionData.html">TSessionData</a> read FSessionData write SetSessionData;</code></td>
 </tr>
 <tr><td colspan="2">
 <p>
-Session data that could be shared between multiple sockets. To share a session, assign this property before starting TLS handshake</p>
+TLS Session data that allows fine tuning of TLS handshake. Also it could contain shared credentials used by multiple sockets. Fields must be assigned before starting TLS handshake (otherwise exception is raised). Note that some fields are assigned internally based on other values (f.ex., <code><a class="normal" href="SChannel.Utils.html#sfNoServerVerify">sfNoServerVerify</a></code> flag is enabled if connecting to IP). Initial values are returned when secure connection is finished. ! Session data is finalized in destructor, closing and zeroing any non-shared handles.</p>
 </td></tr>
 </table>
 <table class="detail wide_list">

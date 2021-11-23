@@ -110,15 +110,41 @@ type
 
   // Session options
   TSessionFlag = (
-    // If @true, SChannel won't automatically verify server certificate setting
+    // If set, SChannel won't automatically verify server certificate by setting
     // `ISC_REQ_MANUAL_CRED_VALIDATION` flag in `InitializeSecurityContextW` call.
     // User has to call manual verification via `CheckServerCert` after handshake
-    // is established (this allows connecting to an IP)
+    // is established (this allows connecting to an IP).
     sfNoServerVerify
   );
   TSessionFlags = set of TSessionFlag;
 
   TDebugFn = procedure (const Msg: string) of object;
+
+  // Local storage of trusted certs.
+  TTrustedCerts = class
+  strict private
+    FCerts: array of record
+      Host: string;
+      Data: TBytes;
+    end;
+  public
+    procedure Add(const Host: string; const Data: TBytes);
+    function Contains(const Host: string; pData: Pointer; DataLen: Integer): Boolean; overload;
+    function Contains(const Host: string; const Data: TBytes): Boolean; overload;
+    procedure Clear;
+    function Count: Integer;
+  end;
+
+  // Flags to ignore some cert aspects when checking manually via `CheckServerCert`.
+  // Mirror of `SECURITY_FLAG_IGNORE_*` constants
+  TCertCheckIgnoreFlag = (
+    ignRevokation,
+    ignUnknownCA,
+    ignWrongUsage,
+    ignCertCNInvalid,
+    ignCertDateInvalid
+  );
+  TCertCheckIgnoreFlags = set of TCertCheckIgnoreFlag;
 
   // Data related to a session
   TSessionData = record
@@ -131,12 +157,20 @@ type
     SSPIFlags: DWORD;
     // Callback function that reports some internal events. If not specified,
     // default global function will be used that reports time and message via
-    // OutputDebugString
+    // `OutputDebugString`
     DebugFn: TDebugFn;
     // Pointer to credentials shared between multiple sessions
     SharedCreds: ISharedSessionCreds;
     // Non-shared session credentials. It is used if `SharedCreds` is @nil
     SessionCreds: TSessionCreds;
+    // Pointer to list of trusted certs. The object could be shared or personal to a socket.
+    // Base class is not MT-safe. If not empty, auto validation of certs is disabled
+    // (`sfNoServerVerify` is included in `Flags` property) at first call to `DoClientHandshake`.
+    TrustedCerts: TTrustedCerts;
+    // Set of cert aspects to ignore when checking manually via `CheckServerCert`.
+    // If not empty, auto validation of certs is disabled (`sfNoServerVerify` is
+    // included in `Flags` property) at first call to `DoClientHandshake`.
+    CertCheckIgnoreFlags: TCertCheckIgnoreFlags;
   end;
   PSessionData = ^TSessionData;
 
@@ -175,26 +209,37 @@ var
   hMYCertStore: HCERTSTORE = nil;
   g_pSSPI: PSecurityFunctionTable;
 
+const
+  // Set of cert validation ignore flags that has all items set - use it to
+  // ignore everything
+  CertCheckIgnoreAll = [Low(TCertCheckIgnoreFlag)..High(TCertCheckIgnoreFlag)];
+
 // ~~ Init utils - usually not to be called by user ~~
 
 // Mainly for internal use
 // @raises ESSPIError on error
 procedure LoadSecurityLibrary;
-// Mainly for internal use
+// Mainly for internal use.
 //   @param SchannelCred - [?IN/OUT] If `SchannelCred.dwVersion` = `SCHANNEL_CRED_VERSION`,              \
 //     the parameter is considered "IN/OUT" and won't be modified before `AcquireCredentialsHandle` call.\
 //     Otherwise the parameter is considered "OUT" and is init-ed with default values.                   \
 //     Thus user can pass desired values to `AcquireCredentialsHandle` function.
 // @raises ESSPIError on error
 procedure CreateCredentials(const User: string; out hCreds: CredHandle; var SchannelCred: SCHANNEL_CRED);
-// Mainly for internal use. Gets called by `CheckServerCert`
-// @raises ESSPIError on error
+// Validate certificate. Mainly for internal use. Gets called by `CheckServerCert`
 //   @param pServerCert - pointer to cert context
-//   @param szServerName - host name of the server to check. Could be empty but appropriate
+//   @param szServerName - host name of the server to check. Could be empty but appropriate \
 //     flags must be set as well, otherwise the function will raise error
-//   @param dwCertFlags - value of `SSL_EXTRA_CERT_CHAIN_POLICY_PARA.fdwChecks` field:
-//     flags defining errors to ignore. 0 to ignore nothing
+//   @param dwCertFlags - value of `SSL_EXTRA_CERT_CHAIN_POLICY_PARA.fdwChecks` field:      \
+//     flags defining errors to ignore. `0` to ignore nothing
+// @raises ESSPIError on error
 procedure VerifyServerCertificate(pServerCert: PCCERT_CONTEXT; const szServerName: string; dwCertFlags: DWORD);
+// Retrieve server certificate. Mainly for internal use. Gets called by `CheckServerCert`.
+// Returned result must be freed via `CertFreeCertificateContext`.
+//   @param hContext - current session context
+//   @returns server certificate data
+// @raises ESSPIError on error
+function GetCertContext(const hContext: CtxtHandle): PCCERT_CONTEXT;
 
 // ~~ Global init and fin ~~
 // Load global stuff. Must be called before any other function called.
@@ -233,12 +278,15 @@ function DoClientHandshake(var SessionData: TSessionData; var HandShakeData: THa
 procedure GetShutdownData(const SessionData: TSessionData; const hContext: CtxtHandle;
   out OutBuffer: SecBuffer);
 // Check server certificate
-// @raises ESSPIError on error
 //   @param hContext - current session context
 //   @param ServerName - host name of the server to check. If empty, errors associated
 //     with a certificate that contains a common name that is not valid will be ignored.
 //     (`SECURITY_FLAG_IGNORE_CERT_CN_INVALID` flag will be set calling `CertVerifyCertificateChainPolicy`)
-procedure CheckServerCert(const hContext: CtxtHandle; const ServerName: string);
+//   @param TrustedCerts - list of trusted certs. If cert is in this list, it won't be checked by system
+//   @param CertCheckIgnoreFlags - set of cert aspects to ignore when checking.
+// @raises ESSPIError on error
+procedure CheckServerCert(const hContext: CtxtHandle; const ServerName: string;
+  const TrustedCerts: TTrustedCerts = nil; CertCheckIgnoreFlags: TCertCheckIgnoreFlags = []);
 // Dispose and nullify security context
 procedure DeleteContext(var hContext: CtxtHandle);
 
@@ -487,6 +535,54 @@ destructor TSharedSessionCreds.Destroy;
 begin
   FreeSessionCreds(FSessionCreds);
   inherited;
+end;
+
+{ ~~ TTrustedCerts ~~ }
+
+procedure TTrustedCerts.Add(const Host: string; const Data: TBytes);
+begin
+  SetLength(FCerts, Length(FCerts) + 1);
+  FCerts[High(FCerts)].Host := Host;
+  FCerts[High(FCerts)].Data := Data;
+end;
+
+// Check if provided cert is in trusted list.
+//  @param Host - cert host. If empty, search is performed over all list
+//  @param pData - cert data
+//  @param DataLen - length of cert data
+//
+//  @returns @true if cert is found
+function TTrustedCerts.Contains(const Host: string; pData: Pointer; DataLen: Integer): Boolean;
+var i: Integer;
+begin
+  for i := Low(FCerts) to High(FCerts) do
+    if (Host = '') or (FCerts[i].Host = Host) then
+      if (DataLen = Length(FCerts[i].Data)) and
+        CompareMem(pData, FCerts[i].Data, DataLen) then
+          Exit(True);
+  Result := False;
+end;
+
+// Check if provided cert is in trusted list. TBytes variant.
+//  @param Host - cert host. If empty, search is performed over all list
+//  @param Data - cert data
+//
+//  @returns @true if cert is found
+function TTrustedCerts.Contains(const Host: string; const Data: TBytes): Boolean;
+begin
+  Result := Contains(Host, Data, Length(Data));
+end;
+
+// Empty the list
+procedure TTrustedCerts.Clear;
+begin
+  SetLength(FCerts, 0);
+end;
+
+// Return number of certs in list
+function TTrustedCerts.Count: Integer;
+begin
+  Result := Length(FCerts);
 end;
 
 { ~~ ESSPIError ~~ }
@@ -784,7 +880,7 @@ end;
  Function to prepare all necessary handshake data. No transport level actions.
    @param SessionData - [IN/OUT] record with session data
    @param HandShakeData - [IN/OUT] record with handshake data
-   @raises ESSPIError on error
+ @raises ESSPIError on error
  Function actions and returning data depending on input stage:
   - `HandShakeData.Stage` = hssNotStarted. Generate client hello. @br
      *Output stage*: hssSendCliHello. @br
@@ -854,6 +950,13 @@ begin
   dwSSPIFlags := SessionData.SSPIFlags;
   if dwSSPIFlags = 0 then
     dwSSPIFlags := SSPI_FLAGS;
+
+  // Check if manual cert validation is required. I haven't found an option to
+  // force SChannel retry handshake stage without auto validation after it had
+  // failed so just turning it off if there's any chance of custom cert check.
+  if ((SessionData.TrustedCerts <> nil) and (SessionData.TrustedCerts.Count <> 0)) or
+    (SessionData.CertCheckIgnoreFlags <> []) then
+      Include(SessionData.Flags, sfNoServerVerify);
   if sfNoServerVerify in SessionData.Flags then
     dwSSPIFlags := dwSSPIFlags or ISC_REQ_MANUAL_CRED_VALIDATION;
 
@@ -1128,22 +1231,43 @@ begin
   end;
 end;
 
-procedure CheckServerCert(const hContext: CtxtHandle; const ServerName: string);
+function GetCertContext(const hContext: CtxtHandle): PCCERT_CONTEXT;
+var Status: SECURITY_STATUS;
+begin
+  // Authenticate server's credentials. Get server's certificate.
+  Status := g_pSSPI.QueryContextAttributesW(@hContext, SECPKG_ATTR_REMOTE_CERT_CONTEXT, @Result);
+  if Status <> SEC_E_OK then
+    raise ErrSecStatus('@ GetCertContext', 'QueryContextAttributesW', Status);
+end;
+
+procedure CheckServerCert(const hContext: CtxtHandle; const ServerName: string;
+  const TrustedCerts: TTrustedCerts; CertCheckIgnoreFlags: TCertCheckIgnoreFlags);
 var
-  Status: SECURITY_STATUS;
   pRemoteCertContext: PCCERT_CONTEXT;
   dwCertFlags: DWORD;
+  IgnFlag: TCertCheckIgnoreFlag;
 begin
-  pRemoteCertContext := nil;
   // Authenticate server's credentials. Get server's certificate.
-  Status := g_pSSPI.QueryContextAttributesW(@hContext, SECPKG_ATTR_REMOTE_CERT_CONTEXT, @pRemoteCertContext);
-  if Status <> SEC_E_OK then
-    raise ErrSecStatus('@ CheckServerCert', 'QueryContextAttributesW', Status);
+  pRemoteCertContext := GetCertContext(hContext);
 
+  // Don't check the cert if it's trusted
+  if TrustedCerts <> nil then
+    if TrustedCerts.Contains(ServerName, pRemoteCertContext.pbCertEncoded, pRemoteCertContext.cbCertEncoded) then
+      Exit;
+
+  // Construct flags
+  // If server name is not defined, ignore check for "common name"
   if ServerName = '' then
-    dwCertFlags := SECURITY_FLAG_IGNORE_CERT_CN_INVALID
-  else
-    dwCertFlags := 0;
+    Include(CertCheckIgnoreFlags, ignCertCNInvalid);
+  dwCertFlags := 0;
+  for IgnFlag in CertCheckIgnoreFlags do
+    case IgnFlag of
+      ignRevokation:      dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_REVOCATION;
+      ignUnknownCA:       dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_UNKNOWN_CA;
+      ignWrongUsage:      dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_WRONG_USAGE;
+      ignCertCNInvalid:   dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_CERT_CN_INVALID;
+      ignCertDateInvalid: dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
+    end;
 
   try
     // Attempt to validate server certificate.

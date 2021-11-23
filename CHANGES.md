@@ -1,6 +1,15 @@
 Notable changes
 ===============
 
+## 23.11.2021
+
+- [+] (API) + More control over server cert validation: flags to allow ignoring some cert aspects and list of trusted certs that are considered valid without any check. SChannel.Utils.pas: add TrustedCerts and CertCheckIgnoreFlags fields to TSessionData. CheckServerCert, added optional TrustedCerts and CertCheckIgnoreFlags parameters.
+- [*] SChannel.Utils.pas: DoClientHandshake, enables sfNoServerVerify flag if either TrustedCerts or CertCheckIgnoreFlags is not empty in SessionData
+- [*] (API) SChannel.Utils.pas: ESSPIError.CreateSecStatus, overloaded version removed as it didn't use SecStatus field. United method accepts both SecStatus and optional custom info
+- [+] IcsSChannelSocket.pas: TSChannelWSocket.DoHandshakeSuccess, use SessionData's TrustedCerts and CertCheckIgnoreFlags fields; report exceptions with loSslErr level before reraising
+- [*] TSChannelWSocket.DoHandshakeProcess, WSAEWOULDBLOCK is ignored and other errors are reported with loSslErr level
+- [+] Demo: Options to check cert manually, ability to set cert props to ignore, option to dump cert after handshake
+
 ## 25.03.2021
 
 - [+] (API) SyncHandshake: RecvFn, SendFn could return < 0 error codes that will be reported to log

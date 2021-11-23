@@ -16104,7 +16104,7 @@ const
 //
 //  A blocking operation was interrupted by a call to WSACancelBlockingCall.
 //
-  WSAEINTR = DWORD(10004);
+  WSAEINTR = WSABASEERR + 4;
   {$EXTERNALSYM WSAEINTR}
 
 //
@@ -16114,7 +16114,7 @@ const
 //
 //  The file handle supplied is not valid.
 //
-  WSAEBADF = DWORD(10009);
+  WSAEBADF = WSABASEERR + 9;
   {$EXTERNALSYM WSAEBADF}
 
 //
@@ -16124,7 +16124,7 @@ const
 //
 //  An attempt was made to access a socket in a way forbidden by its access permissions.
 //
-  WSAEACCES = DWORD(10013);
+  WSAEACCES = WSABASEERR + 13;
   {$EXTERNALSYM WSAEACCES}
 
 //
@@ -16134,7 +16134,7 @@ const
 //
 //  The system detected an invalid pointer address in attempting to use a pointer argument in a call.
 //
-  WSAEFAULT = DWORD(10014);
+  WSAEFAULT = WSABASEERR + 14;
   {$EXTERNALSYM WSAEFAULT}
 
 //
@@ -16144,7 +16144,7 @@ const
 //
 //  An invalid argument was supplied.
 //
-  WSAEINVAL = DWORD(10022);
+  WSAEINVAL = WSABASEERR + 22;
   {$EXTERNALSYM WSAEINVAL}
 
 //
@@ -16154,7 +16154,7 @@ const
 //
 //  Too many open sockets.
 //
-  WSAEMFILE = DWORD(10024);
+  WSAEMFILE = WSABASEERR + 24;
   {$EXTERNALSYM WSAEMFILE}
 
 //
@@ -16164,7 +16164,7 @@ const
 //
 //  A non-blocking socket operation could not be completed immediately.
 //
-  WSAEWOULDBLOCK = DWORD(10035);
+  WSAEWOULDBLOCK = WSABASEERR + 35;
   {$EXTERNALSYM WSAEWOULDBLOCK}
 
 //
@@ -16174,7 +16174,7 @@ const
 //
 //  A blocking operation is currently executing.
 //
-  WSAEINPROGRESS = DWORD(10036);
+  WSAEINPROGRESS = WSABASEERR + 36;
   {$EXTERNALSYM WSAEINPROGRESS}
 
 //
@@ -16184,7 +16184,7 @@ const
 //
 //  An operation was attempted on a non-blocking socket that already had an operation in progress.
 //
-  WSAEALREADY = DWORD(10037);
+  WSAEALREADY = WSABASEERR + 37;
   {$EXTERNALSYM WSAEALREADY}
 
 //
@@ -16194,7 +16194,7 @@ const
 //
 //  An operation was attempted on something that is not a socket.
 //
-  WSAENOTSOCK = DWORD(10038);
+  WSAENOTSOCK = WSABASEERR + 38;
   {$EXTERNALSYM WSAENOTSOCK}
 
 //
@@ -16204,7 +16204,7 @@ const
 //
 //  A required address was omitted from an operation on a socket.
 //
-  WSAEDESTADDRREQ = DWORD(10039);
+  WSAEDESTADDRREQ = WSABASEERR + 39;
   {$EXTERNALSYM WSAEDESTADDRREQ}
 
 //
@@ -16214,7 +16214,7 @@ const
 //
 //  A message sent on a datagram socket was larger than the internal message buffer or some other network limit, or the buffer used to receive a datagram into was smaller than the datagram itself.
 //
-  WSAEMSGSIZE = DWORD(10040);
+  WSAEMSGSIZE = WSABASEERR + 40;
   {$EXTERNALSYM WSAEMSGSIZE}
 
 //
@@ -16224,7 +16224,7 @@ const
 //
 //  A protocol was specified in the socket function call that does not support the semantics of the socket type requested.
 //
-  WSAEPROTOTYPE = DWORD(10041);
+  WSAEPROTOTYPE = WSABASEERR + 41;
   {$EXTERNALSYM WSAEPROTOTYPE}
 
 //
@@ -16234,7 +16234,7 @@ const
 //
 //  An unknown, invalid, or unsupported option or level was specified in a getsockopt or setsockopt call.
 //
-  WSAENOPROTOOPT = DWORD(10042);
+  WSAENOPROTOOPT = WSABASEERR + 42;
   {$EXTERNALSYM WSAENOPROTOOPT}
 
 //
@@ -16244,7 +16244,7 @@ const
 //
 //  The requested protocol has not been configured into the system, or no implementation for it exists.
 //
-  WSAEPROTONOSUPPORT = DWORD(10043);
+  WSAEPROTONOSUPPORT = WSABASEERR + 43;
   {$EXTERNALSYM WSAEPROTONOSUPPORT}
 
 //
@@ -16254,7 +16254,7 @@ const
 //
 //  The support for the specified socket type does not exist in this address family.
 //
-  WSAESOCKTNOSUPPORT = DWORD(10044);
+  WSAESOCKTNOSUPPORT = WSABASEERR + 44;
   {$EXTERNALSYM WSAESOCKTNOSUPPORT}
 
 //
@@ -16264,7 +16264,7 @@ const
 //
 //  The attempted operation is not supported for the type of object referenced.
 //
-  WSAEOPNOTSUPP = DWORD(10045);
+  WSAEOPNOTSUPP = WSABASEERR + 45;
   {$EXTERNALSYM WSAEOPNOTSUPP}
 
 //
@@ -16274,7 +16274,7 @@ const
 //
 //  The protocol family has not been configured into the system or no implementation for it exists.
 //
-  WSAEPFNOSUPPORT = DWORD(10046);
+  WSAEPFNOSUPPORT = WSABASEERR + 46;
   {$EXTERNALSYM WSAEPFNOSUPPORT}
 
 //
@@ -16284,7 +16284,7 @@ const
 //
 //  An address incompatible with the requested protocol was used.
 //
-  WSAEAFNOSUPPORT = DWORD(10047);
+  WSAEAFNOSUPPORT = WSABASEERR + 47;
   {$EXTERNALSYM WSAEAFNOSUPPORT}
 
 //
@@ -16294,7 +16294,7 @@ const
 //
 //  Only one usage of each socket address (protocol/network address/port) is normally permitted.
 //
-  WSAEADDRINUSE = DWORD(10048);
+  WSAEADDRINUSE = WSABASEERR + 48;
   {$EXTERNALSYM WSAEADDRINUSE}
 
 //
@@ -16304,7 +16304,7 @@ const
 //
 //  The requested address is not valid in its context.
 //
-  WSAEADDRNOTAVAIL = DWORD(10049);
+  WSAEADDRNOTAVAIL = WSABASEERR + 49;
   {$EXTERNALSYM WSAEADDRNOTAVAIL}
 
 //
@@ -16314,7 +16314,7 @@ const
 //
 //  A socket operation encountered a dead network.
 //
-  WSAENETDOWN = DWORD(10050);
+  WSAENETDOWN = WSABASEERR + 50;
   {$EXTERNALSYM WSAENETDOWN}
 
 //
@@ -16324,7 +16324,7 @@ const
 //
 //  A socket operation was attempted to an unreachable network.
 //
-  WSAENETUNREACH = DWORD(10051);
+  WSAENETUNREACH = WSABASEERR + 51;
   {$EXTERNALSYM WSAENETUNREACH}
 
 //
@@ -16334,7 +16334,7 @@ const
 //
 //  The connection has been broken due to keep-alive activity detecting a failure while the operation was in progress.
 //
-  WSAENETRESET = DWORD(10052);
+  WSAENETRESET = WSABASEERR + 52;
   {$EXTERNALSYM WSAENETRESET}
 
 //
@@ -16344,7 +16344,7 @@ const
 //
 //  An established connection was aborted by the software in your host machine.
 //
-  WSAECONNABORTED = DWORD(10053);
+  WSAECONNABORTED = WSABASEERR + 53;
   {$EXTERNALSYM WSAECONNABORTED}
 
 //
@@ -16354,7 +16354,7 @@ const
 //
 //  An existing connection was forcibly closed by the remote host.
 //
-  WSAECONNRESET = DWORD(10054);
+  WSAECONNRESET = WSABASEERR + 54;
   {$EXTERNALSYM WSAECONNRESET}
 
 //
@@ -16364,7 +16364,7 @@ const
 //
 //  An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full.
 //
-  WSAENOBUFS = DWORD(10055);
+  WSAENOBUFS = WSABASEERR + 55;
   {$EXTERNALSYM WSAENOBUFS}
 
 //
@@ -16374,7 +16374,7 @@ const
 //
 //  A connect request was made on an already connected socket.
 //
-  WSAEISCONN = DWORD(10056);
+  WSAEISCONN = WSABASEERR + 56;
   {$EXTERNALSYM WSAEISCONN}
 
 //
@@ -16384,7 +16384,7 @@ const
 //
 //  A request to send or receive data was disallowed because the socket is not connected and (when sending on a datagram socket using a sendto call) no address was supplied.
 //
-  WSAENOTCONN = DWORD(10057);
+  WSAENOTCONN = WSABASEERR + 57;
   {$EXTERNALSYM WSAENOTCONN}
 
 //
@@ -16394,7 +16394,7 @@ const
 //
 //  A request to send or receive data was disallowed because the socket had already been shut down in that direction with a previous shutdown call.
 //
-  WSAESHUTDOWN = DWORD(10058);
+  WSAESHUTDOWN = WSABASEERR + 58;
   {$EXTERNALSYM WSAESHUTDOWN}
 
 //
@@ -16404,7 +16404,7 @@ const
 //
 //  Too many references to some kernel object.
 //
-  WSAETOOMANYREFS = DWORD(10059);
+  WSAETOOMANYREFS = WSABASEERR + 59;
   {$EXTERNALSYM WSAETOOMANYREFS}
 
 //
@@ -16414,7 +16414,7 @@ const
 //
 //  A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.
 //
-  WSAETIMEDOUT = DWORD(10060);
+  WSAETIMEDOUT = WSABASEERR + 60;
   {$EXTERNALSYM WSAETIMEDOUT}
 
 //
@@ -16424,7 +16424,7 @@ const
 //
 //  No connection could be made because the target machine actively refused it.
 //
-  WSAECONNREFUSED = DWORD(10061);
+  WSAECONNREFUSED = WSABASEERR + 61;
   {$EXTERNALSYM WSAECONNREFUSED}
 
 //
@@ -16434,7 +16434,7 @@ const
 //
 //  Cannot translate name.
 //
-  WSAELOOP = DWORD(10062);
+  WSAELOOP = WSABASEERR + 62;
   {$EXTERNALSYM WSAELOOP}
 
 //
@@ -16444,7 +16444,7 @@ const
 //
 //  Name component or name was too long.
 //
-  WSAENAMETOOLONG = DWORD(10063);
+  WSAENAMETOOLONG = WSABASEERR + 63;
   {$EXTERNALSYM WSAENAMETOOLONG}
 
 //
@@ -16454,7 +16454,7 @@ const
 //
 //  A socket operation failed because the destination host was down.
 //
-  WSAEHOSTDOWN = DWORD(10064);
+  WSAEHOSTDOWN = WSABASEERR + 64;
   {$EXTERNALSYM WSAEHOSTDOWN}
 
 //
@@ -16464,7 +16464,7 @@ const
 //
 //  A socket operation was attempted to an unreachable host.
 //
-  WSAEHOSTUNREACH = DWORD(10065);
+  WSAEHOSTUNREACH = WSABASEERR + 65;
   {$EXTERNALSYM WSAEHOSTUNREACH}
 
 //
@@ -16474,7 +16474,7 @@ const
 //
 //  Cannot remove a directory that is not empty.
 //
-  WSAENOTEMPTY = DWORD(10066);
+  WSAENOTEMPTY = WSABASEERR + 66;
   {$EXTERNALSYM WSAENOTEMPTY}
 
 //
@@ -16484,7 +16484,7 @@ const
 //
 //  A Windows Sockets implementation may have a limit on the number of applications that may use it simultaneously.
 //
-  WSAEPROCLIM = DWORD(10067);
+  WSAEPROCLIM = WSABASEERR + 67;
   {$EXTERNALSYM WSAEPROCLIM}
 
 //
@@ -16494,7 +16494,7 @@ const
 //
 //  Ran out of quota.
 //
-  WSAEUSERS = DWORD(10068);
+  WSAEUSERS = WSABASEERR + 68;
   {$EXTERNALSYM WSAEUSERS}
 
 //
@@ -16504,7 +16504,7 @@ const
 //
 //  Ran out of disk quota.
 //
-  WSAEDQUOT = DWORD(10069);
+  WSAEDQUOT = WSABASEERR + 69;
   {$EXTERNALSYM WSAEDQUOT}
 
 //
@@ -16514,7 +16514,7 @@ const
 //
 //  File handle reference is no longer available.
 //
-  WSAESTALE = DWORD(10070);
+  WSAESTALE = WSABASEERR + 70;
   {$EXTERNALSYM WSAESTALE}
 
 //
@@ -16524,7 +16524,7 @@ const
 //
 //  Item is not available locally.
 //
-  WSAEREMOTE = DWORD(10071);
+  WSAEREMOTE = WSABASEERR + 71;
   {$EXTERNALSYM WSAEREMOTE}
 
 //
@@ -16534,7 +16534,7 @@ const
 //
 //  WSAStartup cannot function at this time because the underlying system it uses to provide network services is currently unavailable.
 //
-  WSASYSNOTREADY = DWORD(10091);
+  WSASYSNOTREADY = WSABASEERR + 91;
   {$EXTERNALSYM WSASYSNOTREADY}
 
 //
@@ -16544,7 +16544,7 @@ const
 //
 //  The Windows Sockets version requested is not supported.
 //
-  WSAVERNOTSUPPORTED = DWORD(10092);
+  WSAVERNOTSUPPORTED = WSABASEERR + 92;
   {$EXTERNALSYM WSAVERNOTSUPPORTED}
 
 //
@@ -16554,7 +16554,7 @@ const
 //
 //  Either the application has not called WSAStartup, or WSAStartup failed.
 //
-  WSANOTINITIALISED = DWORD(10093);
+  WSANOTINITIALISED = WSABASEERR + 93;
   {$EXTERNALSYM WSANOTINITIALISED}
 
 //
@@ -16564,7 +16564,7 @@ const
 //
 //  Returned by WSARecv or WSARecvFrom to indicate the remote party has initiated a graceful shutdown sequence.
 //
-  WSAEDISCON = DWORD(10101);
+  WSAEDISCON = WSABASEERR + 101;
   {$EXTERNALSYM WSAEDISCON}
 
 //
@@ -16574,7 +16574,7 @@ const
 //
 //  No more results can be returned by WSALookupServiceNext.
 //
-  WSAENOMORE = DWORD(10102);
+  WSAENOMORE = WSABASEERR + 102;
   {$EXTERNALSYM WSAENOMORE}
 
 //
@@ -16584,7 +16584,7 @@ const
 //
 //  A call to WSALookupServiceEnd was made while this call was still processing. The call has been canceled.
 //
-  WSAECANCELLED = DWORD(10103);
+  WSAECANCELLED = WSABASEERR + 103;
   {$EXTERNALSYM WSAECANCELLED}
 
 //
@@ -16594,7 +16594,7 @@ const
 //
 //  The procedure call table is invalid.
 //
-  WSAEINVALIDPROCTABLE = DWORD(10104);
+  WSAEINVALIDPROCTABLE = WSABASEERR + 104;
   {$EXTERNALSYM WSAEINVALIDPROCTABLE}
 
 //
@@ -16604,7 +16604,7 @@ const
 //
 //  The requested service provider is invalid.
 //
-  WSAEINVALIDPROVIDER = DWORD(10105);
+  WSAEINVALIDPROVIDER = WSABASEERR + 105;
   {$EXTERNALSYM WSAEINVALIDPROVIDER}
 
 //
@@ -16614,7 +16614,7 @@ const
 //
 //  The requested service provider could not be loaded or initialized.
 //
-  WSAEPROVIDERFAILEDINIT = DWORD(10106);
+  WSAEPROVIDERFAILEDINIT = WSABASEERR + 106;
   {$EXTERNALSYM WSAEPROVIDERFAILEDINIT}
 
 //
@@ -16624,7 +16624,7 @@ const
 //
 //  A system call that should never fail has failed.
 //
-  WSASYSCALLFAILURE = DWORD(10107);
+  WSASYSCALLFAILURE = WSABASEERR + 107;
   {$EXTERNALSYM WSASYSCALLFAILURE}
 
 //
@@ -16634,7 +16634,7 @@ const
 //
 //  No such service is known. The service cannot be found in the specified name space.
 //
-  WSASERVICE_NOT_FOUND = DWORD(10108);
+  WSASERVICE_NOT_FOUND = WSABASEERR + 108;
   {$EXTERNALSYM WSASERVICE_NOT_FOUND}
 
 //
@@ -16644,7 +16644,7 @@ const
 //
 //  The specified class was not found.
 //
-  WSATYPE_NOT_FOUND = DWORD(10109);
+  WSATYPE_NOT_FOUND = WSABASEERR + 109;
   {$EXTERNALSYM WSATYPE_NOT_FOUND}
 
 //
@@ -16654,7 +16654,7 @@ const
 //
 //  No more results can be returned by WSALookupServiceNext.
 //
-  WSA_E_NO_MORE = DWORD(10110);
+  WSA_E_NO_MORE = WSABASEERR + 110;
   {$EXTERNALSYM WSA_E_NO_MORE}
 
 //
@@ -16664,7 +16664,7 @@ const
 //
 //  A call to WSALookupServiceEnd was made while this call was still processing. The call has been canceled.
 //
-  WSA_E_CANCELLED = DWORD(10111);
+  WSA_E_CANCELLED = WSABASEERR + 111;
   {$EXTERNALSYM WSA_E_CANCELLED}
 
 //
@@ -16674,7 +16674,7 @@ const
 //
 //  A database query failed because it was actively refused.
 //
-  WSAEREFUSED = DWORD(10112);
+  WSAEREFUSED = WSABASEERR + 112;
   {$EXTERNALSYM WSAEREFUSED}
 
 //
@@ -16684,7 +16684,7 @@ const
 //
 //  No such host is known.
 //
-  WSAHOST_NOT_FOUND = DWORD(11001);
+  WSAHOST_NOT_FOUND = WSABASEERR + 1001;
   {$EXTERNALSYM WSAHOST_NOT_FOUND}
 
 //
@@ -16694,7 +16694,7 @@ const
 //
 //  This is usually a temporary error during hostname resolution and means that the local server did not receive a response from an authoritative server.
 //
-  WSATRY_AGAIN = DWORD(11002);
+  WSATRY_AGAIN = WSABASEERR + 1002;
   {$EXTERNALSYM WSATRY_AGAIN}
 
 //
@@ -16704,7 +16704,7 @@ const
 //
 //  A non-recoverable error occurred during a database lookup.
 //
-  WSANO_RECOVERY = DWORD(11003);
+  WSANO_RECOVERY = WSABASEERR + 1003;
   {$EXTERNALSYM WSANO_RECOVERY}
 
 //
@@ -16714,7 +16714,7 @@ const
 //
 //  The requested name is valid, but no data of the requested type was found.
 //
-  WSANO_DATA = DWORD(11004);
+  WSANO_DATA = WSABASEERR + 1004;
   {$EXTERNALSYM WSANO_DATA}
 
 //
@@ -16724,7 +16724,7 @@ const
 //
 //  At least one reserve has arrived.
 //
-  WSA_QOS_RECEIVERS = DWORD(11005);
+  WSA_QOS_RECEIVERS = WSABASEERR + 1005;
   {$EXTERNALSYM WSA_QOS_RECEIVERS}
 
 //
@@ -16734,7 +16734,7 @@ const
 //
 //  At least one path has arrived.
 //
-  WSA_QOS_SENDERS = DWORD(11006);
+  WSA_QOS_SENDERS = WSABASEERR + 1006;
   {$EXTERNALSYM WSA_QOS_SENDERS}
 
 //
@@ -16744,7 +16744,7 @@ const
 //
 //  There are no senders.
 //
-  WSA_QOS_NO_SENDERS = DWORD(11007);
+  WSA_QOS_NO_SENDERS = WSABASEERR + 1007;
   {$EXTERNALSYM WSA_QOS_NO_SENDERS}
 
 //
@@ -16754,7 +16754,7 @@ const
 //
 //  There are no receivers.
 //
-  WSA_QOS_NO_RECEIVERS = DWORD(11008);
+  WSA_QOS_NO_RECEIVERS = WSABASEERR + 1008;
   {$EXTERNALSYM WSA_QOS_NO_RECEIVERS}
 
 //
@@ -16764,7 +16764,7 @@ const
 //
 //  Reserve has been confirmed.
 //
-  WSA_QOS_REQUEST_CONFIRMED = DWORD(11009);
+  WSA_QOS_REQUEST_CONFIRMED = WSABASEERR + 1009;
   {$EXTERNALSYM WSA_QOS_REQUEST_CONFIRMED}
 
 //
@@ -16774,7 +16774,7 @@ const
 //
 //  Error due to lack of resources.
 //
-  WSA_QOS_ADMISSION_FAILURE = DWORD(11010);
+  WSA_QOS_ADMISSION_FAILURE = WSABASEERR + 1010;
   {$EXTERNALSYM WSA_QOS_ADMISSION_FAILURE}
 
 //
@@ -16784,7 +16784,7 @@ const
 //
 //  Rejected for administrative reasons - bad credentials.
 //
-  WSA_QOS_POLICY_FAILURE = DWORD(11011);
+  WSA_QOS_POLICY_FAILURE = WSABASEERR + 1011;
   {$EXTERNALSYM WSA_QOS_POLICY_FAILURE}
 
 //
@@ -16794,7 +16794,7 @@ const
 //
 //  Unknown or conflicting style.
 //
-  WSA_QOS_BAD_STYLE = DWORD(11012);
+  WSA_QOS_BAD_STYLE = WSABASEERR + 1012;
   {$EXTERNALSYM WSA_QOS_BAD_STYLE}
 
 //
@@ -16804,7 +16804,7 @@ const
 //
 //  Problem with some part of the filterspec or providerspecific buffer in general.
 //
-  WSA_QOS_BAD_OBJECT = DWORD(11013);
+  WSA_QOS_BAD_OBJECT = WSABASEERR + 1013;
   {$EXTERNALSYM WSA_QOS_BAD_OBJECT}
 
 //
@@ -16814,7 +16814,7 @@ const
 //
 //  Problem with some part of the flowspec.
 //
-  WSA_QOS_TRAFFIC_CTRL_ERROR = DWORD(11014);
+  WSA_QOS_TRAFFIC_CTRL_ERROR = WSABASEERR + 1014;
   {$EXTERNALSYM WSA_QOS_TRAFFIC_CTRL_ERROR}
 
 //
@@ -16824,7 +16824,7 @@ const
 //
 //  General QOS error.
 //
-  WSA_QOS_GENERIC_ERROR = DWORD(11015);
+  WSA_QOS_GENERIC_ERROR = WSABASEERR + 1015;
   {$EXTERNALSYM WSA_QOS_GENERIC_ERROR}
 
 //
@@ -16834,7 +16834,7 @@ const
 //
 //  An invalid or unrecognized service type was found in the flowspec.
 //
-  WSA_QOS_ESERVICETYPE = DWORD(11016);
+  WSA_QOS_ESERVICETYPE = WSABASEERR + 1016;
   {$EXTERNALSYM WSA_QOS_ESERVICETYPE}
 
 //
@@ -16844,7 +16844,7 @@ const
 //
 //  An invalid or inconsistent flowspec was found in the QOS structure.
 //
-  WSA_QOS_EFLOWSPEC = DWORD(11017);
+  WSA_QOS_EFLOWSPEC = WSABASEERR + 1017;
   {$EXTERNALSYM WSA_QOS_EFLOWSPEC}
 
 //
@@ -16854,7 +16854,7 @@ const
 //
 //  Invalid QOS provider-specific buffer.
 //
-  WSA_QOS_EPROVSPECBUF = DWORD(11018);
+  WSA_QOS_EPROVSPECBUF = WSABASEERR + 1018;
   {$EXTERNALSYM WSA_QOS_EPROVSPECBUF}
 
 //
@@ -16864,7 +16864,7 @@ const
 //
 //  An invalid QOS filter style was used.
 //
-  WSA_QOS_EFILTERSTYLE = DWORD(11019);
+  WSA_QOS_EFILTERSTYLE = WSABASEERR + 1019;
   {$EXTERNALSYM WSA_QOS_EFILTERSTYLE}
 
 //
@@ -16874,7 +16874,7 @@ const
 //
 //  An invalid QOS filter type was used.
 //
-  WSA_QOS_EFILTERTYPE = DWORD(11020);
+  WSA_QOS_EFILTERTYPE = WSABASEERR + 1020;
   {$EXTERNALSYM WSA_QOS_EFILTERTYPE}
 
 //
@@ -16884,7 +16884,7 @@ const
 //
 //  An incorrect number of QOS FILTERSPECs were specified in the FLOWDESCRIPTOR.
 //
-  WSA_QOS_EFILTERCOUNT = DWORD(11021);
+  WSA_QOS_EFILTERCOUNT = WSABASEERR + 1021;
   {$EXTERNALSYM WSA_QOS_EFILTERCOUNT}
 
 //
@@ -16894,7 +16894,7 @@ const
 //
 //  An object with an invalid ObjectLength field was specified in the QOS provider-specific buffer.
 //
-  WSA_QOS_EOBJLENGTH = DWORD(11022);
+  WSA_QOS_EOBJLENGTH = WSABASEERR + 1022;
   {$EXTERNALSYM WSA_QOS_EOBJLENGTH}
 
 //
@@ -16904,7 +16904,7 @@ const
 //
 //  An incorrect number of flow descriptors was specified in the QOS structure.
 //
-  WSA_QOS_EFLOWCOUNT = DWORD(11023);
+  WSA_QOS_EFLOWCOUNT = WSABASEERR + 1023;
   {$EXTERNALSYM WSA_QOS_EFLOWCOUNT}
 
 //
@@ -16914,7 +16914,7 @@ const
 //
 //  An unrecognized object was found in the QOS provider-specific buffer.
 //
-  WSA_QOS_EUNKOWNPSOBJ = DWORD(11024);
+  WSA_QOS_EUNKOWNPSOBJ = WSABASEERR + 1024;
   {$EXTERNALSYM WSA_QOS_EUNKOWNPSOBJ}
 
 //
@@ -16924,7 +16924,7 @@ const
 //
 //  An invalid policy object was found in the QOS provider-specific buffer.
 //
-  WSA_QOS_EPOLICYOBJ = DWORD(11025);
+  WSA_QOS_EPOLICYOBJ = WSABASEERR + 1025;
   {$EXTERNALSYM WSA_QOS_EPOLICYOBJ}
 
 //
@@ -16934,7 +16934,7 @@ const
 //
 //  An invalid QOS flow descriptor was found in the flow descriptor list.
 //
-  WSA_QOS_EFLOWDESC = DWORD(11026);
+  WSA_QOS_EFLOWDESC = WSABASEERR + 1026;
   {$EXTERNALSYM WSA_QOS_EFLOWDESC}
 
 //
@@ -16944,7 +16944,7 @@ const
 //
 //  An invalid or inconsistent flowspec was found in the QOS provider specific buffer.
 //
-  WSA_QOS_EPSFLOWSPEC = DWORD(11027);
+  WSA_QOS_EPSFLOWSPEC = WSABASEERR + 1027;
   {$EXTERNALSYM WSA_QOS_EPSFLOWSPEC}
 
 //
@@ -16954,7 +16954,7 @@ const
 //
 //  An invalid FILTERSPEC was found in the QOS provider-specific buffer.
 //
-  WSA_QOS_EPSFILTERSPEC = DWORD(11028);
+  WSA_QOS_EPSFILTERSPEC = WSABASEERR + 1028;
   {$EXTERNALSYM WSA_QOS_EPSFILTERSPEC}
 
 //
@@ -16964,7 +16964,7 @@ const
 //
 //  An invalid shape discard mode object was found in the QOS provider specific buffer.
 //
-  WSA_QOS_ESDMODEOBJ = DWORD(11029);
+  WSA_QOS_ESDMODEOBJ = WSABASEERR + 1029;
   {$EXTERNALSYM WSA_QOS_ESDMODEOBJ}
 
 //
@@ -16974,7 +16974,7 @@ const
 //
 //  An invalid shaping rate object was found in the QOS provider-specific buffer.
 //
-  WSA_QOS_ESHAPERATEOBJ = DWORD(11030);
+  WSA_QOS_ESHAPERATEOBJ = WSABASEERR + 1030;
   {$EXTERNALSYM WSA_QOS_ESHAPERATEOBJ}
 
 //
@@ -16984,7 +16984,7 @@ const
 //
 //  A reserved policy element was found in the QOS provider-specific buffer.
 //
-  WSA_QOS_RESERVED_PETYPE = DWORD(11031);
+  WSA_QOS_RESERVED_PETYPE = WSABASEERR + 1031;
   {$EXTERNALSYM WSA_QOS_RESERVED_PETYPE}
 
 ///////////////////////////////////////////////////

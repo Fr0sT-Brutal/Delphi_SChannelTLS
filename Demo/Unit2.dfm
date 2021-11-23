@@ -3,7 +3,7 @@ object Form2: TForm2
   Top = 0
   Caption = 'TLS test'
   ClientHeight = 734
-  ClientWidth = 646
+  ClientWidth = 704
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -14,7 +14,7 @@ object Form2: TForm2
   OnClose = FormClose
   OnCreate = FormCreate
   DesignSize = (
-    646
+    704
     734)
   PixelsPerInch = 120
   TextHeight = 16
@@ -32,10 +32,17 @@ object Form2: TForm2
   end
   object lbl: TLabel
     Left = 8
-    Top = 118
+    Top = 147
     Width = 149
     Height = 16
     Caption = 'Request (default if empty)'
+  end
+  object Label1: TLabel
+    Left = 504
+    Top = 64
+    Width = 42
+    Height = 16
+    Caption = 'Ignore:'
   end
   object btnReqSync: TButton
     Left = 272
@@ -50,7 +57,7 @@ object Form2: TForm2
   object mLog: TMemo
     Left = 8
     Top = 335
-    Width = 630
+    Width = 688
     Height = 391
     Anchors = [akLeft, akTop, akRight, akBottom]
     ScrollBars = ssVertical
@@ -66,9 +73,9 @@ object Form2: TForm2
   end
   object mReq: TMemo
     Left = 8
-    Top = 144
+    Top = 171
     Width = 368
-    Height = 185
+    Height = 158
     ScrollBars = ssVertical
     TabOrder = 3
     WordWrap = False
@@ -102,9 +109,9 @@ object Form2: TForm2
   end
   object Memo1: TMemo
     Left = 382
-    Top = 198
+    Top = 224
     Width = 256
-    Height = 131
+    Height = 105
     ScrollBars = ssVertical
     TabOrder = 7
     WordWrap = False
@@ -132,5 +139,38 @@ object Form2: TForm2
     Height = 24
     TabOrder = 10
     TextHint = '(socks5|http)://host:port'
+  end
+  object chbManualCertCheck: TCheckBox
+    Left = 504
+    Top = 32
+    Width = 134
+    Height = 17
+    Caption = 'Check cert manually'
+    TabOrder = 11
+  end
+  object lbxIgnoreFlags: TCheckListBox
+    Left = 560
+    Top = 55
+    Width = 134
+    Height = 87
+    TabOrder = 12
+  end
+  object chbPrintCert: TCheckBox
+    Left = 382
+    Top = 194
+    Width = 227
+    Height = 17
+    Caption = 'Print cert data (async only)'
+    TabOrder = 13
+    OnClick = chbDataClick
+  end
+  object chbNoCheckCert: TCheckBox
+    Left = 504
+    Top = 117
+    Width = 134
+    Height = 17
+    Caption = 'Don'#39't check cert'
+    TabOrder = 14
+    Visible = False
   end
 end

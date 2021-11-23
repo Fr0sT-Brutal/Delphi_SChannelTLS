@@ -7,10 +7,10 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, WinSock,
-  Vcl.ExtCtrls, StrUtils,
-  JwaWinError, JwaSspi, SChannel.Utils,
+  Vcl.ExtCtrls, StrUtils, Vcl.CheckLst, TypInfo,
+  JwaWinError, JwaSspi, JwaWinCrypt, SChannel.Utils,
   {$IFDEF ICS}
-  IcsSChannelSocket, OverbyteIcsWSocket, OverbyteIcsLogger,
+  IcsSChannelSocket, OverbyteIcsWSocket, OverbyteIcsLogger, OverbyteIcsMimeUtils,
   {$ENDIF}
   SChannelSocketRequest;
 
@@ -31,12 +31,20 @@ type
     chbReuseSessions: TCheckBox;
     chbUseProxy: TCheckBox;
     eProxy: TEdit;
+    chbManualCertCheck: TCheckBox;
+    lbxIgnoreFlags: TCheckListBox;
+    Label1: TLabel;
+    chbPrintCert: TCheckBox;
+    chbNoCheckCert: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure chbDumpsClick(Sender: TObject);
     procedure btnReqSyncClick(Sender: TObject);
     procedure btnReqAsyncClick(Sender: TObject);
     procedure chbDataClick(Sender: TObject);
+  private
+    SharedSessionCreds: ISharedSessionCreds;
+    function GetSharedCreds: ISharedSessionCreds;
   public
     {$IFDEF ICS}
     icsSock: TSChannelWSocket;
@@ -58,7 +66,6 @@ var
   hClientCreds: CredHandle = ();
   PrintDumps: Boolean = False;
   PrintData: Boolean = False;
-  SharedSessionCreds: ISharedSessionCreds;
 
 const
   DefaultReq = 'HEAD / HTTP/1.1'+sLineBreak+'Connection: close'+sLineBreak+sLineBreak;
@@ -68,9 +75,12 @@ implementation
 {$R *.dfm}
 
 procedure TForm2.FormCreate(Sender: TObject);
+var IgnFlag: TCertCheckIgnoreFlag;
 begin
   if mReq.Lines.Count = 0 then
     mReq.Text := DefaultReq;
+  for IgnFlag := Low(TCertCheckIgnoreFlag) to High(TCertCheckIgnoreFlag) do
+    lbxIgnoreFlags.Items.Add(GetEnumName(TypeInfo(TCertCheckIgnoreFlag), Ord(IgnFlag)));
 end;
 
 procedure TForm2.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -102,6 +112,17 @@ begin
   Log(s, True);
 end;
 
+function TForm2.GetSharedCreds: ISharedSessionCreds;
+begin
+  if chbReuseSessions.Checked then
+    if SharedSessionCreds = nil then
+      SharedSessionCreds := CreateSharedCreds
+    else
+  else
+    SharedSessionCreds := nil;
+  Result := SharedSessionCreds;
+end;
+
 const
   SLblBtnSync: array[Boolean] of string = ('Request sync', 'Cancel');
   SLblBtnAsync: array[Boolean] of string = ('Request async', 'Cancel');
@@ -123,13 +144,7 @@ begin
     TButton(Sender).Caption := SLblBtnSync[True];
     SChannel.Utils.Init;
     SChannelSocketRequest.LogFn := Self.Log;
-    if chbReuseSessions.Checked then
-      if SharedSessionCreds = nil then
-        SharedSessionCreds := CreateSharedCreds
-      else
-    else
-      SharedSessionCreds := nil;
-    SChannelSocketRequest.SharedSessionCreds := SharedSessionCreds;
+    SChannelSocketRequest.SharedSessionCreds := GetSharedCreds;
 
     Request(eURL.Text, IfThen(mReq.Lines.Count > 0, mReq.Text, DefaultReq));
 
@@ -140,7 +155,9 @@ begin
 end;
 
 procedure TForm2.btnReqAsyncClick(Sender: TObject);
-var SessionData: TSessionData;
+var
+  SessionData: TSessionData;
+  i: Integer;
 begin
   {$IFDEF ICS}
   // Cancel
@@ -156,12 +173,6 @@ begin
   if TButton(Sender).Caption = SLblBtnAsync[False] then
   begin
     TButton(Sender).Caption := SLblBtnAsync[True];
-    if chbReuseSessions.Checked then
-      if SharedSessionCreds = nil then
-        SharedSessionCreds := CreateSharedCreds
-      else
-    else
-      SharedSessionCreds := nil;
     icsSock := TSChannelWSocket.Create(Self);
     icsSock.OnBgException := WSocketBgException;
     icsSock.OnDataAvailable := WSocketDataAvailable;
@@ -183,7 +194,15 @@ begin
       icsSock.ProxyURL := '';
     icsSock.Secure := True;
     SessionData := icsSock.SessionData;
-    SessionData.SharedCreds := SharedSessionCreds;
+    SessionData.SharedCreds := GetSharedCreds;
+    if chbManualCertCheck.Checked
+      then SessionData.Flags := SessionData.Flags + [sfNoServerVerify]
+      else SessionData.Flags := SessionData.Flags - [sfNoServerVerify];
+    SessionData.CertCheckIgnoreFlags := [];
+    for i := 0 to lbxIgnoreFlags.Items.Count - 1 do
+      if lbxIgnoreFlags.Checked[i] then
+        Include(SessionData.CertCheckIgnoreFlags, TCertCheckIgnoreFlag(i));
+
     icsSock.SessionData := SessionData;
     icsSock.Connect;
   end;
@@ -226,7 +245,7 @@ begin
 
   TrashCanBuf[res] := #0;
   Log('WSocket.DataAvailable('+IntToStr(ErrCode)+'), got '+IntToStr(res)+
-    IfThen(PrintData, sLineBreak+StrPas(PAnsiChar(@TrashCanBuf)))
+    IfThen(PrintData, sLineBreak+string(PAnsiChar(@TrashCanBuf)))
   );
   Form2.lblTraf.Caption := Format('Traffic: %d total / %d payload', [TSChannelWSocket(Sender).ReadCount, TSChannelWSocket(Sender).PayloadReadCount]);
 end;
@@ -267,9 +286,23 @@ begin
   btnReqAsync.Caption := SLblBtnAsync[False];
 end;
 
+type
+  TSChannelWSocketHack = class(TSChannelWSocket)
+    property hContext: CtxtHandle read FhContext;
+  end;
+
 procedure TForm2.WSocketTLSDone(Sender: TObject);
+var
+  pCertCtx: PCCERT_CONTEXT;
+  Enc: AnsiString;
 begin
   Log('WSocket.TLSDone');
+  if not chbPrintCert.Checked then Exit;
+
+  pCertCtx := GetCertContext(TSChannelWSocketHack(Sender).hContext);
+  Log('Cert data:');
+  Enc := Base64Encode(PAnsiChar(pCertCtx.pbCertEncoded), Integer(pCertCtx.cbCertEncoded));
+  Log(string(Enc));
 end;
 
 {$ENDIF}

@@ -395,10 +395,13 @@ begin
         cbData := Receive((PByte(FHandShakeData.IoBuffer) + FHandShakeData.cbIoBuffer),
             Length(FHandShakeData.IoBuffer) - Integer(FHandShakeData.cbIoBuffer));
         // ! Although this function is called from TriggerDataAvailable,
-        // WSAEWOULDBLOCK could happen so we just ignore receive errors
+        // WSAEWOULDBLOCK could happen so we just ignore it.
+        if (cbData = SOCKET_ERROR) and (WSocket_WSAGetLastError = WSAEWOULDBLOCK) then
+            Exit;
+        // Report other errors
         if cbData <= 0 then
         begin
-            SChannelLog(loSslDevel, Format(S_Msg_HShStageRFail, [WSocket_WSAGetLastError, WSocketErrorMsgFromErrorCode(WSocket_WSAGetLastError)]));
+            SChannelLog(loSslErr, Format(S_Msg_HShStageRFail, [WSocket_WSAGetLastError, WSocketErrorMsgFromErrorCode(WSocket_WSAGetLastError)]));
             Exit;
         end;
         SChannelLog(loSslDevel, Format(S_Msg_HShStageRSuccess, [cbData]));
@@ -470,12 +473,19 @@ begin
     if FHandShakeData.cbIoBuffer > 0 then
         SChannelLog(loSslInfo, Format(S_Msg_HShExtraData, [FHandShakeData.cbIoBuffer]));
 
-    // Don't pass host addr if it's IP otherwise verification would fail
-    if FAddrIsIP then
-        CheckServerCert(FhContext, '')
-    else
-        CheckServerCert(FhContext, Addr);
-
+    try
+        // Don't pass host addr if it's IP otherwise verification would fail
+        if FAddrIsIP then
+            CheckServerCert(FhContext, '', SessionData.TrustedCerts, SessionData.CertCheckIgnoreFlags)
+        else
+            CheckServerCert(FhContext, Addr, SessionData.TrustedCerts, SessionData.CertCheckIgnoreFlags);
+    except on E: ESSPIError do
+        begin
+            // Report error to TLS channel
+            SChannelLog(loSslErr, E.Message);
+            raise;
+        end;
+    end;
     SChannelLog(loSslInfo, S_Msg_SrvCredsAuth);
     InitBuffers(FhContext, FSendBuffer, FSizes);
     SetLength(FRecvBuffer.Data, Length(FSendBuffer));

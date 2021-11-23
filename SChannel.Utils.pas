@@ -166,10 +166,8 @@ type
 
     // Create WinAPI exception based on Err code
     constructor CreateWinAPI(const Action, Func: string; Err: DWORD);
-    // Create SChannel exception based on status
-    constructor CreateSecStatus(const Action, Func: string; Status: SECURITY_STATUS); overload;
-    // Create SChannel exception based on custom info message
-    constructor CreateSecStatus(const Action, Func, Info: string); overload;
+    // Create SChannel exception based on status and, optionally, on custom info message
+    constructor CreateSecStatus(const Action, Func: string; Status: SECURITY_STATUS; const Info: string = ''); overload;
   end;
 
 var
@@ -506,29 +504,20 @@ begin
 end;
 
 {
-  Create SChannel exception based on status
+  Create SChannel exception based on status and, optionally, on custom info message
     @param Action - current action, like `@ CreateCredentials`
     @param Func - SChannel method, like `AcquireCredentialsHandle`
-    @param Status - SChannel status
+    @param Status - SChannel status that will be copied to SecStatus field.
+    @param Info - custom info message that will be inserted in exception message.
+      If empty, info message is generated based on Status
 }
 constructor ESSPIError.CreateSecStatus(const Action, Func: string;
-  Status: SECURITY_STATUS);
+  Status: SECURITY_STATUS; const Info: string);
 begin
-  inherited CreateFmt(S_E_SecStatusErrPatt, [Action, Func, SecStatusErrStr(Status)]);
+  if Info <> ''
+    then inherited CreateFmt(S_E_SecStatusErrPatt, [Action, Func, Info])
+    else inherited CreateFmt(S_E_SecStatusErrPatt, [Action, Func, SecStatusErrStr(Status)]);
   Self.SecStatus := Status;
-end;
-
-{
-  Create SChannel exception based on custom info message. Sets `SecStatus` to
-  `SEC_E_INTERNAL_ERROR`.
-    @param Action - current action, like `@ CreateCredentials`
-    @param Func - SChannel method, like `AcquireCredentialsHandle`
-    @param Info - SChannel status
-}
-constructor ESSPIError.CreateSecStatus(const Action, Func, Info: string);
-begin
-  inherited CreateFmt(S_E_SecStatusErrPatt, [Action, Func, Info]);
-  Self.SecStatus := SEC_E_INTERNAL_ERROR;
 end;
 
 // Create general exception
@@ -543,15 +532,9 @@ begin
 end;
 
 // Create security status exception
-function ErrSecStatus(const Action, Func: string; Status: SECURITY_STATUS): ESSPIError; overload;
+function ErrSecStatus(const Action, Func: string; Status: SECURITY_STATUS; const Info: string = ''): ESSPIError; overload;
 begin
-  Result := ESSPIError.CreateSecStatus(Action, Func, Status);
-end;
-
-// Create security status exception with custom message
-function ErrSecStatus(const Action, Func, Info: string): ESSPIError; overload;
-begin
-  Result := ESSPIError.CreateSecStatus(Action, Func, Info);
+  Result := ESSPIError.CreateSecStatus(Action, Func, Status, Info);
 end;
 
 // Create WinAPI exception based on GetLastError
@@ -904,7 +887,7 @@ begin
         if Result <> SEC_I_CONTINUE_NEEDED then
           raise ErrSecStatus('@ DoClientHandshake @ client hello', 'InitializeSecurityContext', Result);
         if (HandShakeData.OutBuffers[0].cbBuffer = 0) or (HandShakeData.OutBuffers[0].pvBuffer = nil) then
-          raise ErrSecStatus('@ DoClientHandshake @ client hello', 'InitializeSecurityContext', 'generated empty buffer');
+          raise ErrSecStatus('@ DoClientHandshake @ client hello', 'InitializeSecurityContext', Result, 'generated empty buffer');
 
         HandShakeData.Stage := hssSendCliHello;
       end;
@@ -1138,7 +1121,7 @@ begin
 
     if PolicyStatus.dwError <> NO_ERROR then
       raise ErrSecStatus('@ VerifyServerCertificate', 'CertVerifyCertificateChainPolicy',
-        WinVerifyTrustErrorStr(PolicyStatus.dwError));
+        PolicyStatus.dwError, WinVerifyTrustErrorStr(PolicyStatus.dwError));
   finally
     if pChainContext <> nil then
       CertFreeCertificateChain(pChainContext);
@@ -1235,7 +1218,7 @@ begin
   // Resulting Buffers: header, data, trailer
   cbWritten := Buffers[0].cbBuffer + Buffers[1].cbBuffer + Buffers[2].cbBuffer;
   if cbWritten = 0 then
-    raise ErrSecStatus('@ EncryptData', 'EncryptMessage', 'zero data');
+    raise ErrSecStatus('@ EncryptData', 'EncryptMessage', SEC_E_INTERNAL_ERROR, 'zero data');
 end;
 
 function DecryptData(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes;

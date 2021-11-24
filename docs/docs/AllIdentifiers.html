@@ -18,69 +18,79 @@
 <th class="itemdesc">Description</th>
 </tr>
 <tr class="list">
-<td class="itemname"><a class="bold" href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></td>
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#CertCheckIgnoreAll">CertCheckIgnoreAll</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
-<td class="itemdesc"><p>Check server certificate    with a certificate that contains a common name that is not valid will be ignored.</p></td>
+<td class="itemdesc"><p>Set of cert validation ignore flags that has all items set - use it to ignore everything</p></td>
 </tr>
 <tr class="list2">
-<td class="itemname"><a class="bold" href="SChannel.Utils.html#CreateCredentials">CreateCredentials</a></td>
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
-<td class="itemdesc"><p>Mainly for internal use  </p></td>
+<td class="itemdesc"><p>Check server certificate   with a certificate that contains a common name that is not valid will be ignored.</p></td>
 </tr>
 <tr class="list">
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#CreateCredentials">CreateCredentials</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>Mainly for internal use.</p></td>
+</tr>
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#CreateSessionCreds">CreateSessionCreds</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Init session creds, return data record to be used in calling other functions.</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#CreateSharedCreds">CreateSharedCreds</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Shared creds factory</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#DecryptData">DecryptData</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Decrypt data received from server.</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#DeleteContext">DeleteContext</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Dispose and nullify security context</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#DoClientHandshake">DoClientHandshake</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Function to prepare all necessary handshake data.</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.SyncHandshake.EHandshakeCommError.html">EHandshakeCommError</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.SyncHandshake.html">SChannel.SyncHandshake</a></td>
 <td class="itemdesc"><p>Specific exception class raised by <a class="normal" href="SChannel.SyncHandshake.html#PerformClientHandshake">PerformClientHandshake</a> on communication failures.</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#EncryptData">EncryptData</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Encrypt data (prepare for sending to server).</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Specific exception class.</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#Fin">Fin</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Dispose and nullify global stuff.</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#FinSession">FinSession</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Finalize session, free credentials</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#FreeSessionCreds">FreeSessionCreds</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Finalize session creds</p></td>
+</tr>
+<tr class="list">
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#GetCertContext">GetCertContext</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>Retrieve server certificate.</p></td>
 </tr>
 <tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#GetSessionCredsPtr">GetSessionCredsPtr</a></td>
@@ -280,7 +290,17 @@
 <tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.TBuffer.html">TBuffer</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
-<td class="itemdesc"><p>Trivial <a class="normal" href="SChannel.Utils.TBuffer.html#Data">data</a> storage</p></td>
+<td class="itemdesc"><p>Trivial data storage</p></td>
+</tr>
+<tr class="list2">
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#TCertCheckIgnoreFlag">TCertCheckIgnoreFlag</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>Flags to ignore some cert aspects when checking manually via <code><a class="normal" href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></code>.</p></td>
+</tr>
+<tr class="list">
+<td class="itemname"><a class="bold" href="SChannel.Utils.html#TCertCheckIgnoreFlags">TCertCheckIgnoreFlags</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
 <tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#TChannelState">TChannelState</a></td>
@@ -343,26 +363,31 @@
 <td class="itemdesc"><p>&nbsp;</p></td>
 </tr>
 <tr class="list2">
+<td class="itemname"><a class="bold" href="SChannel.Utils.TTrustedCerts.html">TTrustedCerts</a></td>
+<td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
+<td class="itemdesc"><p>Local storage of trusted certs.</p></td>
+</tr>
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#USED_ALGS">USED_ALGS</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Detect messages received out of sequence</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#USED_PROTOCOLS">USED_PROTOCOLS</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Set of used protocols.</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#VerifyServerCertificate">VerifyServerCertificate</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
-<td class="itemdesc"><p>Mainly for internal use.</p></td>
+<td class="itemdesc"><p>Validate certificate.</p></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemname"><a class="bold" href="SChannel.Utils.html#WinVerifyTrustErrorStr">WinVerifyTrustErrorStr</a></td>
 <td class="itemunit"><a class="bold" href="SChannel.Utils.html">SChannel.Utils</a></td>
 <td class="itemdesc"><p>Returns string representaion of given verify trust error</p></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemname"><a class="bold" href="IcsSChannelSocket.html#WS_OK">WS_OK</a></td>
 <td class="itemunit"><a class="bold" href="IcsSChannelSocket.html">IcsSChannelSocket</a></td>
 <td class="itemdesc"><p>WinSock success code</p></td>

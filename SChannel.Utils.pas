@@ -120,19 +120,22 @@ type
 
   TDebugFn = procedure (const Msg: string) of object;
 
-  // Local storage of trusted certs.
+  // App-local storage of trusted certs. MT-safe.
   TTrustedCerts = class
   strict private
+    FPropCS: TRTLCriticalSection;
     FCerts: array of record
       Host: string;
       Data: TBytes;
     end;
   public
+    constructor Create;
+    destructor Destroy; override;
     procedure Add(const Host: string; const Data: TBytes);
+    function Contains(const Host: string): Boolean; overload;
     function Contains(const Host: string; pData: Pointer; DataLen: Integer): Boolean; overload;
     function Contains(const Host: string; const Data: TBytes): Boolean; overload;
     procedure Clear;
-    function Count: Integer;
   end;
 
   // Flags to ignore some cert aspects when checking manually via `CheckServerCert`.
@@ -146,7 +149,8 @@ type
   );
   TCertCheckIgnoreFlags = set of TCertCheckIgnoreFlag;
 
-  // Data related to a session
+  // Data related to a session. Mainly meaningful during handshake and making no
+  // effect when a connection is established.
   TSessionData = record
     // Options
     Flags: TSessionFlags;
@@ -164,8 +168,8 @@ type
     // Non-shared session credentials. It is used if `SharedCreds` is @nil
     SessionCreds: TSessionCreds;
     // Pointer to list of trusted certs. The object could be shared or personal to a socket.
-    // Base class is not MT-safe. If not empty, auto validation of certs is disabled
-    // (`sfNoServerVerify` is included in `Flags` property) at first call to `DoClientHandshake`.
+    // If not empty, auto validation of certs is disabled (`sfNoServerVerify` is
+    // included in `Flags` property) at first call to `DoClientHandshake`.
     TrustedCerts: TTrustedCerts;
     // Set of cert aspects to ignore when checking manually via `CheckServerCert`.
     // If not empty, auto validation of certs is disabled (`sfNoServerVerify` is
@@ -539,15 +543,55 @@ end;
 
 { ~~ TTrustedCerts ~~ }
 
+constructor TTrustedCerts.Create;
+begin
+  inherited;
+  InitializeCriticalSection(FPropCS);
+end;
+
+destructor TTrustedCerts.Destroy;
+begin
+  DeleteCriticalSection(FPropCS);
+  inherited;
+end;
+
+// Add a cert to list.
+//  @param Host - cert host. If empty, cert is considered global
+//  @param Data - cert data
 procedure TTrustedCerts.Add(const Host: string; const Data: TBytes);
 begin
+  EnterCriticalSection(FPropCS);
+
   SetLength(FCerts, Length(FCerts) + 1);
   FCerts[High(FCerts)].Host := Host;
   FCerts[High(FCerts)].Data := Data;
+
+  LeaveCriticalSection(FPropCS);
 end;
 
-// Check if provided cert is in trusted list.
-//  @param Host - cert host. If empty, search is performed over all list
+// Check if there PROBABLY is a cert in trusted list for the host (i.e., there's
+// at least one trusted cert either global or host-personal.
+//  @param Host - cert host. If empty, cert is considered global
+//
+//  @returns @true if there's a cert for the host
+function TTrustedCerts.Contains(const Host: string): Boolean;
+var i: Integer;
+begin
+  EnterCriticalSection(FPropCS);
+
+  Result := False;
+  for i := Low(FCerts) to High(FCerts) do
+    if (FCerts[i].Host = '') or (FCerts[i].Host = Host) then
+    begin
+      Result := True;
+      Break;
+    end;
+
+  LeaveCriticalSection(FPropCS);
+end;
+
+// Check if provided cert is in trusted list. Looks for both host-personal and global certs.
+//  @param Host - cert host. If empty, cert is considered global
 //  @param pData - cert data
 //  @param DataLen - length of cert data
 //
@@ -555,12 +599,19 @@ end;
 function TTrustedCerts.Contains(const Host: string; pData: Pointer; DataLen: Integer): Boolean;
 var i: Integer;
 begin
+  EnterCriticalSection(FPropCS);
+
+  Result := False;
   for i := Low(FCerts) to High(FCerts) do
-    if (Host = '') or (FCerts[i].Host = Host) then
+    if (FCerts[i].Host = '') or (FCerts[i].Host = Host) then
       if (DataLen = Length(FCerts[i].Data)) and
         CompareMem(pData, FCerts[i].Data, DataLen) then
-          Exit(True);
-  Result := False;
+        begin
+          Result := True;
+          Break;
+        end;
+
+  LeaveCriticalSection(FPropCS);
 end;
 
 // Check if provided cert is in trusted list. TBytes variant.
@@ -576,13 +627,9 @@ end;
 // Empty the list
 procedure TTrustedCerts.Clear;
 begin
+  EnterCriticalSection(FPropCS);
   SetLength(FCerts, 0);
-end;
-
-// Return number of certs in list
-function TTrustedCerts.Count: Integer;
-begin
-  Result := Length(FCerts);
+  LeaveCriticalSection(FPropCS);
 end;
 
 { ~~ ESSPIError ~~ }
@@ -954,7 +1001,7 @@ begin
   // Check if manual cert validation is required. I haven't found an option to
   // force SChannel retry handshake stage without auto validation after it had
   // failed so just turning it off if there's any chance of custom cert check.
-  if ((SessionData.TrustedCerts <> nil) and (SessionData.TrustedCerts.Count <> 0)) or
+  if ((SessionData.TrustedCerts <> nil) and SessionData.TrustedCerts.Contains(HandShakeData.ServerName)) or
     (SessionData.CertCheckIgnoreFlags <> []) then
       Include(SessionData.Flags, sfNoServerVerify);
   if sfNoServerVerify in SessionData.Flags then

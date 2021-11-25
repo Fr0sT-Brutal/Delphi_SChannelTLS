@@ -208,6 +208,13 @@ type
     constructor CreateSecStatus(const Action, Func: string; Status: SECURITY_STATUS; const Info: string = ''); overload;
   end;
 
+  // Result of `CheckServerCert` function
+  TCertCheckResult = (
+    ccrValid,           // Cert is valid
+    ccrTrusted,         // Cert was in trusted list, no check was performed
+    ccrValidWithFlags   // Cert is valid with some ignore flags
+  );
+
 var
   // ~~ Globals that are set/cleared by Init & Fin functions ~~
   hMYCertStore: HCERTSTORE = nil;
@@ -288,9 +295,10 @@ procedure GetShutdownData(const SessionData: TSessionData; const hContext: CtxtH
 //     (`SECURITY_FLAG_IGNORE_CERT_CN_INVALID` flag will be set calling `CertVerifyCertificateChainPolicy`)
 //   @param TrustedCerts - list of trusted certs. If cert is in this list, it won't be checked by system
 //   @param CertCheckIgnoreFlags - set of cert aspects to ignore when checking.
+// @returns Result of cert check
 // @raises ESSPIError on error
-procedure CheckServerCert(const hContext: CtxtHandle; const ServerName: string;
-  const TrustedCerts: TTrustedCerts = nil; CertCheckIgnoreFlags: TCertCheckIgnoreFlags = []);
+function CheckServerCert(const hContext: CtxtHandle; const ServerName: string;
+  const TrustedCerts: TTrustedCerts = nil; CertCheckIgnoreFlags: TCertCheckIgnoreFlags = []): TCertCheckResult;
 // Dispose and nullify security context
 procedure DeleteContext(var hContext: CtxtHandle);
 
@@ -1287,8 +1295,8 @@ begin
     raise ErrSecStatus('@ GetCertContext', 'QueryContextAttributesW', Status);
 end;
 
-procedure CheckServerCert(const hContext: CtxtHandle; const ServerName: string;
-  const TrustedCerts: TTrustedCerts; CertCheckIgnoreFlags: TCertCheckIgnoreFlags);
+function CheckServerCert(const hContext: CtxtHandle; const ServerName: string;
+  const TrustedCerts: TTrustedCerts; CertCheckIgnoreFlags: TCertCheckIgnoreFlags): TCertCheckResult;
 var
   pRemoteCertContext: PCCERT_CONTEXT;
   dwCertFlags: DWORD;
@@ -1300,7 +1308,7 @@ begin
   // Don't check the cert if it's trusted
   if TrustedCerts <> nil then
     if TrustedCerts.Contains(ServerName, pRemoteCertContext.pbCertEncoded, pRemoteCertContext.cbCertEncoded) then
-      Exit;
+      Exit(ccrTrusted);
 
   // Construct flags
   // If server name is not defined, ignore check for "common name"
@@ -1323,6 +1331,10 @@ begin
     // Free the server certificate context.
     CertFreeCertificateContext(pRemoteCertContext);
   end;
+
+  if dwCertFlags <> 0
+    then Result := ccrValidWithFlags
+    else Result := ccrValid;
 end;
 
 procedure DeleteContext(var hContext: CtxtHandle);

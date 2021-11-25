@@ -465,6 +465,8 @@ end;
 // Perform actions on successful handshake.
 // Helper method, called from TriggerDataAvailable only, extracted for simplicity
 procedure TSChannelWSocket.DoHandshakeSuccess;
+var
+    CertCheckRes: TCertCheckResult;
 begin
     FhContext := FHandShakeData.hContext;
     FHandShakeData.Stage := hssDone;
@@ -476,9 +478,14 @@ begin
     try
         // Don't pass host addr if it's IP otherwise verification would fail
         if FAddrIsIP then
-            CheckServerCert(FhContext, '', SessionData.TrustedCerts, SessionData.CertCheckIgnoreFlags)
+            CertCheckRes := CheckServerCert(FhContext, '', SessionData.TrustedCerts, SessionData.CertCheckIgnoreFlags)
         else
-            CheckServerCert(FhContext, Addr, SessionData.TrustedCerts, SessionData.CertCheckIgnoreFlags);
+            CertCheckRes := CheckServerCert(FhContext, Addr, SessionData.TrustedCerts, SessionData.CertCheckIgnoreFlags);
+        // Print debug messages why the cert appeared valid
+        case CertCheckRes of
+            ccrTrusted:        SChannelLog(loSslInfo, 'Certificate is in trusted list');
+            ccrValidWithFlags: SChannelLog(loSslInfo, 'Certificate is valid using some ignore flags');
+        end;
     except on E: ESSPIError do
         begin
             // Report error to TLS channel

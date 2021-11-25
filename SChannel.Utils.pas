@@ -1277,9 +1277,10 @@ begin
                                             @PolicyStatus) then
       raise ErrWinAPI('@ VerifyServerCertificate', 'CertVerifyCertificateChainPolicy');
 
+    // Note dwError is unsigned while SECURITY_STATUS is signed so typecast to suppress Range check error
     if PolicyStatus.dwError <> NO_ERROR then
       raise ErrSecStatus('@ VerifyServerCertificate', 'CertVerifyCertificateChainPolicy',
-        PolicyStatus.dwError, WinVerifyTrustErrorStr(PolicyStatus.dwError));
+        SECURITY_STATUS(PolicyStatus.dwError), WinVerifyTrustErrorStr(PolicyStatus.dwError));
   finally
     if pChainContext <> nil then
       CertFreeCertificateChain(pChainContext);

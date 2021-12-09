@@ -113,7 +113,8 @@ type
     // If set, SChannel won't automatically verify server certificate by setting
     // `ISC_REQ_MANUAL_CRED_VALIDATION` flag in `InitializeSecurityContextW` call.
     // User has to call manual verification via `CheckServerCert` after handshake
-    // is established (this allows connecting to an IP).
+    // is established (this allows connecting to an IP, domains with custom certs,
+    // expired certs, valid certs if system CRL is expired etc).
     sfNoServerVerify
   );
   TSessionFlags = set of TSessionFlag;
@@ -141,17 +142,20 @@ type
   // Flags to ignore some cert aspects when checking manually via `CheckServerCert`.
   // Mirror of `SECURITY_FLAG_IGNORE_*` constants
   TCertCheckIgnoreFlag = (
-    ignRevokation,
-    ignUnknownCA,
+    ignRevokation,      // don't check cert revokation (useful if CRL is unavailable)
+    ignUnknownCA,       // don't check CA
     ignWrongUsage,
-    ignCertCNInvalid,
-    ignCertDateInvalid
+    ignCertCNInvalid,   // don't check cert name (useful when connecting by IP)
+    ignCertDateInvalid  // don't check expiration date
   );
   TCertCheckIgnoreFlags = set of TCertCheckIgnoreFlag;
 
   // Data related to a session. Mainly meaningful during handshake and making no
   // effect when a connection is established.
   TSessionData = record
+    // Server name that a session is linked to. It is assigned at first call to
+    // `DoClientHandshake` to the value of `THandShakeData.ServerName`
+    ServerName: string;
     // Options
     Flags: TSessionFlags;
     // User-defined SSPI-specific flags to use in `InitializeSecurityContextW` call.
@@ -177,6 +181,14 @@ type
     CertCheckIgnoreFlags: TCertCheckIgnoreFlags;
   end;
   PSessionData = ^TSessionData;
+
+  // Abstract base class for shared TLS options storage
+  TBaseTLSOptions = class
+    // Return pointer to session data record that corresponds to given server name.
+    //   @param ServerName - server name
+    // @returns pointer to session data or @nil if there's no entry for the name.
+    function GetSessionDataPtr(const ServerName: string): PSessionData; virtual; abstract;
+  end;
 
   // Trivial data storage
   TBuffer = record
@@ -298,7 +310,12 @@ procedure GetShutdownData(const SessionData: TSessionData; const hContext: CtxtH
 // @returns Result of cert check
 // @raises ESSPIError on error
 function CheckServerCert(const hContext: CtxtHandle; const ServerName: string;
-  const TrustedCerts: TTrustedCerts = nil; CertCheckIgnoreFlags: TCertCheckIgnoreFlags = []): TCertCheckResult;
+  const TrustedCerts: TTrustedCerts = nil; CertCheckIgnoreFlags: TCertCheckIgnoreFlags = []): TCertCheckResult; overload;
+// Check server certificate - variant using SessionData only
+// @returns Result of cert check
+// @raises ESSPIError on error
+function CheckServerCert(const hContext: CtxtHandle; const SessionData: TSessionData): TCertCheckResult; overload;
+
 // Dispose and nullify security context
 procedure DeleteContext(var hContext: CtxtHandle);
 
@@ -1085,6 +1102,8 @@ begin
   if sfNoServerVerify in SessionData.Flags then
     dwSSPIFlags := dwSSPIFlags or ISC_REQ_MANUAL_CRED_VALIDATION;
 
+  SessionData.ServerName := HandShakeData.ServerName;
+
   pCreds := GetSessionCredsPtr(SessionData);
 
   case HandShakeData.Stage of
@@ -1406,6 +1425,11 @@ begin
   if dwCertFlags <> 0
     then Result := ccrValidWithFlags
     else Result := ccrValid;
+end;
+
+function CheckServerCert(const hContext: CtxtHandle; const SessionData: TSessionData): TCertCheckResult;
+begin
+  Result := CheckServerCert(hContext, SessionData.ServerName, SessionData.TrustedCerts, SessionData.CertCheckIgnoreFlags);
 end;
 
 procedure DeleteContext(var hContext: CtxtHandle);

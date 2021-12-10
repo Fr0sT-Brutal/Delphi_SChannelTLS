@@ -171,7 +171,8 @@ type
     SharedCreds: ISharedSessionCreds;
     // Non-shared session credentials. It is used if `SharedCreds` is @nil
     SessionCreds: TSessionCreds;
-    // Pointer to list of trusted certs. The object could be shared or personal to a socket.
+    // Pointer to list of trusted certs. The object could be shared or personal to
+    // a client but it has to be created and disposed manually.
     // If not empty, auto validation of certs is disabled (`sfNoServerVerify` is
     // included in `Flags` property) at first call to `DoClientHandshake`.
     TrustedCerts: TTrustedCerts;

@@ -365,9 +365,9 @@ function DecryptData(const hContext: CtxtHandle; const Sizes: SecPkgContext_Stre
 
 // Check if handle `x` is null (has both fields equal to zero)
 function SecIsNullHandle(const x: SecHandle): Boolean;
-// Returns string representaion of given security status
+// Returns string representaion of given security status (locale message + constant name + numeric value)
 function SecStatusErrStr(scRet: SECURITY_STATUS): string;
-// Returns string representaion of given verify trust error
+// Returns string representaion of given verify trust error (locale message + constant name + numeric value)
 function WinVerifyTrustErrorStr(Status: DWORD): string;
 // Check if status is likely a Windows TLS v1.2 handshake bug (`SEC_E_BUFFER_TOO_SMALL`
 //  or `SEC_E_MESSAGE_ALTERED` status is returned by `InitializeSecurityContext` on handshake).
@@ -437,6 +437,7 @@ end;
 
 function SecStatusErrStr(scRet: SECURITY_STATUS): string;
 begin
+  // Get name of error constant
   case scRet of
     SEC_E_INSUFFICIENT_MEMORY           : Result := 'SEC_E_INSUFFICIENT_MEMORY';
     SEC_E_INVALID_HANDLE                : Result := 'SEC_E_INVALID_HANDLE';
@@ -583,8 +584,9 @@ begin
     CRYPT_E_ASN1_NYI                    : Result := 'CRYPT_E_ASN1_NYI';
     CRYPT_E_ASN1_EXTENDED               : Result := 'CRYPT_E_ASN1_EXTENDED';
     CRYPT_E_ASN1_NOEOD                  : Result := 'CRYPT_E_ASN1_NOEOD';
-    else Result := Format('Unknown [0x%x]', [scRet]);
+    else                                  Result := '';
   end;
+  Result := SysErrorMessage(DWORD(scRet)) + Format(' [%s 0x%x]', [Result, scRet]);
 end;
 
 function WinVerifyTrustErrorStr(Status: DWORD): string;
@@ -606,8 +608,9 @@ begin
     CERT_E_REVOCATION_FAILURE    : Result := 'CERT_E_REVOCATION_FAILURE';
     CERT_E_CN_NO_MATCH           : Result := 'CERT_E_CN_NO_MATCH';
     CERT_E_WRONG_USAGE           : Result := 'CERT_E_WRONG_USAGE';
-    else Result := Format('Unknown [0x%x]', [Status]);
+    else                           Result := '';
   end;
+  Result := SysErrorMessage(Status) + Format(' [%s 0x%x]', [Result, Status]);
 end;
 
 function IsWinHandshakeBug(scRet: SECURITY_STATUS): Boolean;

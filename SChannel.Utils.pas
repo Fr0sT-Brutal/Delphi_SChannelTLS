@@ -9,7 +9,7 @@
   Uses [JEDI API units](https://jedi-apilib.sourceforge.net)
 
   (c) Fr0sT-Brutal
-  
+
   License MIT
 }
 
@@ -301,6 +301,13 @@ function DoClientHandshake(var SessionData: TSessionData; var HandShakeData: THa
 // @raises ESSPIError on error
 procedure GetShutdownData(const SessionData: TSessionData; const hContext: CtxtHandle;
   out OutBuffer: SecBuffer);
+// Retrieve server certificate linked to current context. More suitable for
+// userland application than `GetCertContext`, without any SChannel-specific stuff.
+//   @param hContext - current session context
+//   @returns server certificate data
+// @raises ESSPIError on error
+function GetCurrentCert(const hContext: CtxtHandle): TBytes;
+
 // Check server certificate
 //   @param hContext - current session context
 //   @param ServerName - host name of the server to check. If empty, errors associated
@@ -1387,6 +1394,16 @@ begin
   Status := g_pSSPI.QueryContextAttributesW(@hContext, SECPKG_ATTR_REMOTE_CERT_CONTEXT, @Result);
   if Status <> SEC_E_OK then
     raise ErrSecStatus('@ GetCertContext', 'QueryContextAttributesW', Status);
+end;
+
+function GetCurrentCert(const hContext: CtxtHandle): TBytes;
+var
+  pRemoteCertContext: PCCERT_CONTEXT;
+begin
+  pRemoteCertContext := GetCertContext(hContext);
+  SetLength(Result, pRemoteCertContext.cbCertEncoded);
+  Move(pRemoteCertContext.pbCertEncoded^, Pointer(Result)^, pRemoteCertContext.cbCertEncoded);
+  CertFreeCertificateContext(pRemoteCertContext);
 end;
 
 function CheckServerCert(const hContext: CtxtHandle; const ServerName: string;

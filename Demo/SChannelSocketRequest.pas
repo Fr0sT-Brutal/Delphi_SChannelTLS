@@ -21,6 +21,7 @@ var
   PrintData: Boolean = False;
   PrintCerts: Boolean = False;
   ManualCertCheck: Boolean = False;
+  CertCheckIgnoreFlags: TCertCheckIgnoreFlags;
   Cancel: Boolean = False;
   LogFn: TLogFn;
   SharedSessionCreds: ISharedSessionCreds;
@@ -136,6 +137,7 @@ begin
   try try
     SessionData := Default(TSessionData);
     SessionData.SharedCreds := SharedSessionCreds;
+    SessionData.CertCheckIgnoreFlags := CertCheckIgnoreFlags;
     if ManualCertCheck then
       Include(SessionData.Flags, sfNoServerVerify);
     pCreds := GetSessionCredsPtr(SessionData);

@@ -43,6 +43,7 @@ type
   private
     SharedSessionCreds: ISharedSessionCreds;
     function GetSharedCreds: ISharedSessionCreds;
+    function GetCertCheckIgnoreFlags: TCertCheckIgnoreFlags;
   public
     {$IFDEF ICS}
     icsSock: TSChannelWSocket;
@@ -123,6 +124,15 @@ begin
   Result := SharedSessionCreds;
 end;
 
+function TForm2.GetCertCheckIgnoreFlags: TCertCheckIgnoreFlags;
+var i: Integer;
+begin
+  Result := [];
+  for i := 0 to lbxIgnoreFlags.Items.Count - 1 do
+    if lbxIgnoreFlags.Checked[i] then
+      Include(Result, TCertCheckIgnoreFlag(i));
+end;
+
 const
   SLblBtnSync: array[Boolean] of string = ('Request sync', 'Cancel');
   SLblBtnAsync: array[Boolean] of string = ('Request async', 'Cancel');
@@ -146,6 +156,7 @@ begin
     SChannelSocketRequest.PrintData := chbData.Checked;
     SChannelSocketRequest.PrintCerts := chbPrintCert.Checked;
     SChannelSocketRequest.ManualCertCheck := chbManualCertCheck.Checked;
+    SChannelSocketRequest.CertCheckIgnoreFlags := GetCertCheckIgnoreFlags;
 
     SChannel.Utils.Init;
     SChannelSocketRequest.LogFn := Self.Log;
@@ -162,7 +173,6 @@ end;
 procedure TForm2.btnReqAsyncClick(Sender: TObject);
 var
   SessionData: TSessionData;
-  i: Integer;
 begin
   {$IFDEF ICS}
   // Cancel
@@ -208,11 +218,7 @@ begin
     if ManualCertCheck
       then SessionData.Flags := SessionData.Flags + [sfNoServerVerify]
       else SessionData.Flags := SessionData.Flags - [sfNoServerVerify];
-    SessionData.CertCheckIgnoreFlags := [];
-    for i := 0 to lbxIgnoreFlags.Items.Count - 1 do
-      if lbxIgnoreFlags.Checked[i] then
-        Include(SessionData.CertCheckIgnoreFlags, TCertCheckIgnoreFlag(i));
-
+    SessionData.CertCheckIgnoreFlags := GetCertCheckIgnoreFlags;
     icsSock.SessionData := SessionData;
     icsSock.Connect;
   end;

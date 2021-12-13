@@ -408,6 +408,8 @@ const
   S_Msg_ShuttingDownTLS = 'Shutting down TLS';
   S_Msg_SendingShutdown = 'Sending shutdown notify - %d bytes of data';
   S_Err_ListeningNotSupported = 'Listening is not supported with SChannel yet';
+  S_Msg_CertIsTrusted = 'Certificate is in trusted list';
+  S_Msg_CertIsValidWithFlags = 'Certificate is valid using some ignore flags';
 
 {$ENDIF MSWINDOWS}
 

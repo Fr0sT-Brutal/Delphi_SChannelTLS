@@ -483,8 +483,8 @@ begin
             CertCheckRes := CheckServerCert(FhContext, Addr, SessionData.TrustedCerts, SessionData.CertCheckIgnoreFlags);
         // Print debug messages why the cert appeared valid
         case CertCheckRes of
-            ccrTrusted:        SChannelLog(loSslInfo, 'Certificate is in trusted list');
-            ccrValidWithFlags: SChannelLog(loSslInfo, 'Certificate is valid using some ignore flags');
+            ccrTrusted:        SChannelLog(loSslInfo, S_Msg_CertIsTrusted);
+            ccrValidWithFlags: SChannelLog(loSslInfo, S_Msg_CertIsValidWithFlags);
         end;
     except on E: ESSPIError do
         begin

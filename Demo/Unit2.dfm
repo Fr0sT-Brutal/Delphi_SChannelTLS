@@ -88,7 +88,6 @@ object Form2: TForm2
     Height = 17
     Caption = 'Print handshake dumps (sync only)'
     TabOrder = 4
-    OnClick = chbDumpsClick
   end
   object btnReqAsync: TButton
     Left = 384
@@ -106,7 +105,6 @@ object Form2: TForm2
     Height = 17
     Caption = 'Print data'
     TabOrder = 6
-    OnClick = chbDataClick
   end
   object Memo1: TMemo
     Left = 382
@@ -163,7 +161,6 @@ object Form2: TForm2
     Height = 17
     Caption = 'Print cert data'
     TabOrder = 13
-    OnClick = chbPrintCertClick
   end
   object chbNoCheckCert: TCheckBox
     Left = 504

@@ -20,6 +20,7 @@ var
   PrintDumps: Boolean = False;
   PrintData: Boolean = False;
   PrintCerts: Boolean = False;
+  ManualCertCheck: Boolean = False;
   Cancel: Boolean = False;
   LogFn: TLogFn;
   SharedSessionCreds: ISharedSessionCreds;
@@ -127,6 +128,7 @@ var
 //  OutBuffer: SecBuffer;
   SessionData: TSessionData;
   arg: u_long;
+  CertCheckRes: TCertCheckResult;
   Cert: TBytes;
 begin
   Result := resConnErr; EncrCnt := 0; DecrCnt := 0;
@@ -134,6 +136,8 @@ begin
   try try
     SessionData := Default(TSessionData);
     SessionData.SharedCreds := SharedSessionCreds;
+    if ManualCertCheck then
+      Include(SessionData.Flags, sfNoServerVerify);
     pCreds := GetSessionCredsPtr(SessionData);
     if SecIsNullHandle(pCreds.hCreds) then
     begin
@@ -170,7 +174,15 @@ begin
       LogFn(BinToHex(Cert, Length(Cert)));
     end;
 
-    CheckServerCert(hCtx, IfThen(sfNoServerVerify in SessionData.Flags, '', URL)); // don't check host name if sfNoServerVerify is set
+    if sfNoServerVerify in SessionData.Flags then
+    begin
+      CertCheckRes := CheckServerCert(hCtx, IfThen(sfNoServerVerify in SessionData.Flags, '', URL)); // don't check host name if sfNoServerVerify is set
+      // Print debug messages why the cert appeared valid
+      case CertCheckRes of
+        ccrTrusted:        LogFn(LogPrefix + S_Msg_CertIsTrusted);
+        ccrValidWithFlags: LogFn(LogPrefix + S_Msg_CertIsValidWithFlags);
+      end;
+    end;
     LogFn(LogPrefix + S_Msg_SrvCredsAuth);
     InitBuffers(hCtx, IoBuffer, Sizes);
     cbIoBufferLength := Length(IoBuffer);

@@ -38,11 +38,8 @@ type
     chbNoCheckCert: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
-    procedure chbDumpsClick(Sender: TObject);
     procedure btnReqSyncClick(Sender: TObject);
     procedure btnReqAsyncClick(Sender: TObject);
-    procedure chbDataClick(Sender: TObject);
-    procedure chbPrintCertClick(Sender: TObject);
   private
     SharedSessionCreds: ISharedSessionCreds;
     function GetSharedCreds: ISharedSessionCreds;
@@ -68,6 +65,7 @@ var
   PrintDumps: Boolean = False;
   PrintData: Boolean = False;
   PrintCerts: Boolean = False;
+  ManualCertCheck: Boolean = False;
 
 const
   DefaultReq = 'HEAD / HTTP/1.1'+sLineBreak+'Connection: close'+sLineBreak+sLineBreak;
@@ -144,6 +142,11 @@ begin
   begin
     SChannelSocketRequest.Cancel := False;
     TButton(Sender).Caption := SLblBtnSync[True];
+    SChannelSocketRequest.PrintDumps := chbDumps.Checked;
+    SChannelSocketRequest.PrintData := chbData.Checked;
+    SChannelSocketRequest.PrintCerts := chbPrintCert.Checked;
+    SChannelSocketRequest.ManualCertCheck := chbManualCertCheck.Checked;
+
     SChannel.Utils.Init;
     SChannelSocketRequest.LogFn := Self.Log;
     SChannelSocketRequest.SharedSessionCreds := GetSharedCreds;
@@ -175,6 +178,11 @@ begin
   if TButton(Sender).Caption = SLblBtnAsync[False] then
   begin
     TButton(Sender).Caption := SLblBtnAsync[True];
+    PrintDumps := chbDumps.Checked;
+    PrintData := chbData.Checked;
+    PrintCerts := chbPrintCert.Checked;
+    ManualCertCheck := chbManualCertCheck.Checked;
+
     icsSock := TSChannelWSocket.Create(Self);
     icsSock.OnBgException := WSocketBgException;
     icsSock.OnDataAvailable := WSocketDataAvailable;
@@ -197,7 +205,7 @@ begin
     icsSock.Secure := True;
     SessionData := icsSock.SessionData;
     SessionData.SharedCreds := GetSharedCreds;
-    if chbManualCertCheck.Checked
+    if ManualCertCheck
       then SessionData.Flags := SessionData.Flags + [sfNoServerVerify]
       else SessionData.Flags := SessionData.Flags - [sfNoServerVerify];
     SessionData.CertCheckIgnoreFlags := [];
@@ -209,24 +217,6 @@ begin
     icsSock.Connect;
   end;
   {$ENDIF}
-end;
-
-procedure TForm2.chbDumpsClick(Sender: TObject);
-begin
-  PrintDumps := TCheckBox(Sender).Checked;
-  SChannelSocketRequest.PrintDumps := PrintDumps;
-end;
-
-procedure TForm2.chbDataClick(Sender: TObject);
-begin
-  PrintData := TCheckBox(Sender).Checked;
-  SChannelSocketRequest.PrintData := PrintData;
-end;
-
-procedure TForm2.chbPrintCertClick(Sender: TObject);
-begin
-  PrintCerts := TCheckBox(Sender).Checked;
-  SChannelSocketRequest.PrintCerts := PrintCerts;
 end;
 
 {$IFDEF ICS}

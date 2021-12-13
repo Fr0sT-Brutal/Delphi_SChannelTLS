@@ -1418,26 +1418,26 @@ begin
   // Authenticate server's credentials. Get server's certificate.
   pRemoteCertContext := GetCertContext(hContext);
 
-  // Don't check the cert if it's trusted
-  if TrustedCerts <> nil then
-    if TrustedCerts.Contains(ServerName, pRemoteCertContext.pbCertEncoded, pRemoteCertContext.cbCertEncoded) then
-      Exit(ccrTrusted);
-
-  // Construct flags
-  // If server name is not defined, ignore check for "common name"
-  if ServerName = '' then
-    Include(CertCheckIgnoreFlags, ignCertCNInvalid);
-  dwCertFlags := 0;
-  for IgnFlag in CertCheckIgnoreFlags do
-    case IgnFlag of
-      ignRevokation:      dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_REVOCATION;
-      ignUnknownCA:       dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_UNKNOWN_CA;
-      ignWrongUsage:      dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_WRONG_USAGE;
-      ignCertCNInvalid:   dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_CERT_CN_INVALID;
-      ignCertDateInvalid: dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
-    end;
-
   try
+    // Don't check the cert if it's trusted
+    if TrustedCerts <> nil then
+      if TrustedCerts.Contains(ServerName, pRemoteCertContext.pbCertEncoded, pRemoteCertContext.cbCertEncoded) then
+        Exit(ccrTrusted);
+
+    // Construct flags
+    // If server name is not defined, ignore check for "common name"
+    if ServerName = '' then
+      Include(CertCheckIgnoreFlags, ignCertCNInvalid);
+    dwCertFlags := 0;
+    for IgnFlag in CertCheckIgnoreFlags do
+      case IgnFlag of
+        ignRevokation:      dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_REVOCATION;
+        ignUnknownCA:       dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_UNKNOWN_CA;
+        ignWrongUsage:      dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_WRONG_USAGE;
+        ignCertCNInvalid:   dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_CERT_CN_INVALID;
+        ignCertDateInvalid: dwCertFlags := dwCertFlags or SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
+      end;
+
     // Attempt to validate server certificate.
     VerifyServerCertificate(pRemoteCertContext, ServerName, dwCertFlags);
   finally

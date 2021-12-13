@@ -19,6 +19,7 @@ type
 var
   PrintDumps: Boolean = False;
   PrintData: Boolean = False;
+  PrintCerts: Boolean = False;
   Cancel: Boolean = False;
   LogFn: TLogFn;
   SharedSessionCreds: ISharedSessionCreds;
@@ -126,6 +127,7 @@ var
 //  OutBuffer: SecBuffer;
   SessionData: TSessionData;
   arg: u_long;
+  Cert: TBytes;
 begin
   Result := resConnErr; EncrCnt := 0; DecrCnt := 0;
   socket := TSyncSocket.Create;
@@ -160,6 +162,14 @@ begin
 
     // Perform handshake
     PerformClientHandshake(SessionData, URL, LogFn, socket.Send, socket.Recv, hCtx, ExtraData);
+
+    if PrintCerts then
+    begin
+      Cert := GetCurrentCert(hCtx);
+      LogFn('Cert data:');
+      LogFn(BinToHex(Cert, Length(Cert)));
+    end;
+
     CheckServerCert(hCtx, IfThen(sfNoServerVerify in SessionData.Flags, '', URL)); // don't check host name if sfNoServerVerify is set
     LogFn(LogPrefix + S_Msg_SrvCredsAuth);
     InitBuffers(hCtx, IoBuffer, Sizes);

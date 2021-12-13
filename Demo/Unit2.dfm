@@ -11,6 +11,7 @@ object Form2: TForm2
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  Scaled = False
   OnClose = FormClose
   OnCreate = FormCreate
   DesignSize = (
@@ -125,17 +126,17 @@ object Form2: TForm2
     TabOrder = 8
   end
   object chbUseProxy: TCheckBox
-    Left = 16
+    Left = 8
     Top = 40
-    Width = 81
+    Width = 185
     Height = 17
-    Caption = 'Use proxy'
+    Caption = 'Use proxy (async only)'
     TabOrder = 9
   end
   object eProxy: TEdit
-    Left = 31
+    Left = 23
     Top = 63
-    Width = 218
+    Width = 226
     Height = 24
     TabOrder = 10
     TextHint = '(socks5|http)://host:port'
@@ -160,9 +161,9 @@ object Form2: TForm2
     Top = 194
     Width = 227
     Height = 17
-    Caption = 'Print cert data (async only)'
+    Caption = 'Print cert data'
     TabOrder = 13
-    OnClick = chbDataClick
+    OnClick = chbPrintCertClick
   end
   object chbNoCheckCert: TCheckBox
     Left = 504

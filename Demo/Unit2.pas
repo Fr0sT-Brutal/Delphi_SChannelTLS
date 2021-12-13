@@ -42,6 +42,7 @@ type
     procedure btnReqSyncClick(Sender: TObject);
     procedure btnReqAsyncClick(Sender: TObject);
     procedure chbDataClick(Sender: TObject);
+    procedure chbPrintCertClick(Sender: TObject);
   private
     SharedSessionCreds: ISharedSessionCreds;
     function GetSharedCreds: ISharedSessionCreds;
@@ -66,6 +67,7 @@ var
   hClientCreds: CredHandle = ();
   PrintDumps: Boolean = False;
   PrintData: Boolean = False;
+  PrintCerts: Boolean = False;
 
 const
   DefaultReq = 'HEAD / HTTP/1.1'+sLineBreak+'Connection: close'+sLineBreak+sLineBreak;
@@ -221,6 +223,12 @@ begin
   SChannelSocketRequest.PrintData := PrintData;
 end;
 
+procedure TForm2.chbPrintCertClick(Sender: TObject);
+begin
+  PrintCerts := TCheckBox(Sender).Checked;
+  SChannelSocketRequest.PrintCerts := PrintCerts;
+end;
+
 {$IFDEF ICS}
 
 procedure TForm2.WSocketBgException(Sender: TObject; E: Exception; var CanClose: Boolean);
@@ -293,15 +301,15 @@ type
 
 procedure TForm2.WSocketTLSDone(Sender: TObject);
 var
-  pCertCtx: PCCERT_CONTEXT;
+  Cert: TBytes;
   Enc: AnsiString;
 begin
   Log('WSocket.TLSDone');
-  if not chbPrintCert.Checked then Exit;
+  if not PrintCerts then Exit;
 
-  pCertCtx := GetCertContext(TSChannelWSocketHack(Sender).hContext);
+  Cert := GetCurrentCert(TSChannelWSocketHack(Sender).hContext);
   Log('Cert data:');
-  Enc := Base64Encode(PAnsiChar(pCertCtx.pbCertEncoded), Integer(pCertCtx.cbCertEncoded));
+  Enc := Base64Encode(PAnsiChar(Cert), Length(Cert));
   Log(string(Enc));
 end;
 

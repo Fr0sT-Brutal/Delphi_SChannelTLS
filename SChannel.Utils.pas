@@ -880,7 +880,9 @@ begin
       SchannelCred.palgSupportedAlgs := @rgbSupportedAlgs;
     end;
 
-    SchannelCred.dwFlags := SCH_CRED_REVOCATION_CHECK_CHAIN;
+    SchannelCred.dwFlags := SCH_CRED_REVOCATION_CHECK_CHAIN or
+      // CRL could be offline but we likely want to connect anyway so ignore this error
+      SCH_CRED_IGNORE_REVOCATION_OFFLINE;
   end;
 
   // Create an SSPI credential with SChannel security package
@@ -1107,7 +1109,6 @@ function DoClientHandshake(var SessionData: TSessionData; var HandShakeData: THa
 var
   dwSSPIFlags, dwSSPIOutFlags: DWORD;
   pCreds: PSessionCreds;
-  tsExpiry: TimeStamp;
   InBuffers: array [0..1] of SecBuffer;
   OutBuffer, InBuffer: SecBufferDesc;
 begin
@@ -1151,10 +1152,12 @@ begin
                                                      @HandShakeData.hContext,
                                                      @OutBuffer,
                                                      dwSSPIOutFlags,
-                                                     @tsExpiry);
-
+                                                     nil);
         if Result <> SEC_I_CONTINUE_NEEDED then
+        begin
+          DeleteContext(HandShakeData.hContext);
           raise ErrSecStatus('@ DoClientHandshake @ client hello', 'InitializeSecurityContext', Result);
+        end;
         if (HandShakeData.OutBuffers[0].cbBuffer = 0) or (HandShakeData.OutBuffers[0].pvBuffer = nil) then
           raise ErrSecStatus('@ DoClientHandshake @ client hello', 'InitializeSecurityContext', Result, 'generated empty buffer');
 
@@ -1214,8 +1217,7 @@ begin
                                                      nil,
                                                      @OutBuffer,
                                                      dwSSPIOutFlags,
-                                                     @tsExpiry);
-
+                                                     nil);
         // If InitializeSecurityContext returned SEC_E_INCOMPLETE_MESSAGE,
         // then we need to read more data from the server and try again.
         if Result = SEC_E_INCOMPLETE_MESSAGE then Exit;

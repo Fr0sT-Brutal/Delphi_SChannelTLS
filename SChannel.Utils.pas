@@ -824,7 +824,6 @@ end;
 
 procedure CreateCredentials(const User: string; out hCreds: CredHandle; var SchannelCred: SCHANNEL_CRED);
 var
-  tsExpiry: TimeStamp;
   cSupportedAlgs: DWORD;
   rgbSupportedAlgs: array[0..15] of ALG_ID;
   pCertContext: PCCERT_CONTEXT;
@@ -885,15 +884,15 @@ begin
   end;
 
   // Create an SSPI credential with SChannel security package
-  Status := g_pSSPI.AcquireCredentialsHandleW(nil,         // Name of principal
-                                              PSecWChar(PChar(UNISP_NAME)),     // Name of package
-                                              SECPKG_CRED_OUTBOUND, // Flags indicating use
-                                              nil,         // Pointer to logon ID
-                                              @SchannelCred,        // Package specific data
-                                              nil,         // Pointer to GetKey() func
-                                              nil,         // Value to pass to GetKey()
-                                              @hCreds,        // (out) Cred Handle
-                                              @tsExpiry);      // (out) Lifetime (optional)
+  Status := g_pSSPI.AcquireCredentialsHandleW(nil,                          // Name of principal
+                                              PSecWChar(PChar(UNISP_NAME)), // Name of package
+                                              SECPKG_CRED_OUTBOUND,         // Flags indicating use
+                                              nil,                          // Pointer to logon ID
+                                              @SchannelCred,                // Package specific data
+                                              nil,                          // Pointer to GetKey() func
+                                              nil,                          // Value to pass to GetKey()
+                                              @hCreds,                      // (out) Cred Handle
+                                              nil);                         // (out) Lifetime (optional)
 
   // cleanup: Free the certificate context. Schannel has already made its own copy.
   if pCertContext <> nil then
@@ -965,9 +964,11 @@ var
   pCreds: PSessionCreds;
   IssuerListInfo: SecPkgContext_IssuerListInfoEx;
   pChainContext: PCCERT_CHAIN_CONTEXT;
+  Err: LONG;
+  ErrDescr: string;
   FindByIssuerPara: CERT_CHAIN_FIND_BY_ISSUER_PARA;
   pCertContext: PCCERT_CONTEXT;
-  tsExpiry: TimeStamp;
+  SchannelCred: SCHANNEL_CRED;
   Status: SECURITY_STATUS;
   hCreds: CredHandle;
 begin
@@ -997,11 +998,17 @@ begin
                                           pChainContext);
     if pChainContext = nil then
     begin
-      Debug(SessionData,
-        'GetNewClientCredentials: error in CertFindChainInStore finding cert chain - #' +
-        IntToStr(GetLastError) + ' ' +
-        SysErrorMessage(GetLastError));
-      Break;
+      ErrDescr := 'GetNewClientCredentials: error in CertFindChainInStore finding cert chain - ';
+      // There's no description of returned codes in MSDN. They're returned via
+      // GetLastError but seem to be SecStatus. Try to determine if that's the
+      // case by extracting facility and comparing it to expected ones: SSPI and
+      // CERT. Others are reported as usual WinAPI errors
+      Err := LONG(GetLastError);
+      if (SCODE_FACILITY(Err) = FACILITY_SSPI) or (SCODE_FACILITY(Err) = FACILITY_CERT) 
+        then ErrDescr := ErrDescr + SecStatusErrStr(Err)
+        else ErrDescr := ErrDescr + SysErrorMessage(DWORD(Err)) + Format(' [%d]', [Err]);
+      Debug(SessionData, ErrDescr);
+      Break;                                
     end;
 
     // Get pointer to leaf certificate context.
@@ -1009,25 +1016,27 @@ begin
 
     // Create schannel credential.
     pCreds := GetSessionCredsPtr(SessionData);
-    pCreds.SchannelCred.dwVersion := SCHANNEL_CRED_VERSION;
-    pCreds.SchannelCred.cCreds := 1;
-    pCreds.SchannelCred.paCred := @pCertContext;
+    SchannelCred := Default(SCHANNEL_CRED);
+    SchannelCred.dwVersion := SCHANNEL_CRED_VERSION;
+    SchannelCred.cCreds := 1;
+    SchannelCred.paCred := @pCertContext;
 
     Status := g_pSSPI.AcquireCredentialsHandleW(nil,                          // Name of principal
                                                 PSecWChar(PChar(UNISP_NAME)), // Name of package
                                                 SECPKG_CRED_OUTBOUND,         // Flags indicating use
                                                 nil,                          // Pointer to logon ID
-                                                @pCreds.SchannelCred,         // Package specific data
+                                                @SchannelCred,                // Package specific data
                                                 nil,                          // Pointer to GetKey() func
                                                 nil,                          // Value to pass to GetKey()
                                                 @hCreds,                      // (out) Cred Handle
-                                                @tsExpiry);                   // (out) Lifetime (optional)
+                                                nil);                         // (out) Lifetime (optional)
 
     if Status <> SEC_E_OK then
       Continue;
 
     g_pSSPI.FreeCredentialsHandle(@pCreds.hCreds); // Destroy the old credentials.
     pCreds.hCreds := hCreds;
+    pCreds.SchannelCred := SchannelCred;
   end; // while
 end;
 
@@ -1115,13 +1124,13 @@ begin
   if sfNoServerVerify in SessionData.Flags then
     dwSSPIFlags := dwSSPIFlags or ISC_REQ_MANUAL_CRED_VALIDATION;
 
-  SessionData.ServerName := HandShakeData.ServerName;
-
   pCreds := GetSessionCredsPtr(SessionData);
 
   case HandShakeData.Stage of
     hssNotStarted:
       begin
+        SessionData.ServerName := HandShakeData.ServerName;
+
         //  Initiate a ClientHello message and generate a token.
         SetLength(HandShakeData.OutBuffers, 1);
         HandShakeData.OutBuffers[0] := Default(SecBuffer);

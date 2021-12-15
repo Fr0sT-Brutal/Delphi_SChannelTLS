@@ -1,6 +1,21 @@
 Notable changes
 ===============
 
+## Current
+
+- [+] (API) TTrustedCerts, MT-safe; added .Contains(Host) method to check if there's any chance a cert for the host could be in the list. .Count method removed.
+- [+] (API) SChannel.Utils.pas: + CheckServerCert, returns result code allowing caller to determine why cert was considered valid
+- [+] (API) SChannel.Utils.pas: TSessionData.ServerName - add this field because session is 1:1 related to domain name.
+- [+] (API) SChannel.Utils.pas: TTLSOptions - Base class for shared TLS options storage
+- [+] (API) SChannel.Utils.pas: CheckServerCert overload with TSessionData argument
+- [+] (API) SChannel.Utils.pas: GetCurrentCert for more convenient server cert retrieval without too much of specific stuff
+- [*] (API) SChannel.Utils.pas: Error messages include localized texts and status value in hex to make search easier
+- [*] (API) SChannel.Utils.pas: CreateCredentials, sets SCH_CRED_IGNORE_REVOCATION_OFFLINE flag (if CRL is unavailable, we likely want to connect anyway)
+- [+] (API) SChannel.Utils.pas: * Redesign of DebugLog functions. Move TDefaultDebugFnHoster and Debug to intf section, deprecate TSessionData.DebugFn field, add DebugLogFn argument to DoClientHandshake.
+- [*] (API) SChannel.Utils.pas: Deprecate THandShakeData.ServerName in favor of TSessionData.ServerName
+- [*] IcsSChannelSocket.pas: + Use logging method during handshake so details are reported to log
+- [+] Demo: Print cert data, Manual cert check for sync request
+
 ## 23.11.2021
 
 - [+] (API) + More control over server cert validation: flags to allow ignoring some cert aspects and list of trusted certs that are considered valid without any check. SChannel.Utils.pas: add TrustedCerts and CertCheckIgnoreFlags fields to TSessionData. CheckServerCert, added optional TrustedCerts and CertCheckIgnoreFlags parameters.

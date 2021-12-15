@@ -78,7 +78,8 @@ type
     Stage: THandShakeStage;
     // Name of domain we're connecting to.
     // IN at hssNotStarted
-    ServerName: string;
+    // **DEPRECATED** SessionData.ServerName is used instead
+    ServerName: string deprecated 'Assign SessionData.ServerName instead';
     // Handle of security context.
     // OUT after hssSendCliHello, IN at hssReadSrvHello*
     hContext: CtxtHandle;
@@ -160,8 +161,7 @@ type
   // Data related to a session. Mainly meaningful during handshake and making no
   // effect when a connection is established.
   TSessionData = record
-    // Server name that a session is linked to. It is assigned at first call to
-    // `DoClientHandshake` to the value of `THandShakeData.ServerName`
+    // Server name that a session is linked to. Must be non-empty.
     ServerName: string;
     // Options
     Flags: TSessionFlags;
@@ -1125,14 +1125,20 @@ begin
   if dwSSPIFlags = 0 then
     dwSSPIFlags := SSPI_FLAGS;
 
-  // Old behavior - use SessionData's logFn
+  {$WARNINGS OFF}
+  // Old behavior - use SessionData's logFn. To be removed.
   if not Assigned(DebugLogFn) then
     DebugLogFn := SessionData.DebugFn;
+
+  // Old behavior - copy HandShakeData's server name to SessionData. To be removed.
+  if HandShakeData.ServerName <> '' then
+    SessionData.ServerName := HandShakeData.ServerName;
+  {$WARNINGS ON}
 
   // Check if manual cert validation is required. I haven't found an option to
   // force SChannel retry handshake stage without auto validation after it had
   // failed so just turning it off if there's any chance of custom cert check.
-  if ((SessionData.TrustedCerts <> nil) and SessionData.TrustedCerts.Contains(HandShakeData.ServerName)) or
+  if ((SessionData.TrustedCerts <> nil) and SessionData.TrustedCerts.Contains(SessionData.ServerName)) or
     (SessionData.CertCheckIgnoreFlags <> []) then
       Include(SessionData.Flags, sfNoServerVerify);
   if sfNoServerVerify in SessionData.Flags then
@@ -1143,8 +1149,6 @@ begin
   case HandShakeData.Stage of
     hssNotStarted:
       begin
-        SessionData.ServerName := HandShakeData.ServerName;
-
         //  Initiate a ClientHello message and generate a token.
         SetLength(HandShakeData.OutBuffers, 1);
         HandShakeData.OutBuffers[0] := Default(SecBuffer);
@@ -1156,7 +1160,7 @@ begin
 
         Result := g_pSSPI.InitializeSecurityContextW(@pCreds.hCreds,
                                                      nil,  // NULL on the first call
-                                                     PSecWChar(Pointer(HandShakeData.ServerName)), // ! PChar('') <> nil !
+                                                     PSecWChar(Pointer(SessionData.ServerName)), // ! PChar('') <> nil !
                                                      dwSSPIFlags,
                                                      0,    // Reserved
                                                      0,    // Not used with Schannel
@@ -1221,7 +1225,7 @@ begin
 
         Result := g_pSSPI.InitializeSecurityContextW(@pCreds.hCreds,
                                                      @HandShakeData.hContext,
-                                                     PSecWChar(Pointer(HandShakeData.ServerName)),
+                                                     PSecWChar(Pointer(SessionData.ServerName)),
                                                      dwSSPIFlags,
                                                      0,          // Reserved
                                                      0,          // Not used with Schannel

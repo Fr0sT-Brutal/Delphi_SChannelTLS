@@ -12,7 +12,7 @@
       `property HttpTunnelState : THttpTunnelState read FHttpTunnelState;`
 
   (c) Fr0sT-Brutal
-  
+
   License MIT
 }
 
@@ -226,7 +226,7 @@ begin
     case scRet of
         SEC_E_OK, SEC_E_INCOMPLETE_MESSAGE, SEC_I_CONTEXT_EXPIRED:
             begin
-                SChannelLog(loSslDevel, Format(S_Msg_Received, [res, cbWritten]));
+                SChannelLog(loSslDump, Format(S_Msg_Received, [res, cbWritten]));
                 if scRet = SEC_I_CONTEXT_EXPIRED then
                     SChannelLog(loSslInfo, S_Msg_SessionClosed);
                 FDecrBuffer.DataLen := cbWritten;
@@ -258,7 +258,7 @@ begin
 
     // Handshake established - encrypt and send
     EncryptData(FhContext, FSizes, Data, Len, PByte(FSendBuffer), Length(FSendBuffer), EncryptedLen);
-    SChannelLog(loSslDevel, Format(S_Msg_Sending, [Len, EncryptedLen]));
+    SChannelLog(loSslDump, Format(S_Msg_Sending, [Len, EncryptedLen]));
     Sent := inherited RealSend(TWSocketData(FSendBuffer), EncryptedLen);
 
     if Sent <= 0 then
@@ -359,7 +359,7 @@ end;
 procedure TSChannelWSocket.SChannelHandshakeLog(const Msg: string);
 begin
 {$IFNDEF NO_DEBUG_LOG}
-    SChannelLog(loSslInfo, Msg);
+    SChannelLog(loSslDevel, Msg);
 {$ENDIF}
 end;
 

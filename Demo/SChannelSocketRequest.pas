@@ -23,7 +23,7 @@ var
   ManualCertCheck: Boolean = False;
   CertCheckIgnoreFlags: TCertCheckIgnoreFlags;
   Cancel: Boolean = False;
-  LogFn: TLogFn;
+  LogFn: TDebugFn;
   SharedSessionCreds: ISharedSessionCreds;
 
 function Request(const URL, ReqStr: string): TReqResult;

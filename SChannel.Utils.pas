@@ -121,6 +121,11 @@ type
 
   TDebugFn = procedure (const Msg: string) of object;
 
+  // Class with stub debug logging function that reports messages via `OutputDebugString`
+  TDefaultDebugFnHoster = class
+    class procedure Debug(const Msg: string);
+  end;
+
   // App-local storage of trusted certs. MT-safe.
   TTrustedCerts = class
   strict private
@@ -166,7 +171,7 @@ type
     // Callback function that reports some internal events. If not specified,
     // default global function will be used that reports time and message via
     // `OutputDebugString`
-    DebugFn: TDebugFn;
+    DebugFn: TDebugFn deprecated 'Use function arguments instead';
     // Pointer to credentials shared between multiple sessions
     SharedCreds: ISharedSessionCreds;
     // Non-shared session credentials. It is used if `SharedCreds` is @nil
@@ -294,9 +299,12 @@ procedure FinSession(var SessionData: TSessionData);
 
 // ~~ Start/close connection ~~
 
+// Print debug message either with user-defined function if set or default one
+// (`TDefaultDebugFnHoster.Debug` method)
+procedure Debug(DebugLogFn: TDebugFn; const Msg: string);
 // Function to prepare all necessary handshake data. No transport level actions.
 // @raises ESSPIError on error
-function DoClientHandshake(var SessionData: TSessionData; var HandShakeData: THandShakeData): SECURITY_STATUS;
+function DoClientHandshake(var SessionData: TSessionData; var HandShakeData: THandShakeData; DebugLogFn: TDebugFn = nil): SECURITY_STATUS;
 // Generate data to send to a server on connection shutdown
 // @raises ESSPIError on error
 procedure GetShutdownData(const SessionData: TSessionData; const hContext: CtxtHandle;
@@ -794,21 +802,17 @@ begin
   Result := ESSPIError.CreateWinAPI(Action, Func, GetLastError);
 end;
 
-type
-  TDefaultDebugFnHoster = class
-    class procedure Debug(const Msg: string);
-  end;
+{ TDefaultDebugFnHoster }
 
 class procedure TDefaultDebugFnHoster.Debug(const Msg: string);
 begin
   OutputDebugString(PChar(FormatDateTime('yyyy.mm.dd hh:mm:ss.zzz', Now) + ' ' + LogPrefix + Msg));
 end;
 
-// Print debug message either with session-defined function or default one
-procedure Debug(const SessionData: TSessionData; const Msg: string);
+procedure Debug(DebugLogFn: TDebugFn; const Msg: string);
 begin
-  if Assigned(SessionData.DebugFn) then
-    SessionData.DebugFn(Msg)
+  if Assigned(DebugLogFn) then
+    DebugLogFn(Msg)
   else
     TDefaultDebugFnHoster.Debug(Msg);
 end;
@@ -961,7 +965,7 @@ end;
 // ~~ Connect & close ~~
 
 // Try to get new client credentials, leaving old value on error
-procedure GetNewClientCredentials(var SessionData: TSessionData; const hContext: CtxtHandle);
+procedure GetNewClientCredentials(var SessionData: TSessionData; const hContext: CtxtHandle; DebugLogFn: TDebugFn = nil);
 var
   pCreds: PSessionCreds;
   IssuerListInfo: SecPkgContext_IssuerListInfoEx;
@@ -1009,8 +1013,8 @@ begin
       if (SCODE_FACILITY(Err) = FACILITY_SSPI) or (SCODE_FACILITY(Err) = FACILITY_CERT) 
         then ErrDescr := ErrDescr + SecStatusErrStr(Err)
         else ErrDescr := ErrDescr + SysErrorMessage(DWORD(Err)) + Format(' [%d]', [Err]);
-      Debug(SessionData, ErrDescr);
-      Break;                                
+      Debug(DebugLogFn, ErrDescr);
+      Break;
     end;
 
     // Get pointer to leaf certificate context.
@@ -1087,7 +1091,7 @@ end;
 
   - `HandShakeData.Stage` = hssDone. **Not** handled by @name @br
 }
-function DoClientHandshake(var SessionData: TSessionData; var HandShakeData: THandShakeData): SECURITY_STATUS;
+function DoClientHandshake(var SessionData: TSessionData; var HandShakeData: THandShakeData; DebugLogFn: TDebugFn): SECURITY_STATUS;
 
   // Process "extra" buffer and modify HandShakeData.cbIoBuffer accordingly.
   // After the call HandShakeData.IoBuffer will contain HandShakeData.cbIoBuffer
@@ -1115,6 +1119,10 @@ begin
   dwSSPIFlags := SessionData.SSPIFlags;
   if dwSSPIFlags = 0 then
     dwSSPIFlags := SSPI_FLAGS;
+
+  // Old behavior - use SessionData's logFn
+  if not Assigned(DebugLogFn) then
+    DebugLogFn := SessionData.DebugFn;
 
   // Check if manual cert validation is required. I haven't found an option to
   // force SChannel retry handshake stage without auto validation after it had
@@ -1243,7 +1251,7 @@ begin
           // the server just requested client authentication.
           SEC_I_INCOMPLETE_CREDENTIALS:
             begin
-              Debug(SessionData, 'DoClientHandshake @ server hello - InitializeSecurityContext returned SEC_I_INCOMPLETE_CREDENTIALS');
+              Debug(DebugLogFn, 'DoClientHandshake @ server hello - InitializeSecurityContext returned SEC_I_INCOMPLETE_CREDENTIALS');
               // Busted. The server has requested client authentication and
               // the credential we supplied didn't contain a client certificate.
               // This function will read the list of trusted certificate
@@ -1252,7 +1260,7 @@ begin
               // was issued by one of these. If this function is successful,
               // then we will connect using the new certificate. Otherwise,
               // we will attempt to connect anonymously (using our current credentials).
-              GetNewClientCredentials(SessionData, HandShakeData.hContext);
+              GetNewClientCredentials(SessionData, HandShakeData.hContext, DebugLogFn);
               // Go around again
               HandShakeData.Stage := hssReadSrvHelloNoRead;
             end;

@@ -62,6 +62,7 @@ type
                          Flags      : Integer) : Integer; override;
       function    RealSend(var Data : TWSocketData; Len : Integer) : Integer; override;
       // new methods
+      procedure   SChannelHandshakeLog(const Msg: string);
       procedure   SChannelLog(LogOption : TLogOption; const Msg: string);
       procedure   DoHandshakeStart;
       procedure   DoHandshakeProcess;
@@ -114,8 +115,9 @@ type
 implementation
 
 const
-    S_Msg_HandshakeTDAErr = 'Handshake - ! error [%d] in TriggerDataAvailable';
-    S_Msg_SettingSessionData = 'Setting SessionData is prohibited when secure channel is active';
+    S_E_HandshakeTDAErr = 'Handshake - ! error [%d] in TriggerDataAvailable';
+    S_E_SettingSessionDataChannelActive = 'Setting SessionData is prohibited when secure channel is active';
+    S_E_SettingSessionDataHostsDiffer = 'Error setting SessionData: socket is connected and hosts differ (%s and %s)';
 
 // Check if address is a dotted numeric address like 192.161.124.32
 function AddrIsIP(const Addr: string): Boolean;
@@ -301,7 +303,7 @@ begin
             begin
                 if (Error <> WS_OK) then
                 begin
-                    SChannelLog(loSslErr, Format(S_Msg_HandshakeTDAErr, [Error]));
+                    SChannelLog(loSslErr, Format(S_E_HandshakeTDAErr, [Error]));
                     TriggerSessionConnected(Error);
                     InternalClose(TRUE, Error);
                     Result := False;
@@ -353,6 +355,14 @@ begin
 {$ENDIF}
 end;
 
+// SChannel-specific output that is called from functions during handshake
+procedure TSChannelWSocket.SChannelHandshakeLog(const Msg: string);
+begin
+{$IFNDEF NO_DEBUG_LOG}
+    SChannelLog(loSslInfo, Msg);
+{$ENDIF}
+end;
+
 // Start handshake process
 procedure TSChannelWSocket.DoHandshakeStart;
 var
@@ -363,7 +373,7 @@ begin
 
     try
         // Generate hello
-        DoClientHandshake(FSessionData, FHandShakeData);
+        DoClientHandshake(FSessionData, FHandShakeData, SChannelHandshakeLog);
         Assert(FHandShakeData.Stage = hssSendCliHello);
 
         // Send hello to server
@@ -411,7 +421,7 @@ begin
     // Decode hello
     try
         try
-            DoClientHandshake(FSessionData, FHandShakeData);
+            DoClientHandshake(FSessionData, FHandShakeData, SChannelHandshakeLog);
         except on E: ESSPIError do
             // Hide Windows handshake bug and restart the process for the first time
             if (FHandShakeData.Stage = hssReadSrvHello) and IsWinHandshakeBug(E.SecStatus)
@@ -539,12 +549,14 @@ end;
 procedure TSChannelWSocket.StartTLS;
 var pCreds: PSessionCreds;
 begin
+    FSessionData.ServerName := Addr;
+
     // Create and init session data if not inited yet or finished (unlikely)
     pCreds := GetSessionCredsPtr(FSessionData);
     if SecIsNullHandle(pCreds.hCreds) then
     begin
-      CreateSessionCreds(pCreds^);
-      SChannelLog(loSslInfo, S_Msg_CredsInited);
+        CreateSessionCreds(pCreds^);
+        SChannelLog(loSslInfo, S_Msg_CredsInited);
     end;
 
     // Save initial flags
@@ -557,8 +569,8 @@ begin
         Include(FSessionData.Flags, sfNoServerVerify);
     end;
 
-    FHandShakeData.ServerName := Addr;
-    FhContext := Default(CtxtHandle);
+    DeleteContext(FhContext); // It should not contain any value but delete it for sure
+
     DoHandshakeStart;
 end;
 
@@ -626,9 +638,13 @@ procedure TSChannelWSocket.SetSessionData(const SessionData: TSessionData);
 begin
     // Allow setting only when channel is not established
     if FChannelState <> chsNotStarted then
-        raise ESocketException.Create(S_Msg_SettingSessionData);
+        raise ESocketException.Create(S_E_SettingSessionDataChannelActive);
+    // If connected, check if socket host is the same as Session host
+    if FState = wsConnected then
+        if (SessionData.ServerName <> '') and (Addr <> SessionData.ServerName) then
+            raise ESocketException.CreateFmt(S_E_SettingSessionDataHostsDiffer, [Addr, SessionData.ServerName]);
 
-    FSessionData := SessionData;
+    FSessionData := SessionData; // we'll assign ServerName later in StartTLS
 end;
 
 end.

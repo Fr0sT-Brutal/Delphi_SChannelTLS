@@ -44,12 +44,20 @@ Helper functions for easy implementation of TLS communication by means of Window
 <td class="itemdesc">Interface with session creds for sharing between multiple sessions</td>
 </tr>
 <tr class="list2">
-<td class="itemname">Class&nbsp;<a class="bold" href="SChannel.Utils.TTrustedCerts.html"><code>TTrustedCerts</code></a></td>
-<td class="itemdesc">Local storage of trusted certs.</td>
+<td class="itemname">Class&nbsp;<a class="bold" href="SChannel.Utils.TDefaultDebugFnHoster.html"><code>TDefaultDebugFnHoster</code></a></td>
+<td class="itemdesc">Class with stub <a class="normal" href="SChannel.Utils.TDefaultDebugFnHoster.html#Debug">debug</a> logging function that reports messages via <code>OutputDebugString</code></td>
 </tr>
 <tr class="list">
+<td class="itemname">Class&nbsp;<a class="bold" href="SChannel.Utils.TTrustedCerts.html"><code>TTrustedCerts</code></a></td>
+<td class="itemdesc">App-local storage of trusted certs.</td>
+</tr>
+<tr class="list2">
 <td class="itemname">Record&nbsp;<a class="bold" href="SChannel.Utils.TSessionData.html"><code>TSessionData</code></a></td>
-<td class="itemdesc">Data related to a session</td>
+<td class="itemdesc">Data related to a session.</td>
+</tr>
+<tr class="list">
+<td class="itemname">Class&nbsp;<a class="bold" href="SChannel.Utils.TBaseTLSOptions.html"><code>TBaseTLSOptions</code></a></td>
+<td class="itemdesc">Abstract base class for shared TLS options storage</td>
 </tr>
 <tr class="list2">
 <td class="itemname">Record&nbsp;<a class="bold" href="SChannel.Utils.TBuffer.html"><code>TBuffer</code></a></td>
@@ -93,39 +101,48 @@ Helper functions for easy implementation of TLS communication by means of Window
 <td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#FinSession">FinSession</a></strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>);</code></td>
 </tr>
 <tr class="list">
-<td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#DoClientHandshake">DoClientHandshake</a></strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; var HandShakeData: <a href="SChannel.Utils.THandShakeData.html">THandShakeData</a>): SECURITY_STATUS;</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#Debug">Debug</a></strong>(DebugLogFn: <a href="SChannel.Utils.html#TDebugFn">TDebugFn</a>; const Msg: string);</code></td>
 </tr>
 <tr class="list2">
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#DoClientHandshake">DoClientHandshake</a></strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; var HandShakeData: <a href="SChannel.Utils.THandShakeData.html">THandShakeData</a>; DebugLogFn: <a href="SChannel.Utils.html#TDebugFn">TDebugFn</a> = nil): SECURITY_STATUS;</code></td>
+</tr>
+<tr class="list">
 <td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#GetShutdownData">GetShutdownData</a></strong>(const SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; const hContext: CtxtHandle; out OutBuffer: SecBuffer);</code></td>
 </tr>
+<tr class="list2">
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#GetCurrentCert">GetCurrentCert</a></strong>(const hContext: CtxtHandle): TBytes;</code></td>
+</tr>
 <tr class="list">
-<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></strong>(const hContext: CtxtHandle; const ServerName: string; const TrustedCerts: <a href="SChannel.Utils.TTrustedCerts.html">TTrustedCerts</a> = nil; CertCheckIgnoreFlags: <a href="SChannel.Utils.html#TCertCheckIgnoreFlags">TCertCheckIgnoreFlags</a> = []);</code></td>
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></strong>(const hContext: CtxtHandle; const ServerName: string; const TrustedCerts: <a href="SChannel.Utils.TTrustedCerts.html">TTrustedCerts</a> = nil; CertCheckIgnoreFlags: <a href="SChannel.Utils.html#TCertCheckIgnoreFlags">TCertCheckIgnoreFlags</a> = []): <a href="SChannel.Utils.html#TCertCheckResult">TCertCheckResult</a>; overload;</code></td>
 </tr>
 <tr class="list2">
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></strong>(const hContext: CtxtHandle; const SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>): <a href="SChannel.Utils.html#TCertCheckResult">TCertCheckResult</a>; overload;</code></td>
+</tr>
+<tr class="list">
 <td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#DeleteContext">DeleteContext</a></strong>(var hContext: CtxtHandle);</code></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#InitBuffers">InitBuffers</a></strong>(const hContext: CtxtHandle; out pbIoBuffer: TBytes; out Sizes: SecPkgContext_StreamSizes);</code></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.html#EncryptData">EncryptData</a></strong>(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes; pbMessage: PByte; cbMessage: DWORD; pbIoBuffer: PByte; pbIoBufferLength: DWORD; out cbWritten: DWORD);</code></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#DecryptData">DecryptData</a></strong>(const hContext: CtxtHandle; const Sizes: SecPkgContext_StreamSizes; pbIoBuffer: PByte; var cbEncData: DWORD; pbDecData: PByte; cbDecDataLength: DWORD; out cbWritten: DWORD): SECURITY_STATUS;</code></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#SecIsNullHandle">SecIsNullHandle</a></strong>(const x: SecHandle): Boolean;</code></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#SecStatusErrStr">SecStatusErrStr</a></strong>(scRet: SECURITY_STATUS): string;</code></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#WinVerifyTrustErrorStr">WinVerifyTrustErrorStr</a></strong>(Status: DWORD): string;</code></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#IsWinHandshakeBug">IsWinHandshakeBug</a></strong>(scRet: SECURITY_STATUS): Boolean;</code></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="itemcode"><code>function <strong><a href="SChannel.Utils.html#GetSessionCredsPtr">GetSessionCredsPtr</a></strong>(const SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>): <a href="SChannel.Utils.html#PSessionCreds">PSessionCreds</a>;</code></td>
 </tr>
 </table>
@@ -157,6 +174,9 @@ Helper functions for easy implementation of TLS communication by means of Window
 </tr>
 <tr class="list">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#PSessionData">PSessionData</a></strong> = &circ;<a href="SChannel.Utils.TSessionData.html">TSessionData</a>;</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#TCertCheckResult">TCertCheckResult</a></strong> = (...);</code></td>
 </tr>
 </table>
 <span id="PasDoc-Constants"></span><h3 class="summary">Constants</h3>
@@ -250,6 +270,12 @@ Helper functions for easy implementation of TLS communication by means of Window
 </tr>
 <tr class="list2">
 <td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Err_ListeningNotSupported">S_Err_ListeningNotSupported</a></strong> = 'Listening is not supported with SChannel yet';</code></td>
+</tr>
+<tr class="list">
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_CertIsTrusted">S_Msg_CertIsTrusted</a></strong> = 'Certificate is in trusted list';</code></td>
+</tr>
+<tr class="list2">
+<td class="itemcode"><code><strong><a href="SChannel.Utils.html#S_Msg_CertIsValidWithFlags">S_Msg_CertIsValidWithFlags</a></strong> = 'Certificate is valid using some ignore flags';</code></td>
 </tr>
 </table>
 <span id="PasDoc-Variables"></span><h3 class="summary">Variables</h3>
@@ -410,13 +436,22 @@ Finalize session, free credentials</p>
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="DoClientHandshake"></span><code>function <strong>DoClientHandshake</strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; var HandShakeData: <a href="SChannel.Utils.THandShakeData.html">THandShakeData</a>): SECURITY_STATUS;</code></td>
+<td class="itemcode"><span id="Debug"></span><code>procedure <strong>Debug</strong>(DebugLogFn: <a href="SChannel.Utils.html#TDebugFn">TDebugFn</a>; const Msg: string);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Print <code>debug</code> message either with user-defined function if set or default one (<code><a class="normal" href="SChannel.Utils.TDefaultDebugFnHoster.html#Debug">TDefaultDebugFnHoster.Debug</a></code> method)</p>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="DoClientHandshake"></span><code>function <strong>DoClientHandshake</strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; var HandShakeData: <a href="SChannel.Utils.THandShakeData.html">THandShakeData</a>; DebugLogFn: <a href="SChannel.Utils.html#TDebugFn">TDebugFn</a> = nil): SECURITY_STATUS;</code></td>
 </tr>
 <tr><td colspan="1">
 <p>
 Function to prepare all necessary handshake data. No transport level actions. 
 
-<p>Function to prepare all necessary handshake data. No transport level actions.    Function actions and returning data depending on input stage: </p>
+<p>Function to prepare all necessary handshake data. No transport level actions.     Function actions and returning data depending on input stage: </p>
 
 <ul class="paragraph_spacing">
   <li><p><code>HandShakeData.Stage</code> = <a class="normal" href="SChannel.Utils.html#hssNotStarted">hssNotStarted</a>. Generate client hello. <br> <em>Output stage</em>: <a class="normal" href="SChannel.Utils.html#hssSendCliHello">hssSendCliHello</a>. <br> <em>Caller action</em>: send returned data (client hello) to server <br> <em>Input data</em>: </p>
@@ -473,6 +508,8 @@ Function to prepare all necessary handshake data. No transport level actions.
 <dd>- [IN/OUT] record with session data</dd>
 <dt>HandShakeData</dt>
 <dd>- [IN/OUT] record with handshake data</dd>
+<dt>DebugLogFn</dt>
+<dd>- logging callback, could be <code>Nil</code></dd>
 </dl>
 <h6 class="description_section">Exceptions raised</h6>
 <dl class="exceptions_raised">
@@ -499,11 +536,31 @@ Generate data to send to a server on connection shutdown </p>
 </table>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="CheckServerCert"></span><code>procedure <strong>CheckServerCert</strong>(const hContext: CtxtHandle; const ServerName: string; const TrustedCerts: <a href="SChannel.Utils.TTrustedCerts.html">TTrustedCerts</a> = nil; CertCheckIgnoreFlags: <a href="SChannel.Utils.html#TCertCheckIgnoreFlags">TCertCheckIgnoreFlags</a> = []);</code></td>
+<td class="itemcode"><span id="GetCurrentCert"></span><code>function <strong>GetCurrentCert</strong>(const hContext: CtxtHandle): TBytes;</code></td>
 </tr>
 <tr><td colspan="1">
 <p>
-Check server certificate   with a certificate that contains a common name that is not valid will be ignored. (<code>SECURITY_FLAG_IGNORE_CERT_CN_INVALID</code> flag will be set calling <code>CertVerifyCertificateChainPolicy</code>)   </p>
+Retrieve server certificate linked to current context. More suitable for userland application than <code><a class="normal" href="SChannel.Utils.html#GetCertContext">GetCertContext</a></code>, without any SChannel-specific stuff.   </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>hContext</dt>
+<dd>- current session context</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return">server certificate data</p><h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="CheckServerCert"></span><code>function <strong>CheckServerCert</strong>(const hContext: CtxtHandle; const ServerName: string; const TrustedCerts: <a href="SChannel.Utils.TTrustedCerts.html">TTrustedCerts</a> = nil; CertCheckIgnoreFlags: <a href="SChannel.Utils.html#TCertCheckIgnoreFlags">TCertCheckIgnoreFlags</a> = []): <a href="SChannel.Utils.html#TCertCheckResult">TCertCheckResult</a>; overload;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Check server certificate   with a certificate that contains a common name that is not valid will be ignored. (<code>SECURITY_FLAG_IGNORE_CERT_CN_INVALID</code> flag will be set calling <code>CertVerifyCertificateChainPolicy</code>)    </p>
 <h6 class="description_section">Parameters</h6>
 <dl class="parameters">
 <dt>hContext</dt>
@@ -515,7 +572,23 @@ Check server certificate   with a certificate that contains a common name that i
 <dt>CertCheckIgnoreFlags</dt>
 <dd>- set of cert aspects to ignore when checking.</dd>
 </dl>
-<h6 class="description_section">Exceptions raised</h6>
+<h6 class="description_section">Returns</h6>
+<p class="return">Result of cert check</p><h6 class="description_section">Exceptions raised</h6>
+<dl class="exceptions_raised">
+<dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
+<dd>on error</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="CheckServerCert"></span><code>function <strong>CheckServerCert</strong>(const hContext: CtxtHandle; const SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>): <a href="SChannel.Utils.html#TCertCheckResult">TCertCheckResult</a>; overload;</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Check server certificate - variant using SessionData only  </p>
+<h6 class="description_section">Returns</h6>
+<p class="return">Result of cert check</p><h6 class="description_section">Exceptions raised</h6>
 <dl class="exceptions_raised">
 <dt><a class="normal" href="SChannel.Utils.ESSPIError.html">ESSPIError</a></dt>
 <dd>on error</dd>
@@ -632,7 +705,7 @@ Check if handle <code>x</code> is null (has both fields equal to zero)</p>
 </tr>
 <tr><td colspan="1">
 <p>
-Returns string representaion of given security status</p>
+Returns string representaion of given security status (locale message + constant name + numeric value)</p>
 </td></tr>
 </table>
 <table class="detail wide_list">
@@ -641,7 +714,7 @@ Returns string representaion of given security status</p>
 </tr>
 <tr><td colspan="1">
 <p>
-Returns string representaion of given verify trust error</p>
+Returns string representaion of given verify trust error (locale message + constant name + numeric value)</p>
 </td></tr>
 </table>
 <table class="detail wide_list">
@@ -726,7 +799,7 @@ Session options</p>
 <h6 class="description_section">Values</h6>
 <ul>
 <li>
-<span id="sfNoServerVerify">sfNoServerVerify</span>: If set, SChannel won't automatically verify server certificate by setting <code>ISC_REQ_MANUAL_CRED_VALIDATION</code> flag in <code>InitializeSecurityContextW</code> call. User has to call manual verification via <code><a class="normal" href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></code> after handshake is established (this allows connecting to an IP).</li>
+<span id="sfNoServerVerify">sfNoServerVerify</span>: If set, SChannel won't automatically verify server certificate by setting <code>ISC_REQ_MANUAL_CRED_VALIDATION</code> flag in <code>InitializeSecurityContextW</code> call. User has to call manual verification via <code><a class="normal" href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></code> after handshake is established (this allows connecting to an IP, domains with custom certs, expired certs, valid certs if system CRL is expired etc).</li>
 </ul>
 </td></tr>
 </table>
@@ -742,7 +815,9 @@ Session options</p>
 <td class="itemcode"><span id="TDebugFn"></span><code><strong>TDebugFn</strong> = procedure (const Msg: string) of object;</code></td>
 </tr>
 <tr><td colspan="1">
-&nbsp;</td></tr>
+<p>
+Logging method that is used by functions to report non-critical errors and handshake details.</p>
+</td></tr>
 </table>
 <table class="detail wide_list">
 <tr class="list">
@@ -754,15 +829,15 @@ Flags to ignore some cert aspects when checking manually via <code><a class="nor
 <h6 class="description_section">Values</h6>
 <ul>
 <li>
-<span id="ignRevokation">ignRevokation</span></li>
+<span id="ignRevokation">ignRevokation</span>: don't check cert revokation (useful if CRL is unavailable)</li>
 <li>
-<span id="ignUnknownCA">ignUnknownCA</span></li>
+<span id="ignUnknownCA">ignUnknownCA</span>: don't check CA</li>
 <li>
 <span id="ignWrongUsage">ignWrongUsage</span></li>
 <li>
-<span id="ignCertCNInvalid">ignCertCNInvalid</span></li>
+<span id="ignCertCNInvalid">ignCertCNInvalid</span>: don't check cert name (useful when connecting by IP)</li>
 <li>
-<span id="ignCertDateInvalid">ignCertDateInvalid</span></li>
+<span id="ignCertDateInvalid">ignCertDateInvalid</span>: don't check expiration date</li>
 </ul>
 </td></tr>
 </table>
@@ -779,6 +854,24 @@ Flags to ignore some cert aspects when checking manually via <code><a class="nor
 </tr>
 <tr><td colspan="1">
 &nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="TCertCheckResult"></span><code><strong>TCertCheckResult</strong> = (...);</code></td>
+</tr>
+<tr><td colspan="1">
+<p>
+Result of <code><a class="normal" href="SChannel.Utils.html#CheckServerCert">CheckServerCert</a></code> function</p>
+<h6 class="description_section">Values</h6>
+<ul>
+<li>
+<span id="ccrValid">ccrValid</span>: Cert is valid</li>
+<li>
+<span id="ccrTrusted">ccrTrusted</span>: Cert was in trusted list, no check was performed</li>
+<li>
+<span id="ccrValidWithFlags">ccrValidWithFlags</span>: Cert is valid with some ignore flags</li>
+</ul>
+</td></tr>
 </table>
 <h3 class="detail">Constants</h3>
 <table class="detail wide_list">
@@ -993,6 +1086,20 @@ Messages that could be written to log by various implementations. None of these 
 <table class="detail wide_list">
 <tr class="list">
 <td class="itemcode"><span id="S_Err_ListeningNotSupported"></span><code><strong>S_Err_ListeningNotSupported</strong> = 'Listening is not supported with SChannel yet';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_CertIsTrusted"></span><code><strong>S_Msg_CertIsTrusted</strong> = 'Certificate is in trusted list';</code></td>
+</tr>
+<tr><td colspan="1">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="itemcode"><span id="S_Msg_CertIsValidWithFlags"></span><code><strong>S_Msg_CertIsValidWithFlags</strong> = 'Certificate is valid using some ignore flags';</code></td>
 </tr>
 <tr><td colspan="1">
 &nbsp;</td></tr>

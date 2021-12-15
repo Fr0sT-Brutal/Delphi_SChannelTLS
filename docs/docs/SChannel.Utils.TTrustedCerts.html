@@ -21,7 +21,7 @@
 <code>type TTrustedCerts = class(TObject)</code></p>
 <h2 class="description">Description</h2>
 <p>
-Local storage of trusted certs.</p>
+App-local storage of trusted certs. MT-safe.</p>
 <span id="PasDoc-Hierarchy"></span><h2 class="hierarchy">Hierarchy</h2>
 <ul class="hierarchy"><li class="ancestor">TObject</li>
 <li class="thisitem">TTrustedCerts</li></ul><h2 class="overview">Overview</h2>
@@ -29,23 +29,31 @@ Local storage of trusted certs.</p>
 <table class="summary wide_list">
 <tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>constructor <strong><a href="SChannel.Utils.TTrustedCerts.html#Create">Create</a></strong>;</code></td>
+</tr>
+<tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code>destructor <strong><a href="SChannel.Utils.TTrustedCerts.html#Destroy">Destroy</a></strong>; override;</code></td>
+</tr>
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
 <td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.TTrustedCerts.html#Add">Add</a></strong>(const Host: string; const Data: TBytes);</code></td>
 </tr>
 <tr class="list2">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code>function <strong><a href="SChannel.Utils.TTrustedCerts.html#Contains">Contains</a></strong>(const Host: string; pData: Pointer; DataLen: Integer): Boolean; overload;</code></td>
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.TTrustedCerts.html#Contains">Contains</a></strong>(const Host: string): Boolean; overload;</code></td>
 </tr>
 <tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code>function <strong><a href="SChannel.Utils.TTrustedCerts.html#Contains">Contains</a></strong>(const Host: string; const Data: TBytes): Boolean; overload;</code></td>
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.TTrustedCerts.html#Contains">Contains</a></strong>(const Host: string; pData: Pointer; DataLen: Integer): Boolean; overload;</code></td>
 </tr>
 <tr class="list2">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.TTrustedCerts.html#Clear">Clear</a></strong>;</code></td>
+<td class="itemcode"><code>function <strong><a href="SChannel.Utils.TTrustedCerts.html#Contains">Contains</a></strong>(const Host: string; const Data: TBytes): Boolean; overload;</code></td>
 </tr>
 <tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code>function <strong><a href="SChannel.Utils.TTrustedCerts.html#Count">Count</a></strong>: Integer;</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.Utils.TTrustedCerts.html#Clear">Clear</a></strong>;</code></td>
 </tr>
 </table>
 <h2 class="description">Description</h2>
@@ -53,10 +61,53 @@ Local storage of trusted certs.</p>
 <table class="detail wide_list">
 <tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><span id="Add"></span><code>procedure <strong>Add</strong>(const Host: string; const Data: TBytes);</code></td>
+<td class="itemcode"><span id="Create"></span><code>constructor <strong>Create</strong>;</code></td>
 </tr>
 <tr><td colspan="2">
 &nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="Destroy"></span><code>destructor <strong>Destroy</strong>; override;</code></td>
+</tr>
+<tr><td colspan="2">
+&nbsp;</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="Add"></span><code>procedure <strong>Add</strong>(const Host: string; const Data: TBytes);</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Add a cert to list.  </p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>Host</dt>
+<dd>- cert host. If empty, cert is considered global</dd>
+<dt>Data</dt>
+<dd>- cert data</dd>
+</dl>
+</td></tr>
+</table>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="Contains"></span><code>function <strong>Contains</strong>(const Host: string): Boolean; overload;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Check if there PROBABLY is a cert in trusted list for the host (i.e., there's at least one trusted cert either global or host-personal. 
+
+<p></p>
+<h6 class="description_section">Parameters</h6>
+<dl class="parameters">
+<dt>Host</dt>
+<dd>- cert host. If empty, cert is considered global</dd>
+</dl>
+<h6 class="description_section">Returns</h6>
+<p class="return"><code>True</code> if there's a cert for the host</p></td></tr>
 </table>
 <table class="detail wide_list">
 <tr class="list">
@@ -65,13 +116,13 @@ Local storage of trusted certs.</p>
 </tr>
 <tr><td colspan="2">
 <p>
-Check if provided cert is in trusted list.   
+Check if provided cert is in trusted list. Looks for both host-personal and global certs.   
 
 <p></p>
 <h6 class="description_section">Parameters</h6>
 <dl class="parameters">
 <dt>Host</dt>
-<dd>- cert host. If empty, search is performed over all list</dd>
+<dd>- cert host. If empty, cert is considered global</dd>
 <dt>pData</dt>
 <dd>- cert data</dd>
 <dt>DataLen</dt>
@@ -108,16 +159,6 @@ Check if provided cert is in trusted list. TBytes variant.
 <tr><td colspan="2">
 <p>
 Empty the list</p>
-</td></tr>
-</table>
-<table class="detail wide_list">
-<tr class="list">
-<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><span id="Count"></span><code>function <strong>Count</strong>: Integer;</code></td>
-</tr>
-<tr><td colspan="2">
-<p>
-Return number of certs in list</p>
 </td></tr>
 </table>
 <hr><span class="appinfo"><em>Generated by <a href="https://github.com/pasdoc/pasdoc/wiki">PasDoc 0.15.0</a>. </em>

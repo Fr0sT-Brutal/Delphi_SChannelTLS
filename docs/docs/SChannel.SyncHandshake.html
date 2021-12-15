@@ -39,18 +39,15 @@ Helper function that implements synchronous TLS handshake by means of Windows SC
 <span id="PasDoc-FuncsProcs"></span><h3 class="summary">Functions and Procedures</h3>
 <table class="summary wide_list">
 <tr class="list">
-<td class="itemcode"><code>procedure <strong><a href="SChannel.SyncHandshake.html#PerformClientHandshake">PerformClientHandshake</a></strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; const ServerName: string; LogFn: <a href="SChannel.SyncHandshake.html#TLogFn">TLogFn</a>; SendFn: <a href="SChannel.SyncHandshake.html#TSendFn">TSendFn</a>; RecvFn: <a href="SChannel.SyncHandshake.html#TRecvFn">TRecvFn</a>; out hContext: CtxtHandle; out ExtraData: TBytes);</code></td>
+<td class="itemcode"><code>procedure <strong><a href="SChannel.SyncHandshake.html#PerformClientHandshake">PerformClientHandshake</a></strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; const ServerName: string; DebugLogFn: <a href="SChannel.Utils.html#TDebugFn">TDebugFn</a>; SendFn: <a href="SChannel.SyncHandshake.html#TSendFn">TSendFn</a>; RecvFn: <a href="SChannel.SyncHandshake.html#TRecvFn">TRecvFn</a>; out hContext: CtxtHandle; out ExtraData: TBytes);</code></td>
 </tr>
 </table>
 <span id="PasDoc-Types"></span><h3 class="summary">Types</h3>
 <table class="summary wide_list">
 <tr class="list">
-<td class="itemcode"><code><strong><a href="SChannel.SyncHandshake.html#TLogFn">TLogFn</a></strong> = procedure (const Msg: string) of object;</code></td>
-</tr>
-<tr class="list2">
 <td class="itemcode"><code><strong><a href="SChannel.SyncHandshake.html#TSendFn">TSendFn</a></strong> = function (Buf: Pointer; BufLen: Integer): Integer of object;</code></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="itemcode"><code><strong><a href="SChannel.SyncHandshake.html#TRecvFn">TRecvFn</a></strong> = function (Buf: Pointer; BufLen: Integer): Integer of object;</code></td>
 </tr>
 </table>
@@ -58,7 +55,7 @@ Helper function that implements synchronous TLS handshake by means of Windows SC
 <h3 class="detail">Functions and Procedures</h3>
 <table class="detail wide_list">
 <tr class="list">
-<td class="itemcode"><span id="PerformClientHandshake"></span><code>procedure <strong>PerformClientHandshake</strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; const ServerName: string; LogFn: <a href="SChannel.SyncHandshake.html#TLogFn">TLogFn</a>; SendFn: <a href="SChannel.SyncHandshake.html#TSendFn">TSendFn</a>; RecvFn: <a href="SChannel.SyncHandshake.html#TRecvFn">TRecvFn</a>; out hContext: CtxtHandle; out ExtraData: TBytes);</code></td>
+<td class="itemcode"><span id="PerformClientHandshake"></span><code>procedure <strong>PerformClientHandshake</strong>(var SessionData: <a href="SChannel.Utils.TSessionData.html">TSessionData</a>; const ServerName: string; DebugLogFn: <a href="SChannel.Utils.html#TDebugFn">TDebugFn</a>; SendFn: <a href="SChannel.SyncHandshake.html#TSendFn">TSendFn</a>; RecvFn: <a href="SChannel.SyncHandshake.html#TRecvFn">TRecvFn</a>; out hContext: CtxtHandle; out ExtraData: TBytes);</code></td>
 </tr>
 <tr><td colspan="1">
 <p>
@@ -69,7 +66,7 @@ Synchronously perform full handshake process including communication with server
 <dd>- [IN/OUT] record with session data</dd>
 <dt>ServerName</dt>
 <dd>- name of domain to connect to</dd>
-<dt>LogFn</dt>
+<dt>DebugLogFn</dt>
 <dd>- logging callback, could be <code>Nil</code></dd>
 <dt>Data</dt>
 <dd>- any data with which <code>SendFn</code> and <code>RecvFn</code> will be called</dd>
@@ -90,15 +87,6 @@ Synchronously perform full handshake process including communication with server
 </td></tr>
 </table>
 <h3 class="detail">Types</h3>
-<table class="detail wide_list">
-<tr class="list">
-<td class="itemcode"><span id="TLogFn"></span><code><strong>TLogFn</strong> = procedure (const Msg: string) of object;</code></td>
-</tr>
-<tr><td colspan="1">
-<p>
-Logging method</p>
-</td></tr>
-</table>
 <table class="detail wide_list">
 <tr class="list">
 <td class="itemcode"><span id="TSendFn"></span><code><strong>TSendFn</strong> = function (Buf: Pointer; BufLen: Integer): Integer of object;</code></td>

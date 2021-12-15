@@ -21,41 +21,55 @@
 <code>type TSessionData = record</code></p>
 <h2 class="description">Description</h2>
 <p>
-Data related to a session</p>
+Data related to a session. Mainly meaningful during handshake and making no effect when a connection is established.</p>
 <h2 class="overview">Overview</h2>
 <span id="PasDoc-Fields"></span><h3 class="summary">Fields</h3>
 <table class="summary wide_list">
 <tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code><strong><a href="SChannel.Utils.TSessionData.html#Flags">Flags</a></strong>: <a href="SChannel.Utils.html#TSessionFlags">TSessionFlags</a>;</code></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.TSessionData.html#ServerName">ServerName</a></strong>: string;</code></td>
 </tr>
 <tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.TSessionData.html#Flags">Flags</a></strong>: <a href="SChannel.Utils.html#TSessionFlags">TSessionFlags</a>;</code></td>
+</tr>
+<tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
 <td class="itemcode"><code><strong><a href="SChannel.Utils.TSessionData.html#SSPIFlags">SSPIFlags</a></strong>: DWORD;</code></td>
 </tr>
-<tr class="list">
-<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><code><strong><a href="SChannel.Utils.TSessionData.html#DebugFn">DebugFn</a></strong>: <a href="SChannel.Utils.html#TDebugFn">TDebugFn</a>;</code></td>
-</tr>
 <tr class="list2">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><code><strong><a href="SChannel.Utils.TSessionData.html#DebugFn">DebugFn</a></strong>: <a href="SChannel.Utils.html#TDebugFn">TDebugFn</a> deprecated 'Use function arguments instead';</code></td>
+</tr>
+<tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
 <td class="itemcode"><code><strong><a href="SChannel.Utils.TSessionData.html#SharedCreds">SharedCreds</a></strong>: <a href="SChannel.Utils.ISharedSessionCreds.html">ISharedSessionCreds</a>;</code></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
 <td class="itemcode"><code><strong><a href="SChannel.Utils.TSessionData.html#SessionCreds">SessionCreds</a></strong>: <a href="SChannel.Utils.TSessionCreds.html">TSessionCreds</a>;</code></td>
 </tr>
-<tr class="list2">
+<tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
 <td class="itemcode"><code><strong><a href="SChannel.Utils.TSessionData.html#TrustedCerts">TrustedCerts</a></strong>: <a href="SChannel.Utils.TTrustedCerts.html">TTrustedCerts</a>;</code></td>
 </tr>
-<tr class="list">
+<tr class="list2">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
 <td class="itemcode"><code><strong><a href="SChannel.Utils.TSessionData.html#CertCheckIgnoreFlags">CertCheckIgnoreFlags</a></strong>: <a href="SChannel.Utils.html#TCertCheckIgnoreFlags">TCertCheckIgnoreFlags</a>;</code></td>
 </tr>
 </table>
 <h2 class="description">Description</h2>
 <h3 class="detail">Fields</h3>
+<table class="detail wide_list">
+<tr class="list">
+<td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
+<td class="itemcode"><span id="ServerName"></span><code><strong>ServerName</strong>: string;</code></td>
+</tr>
+<tr><td colspan="2">
+<p>
+Server name that a session is linked to. Must be non-empty.</p>
+</td></tr>
+</table>
 <table class="detail wide_list">
 <tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
@@ -79,11 +93,11 @@ User-defined SSPI-specific flags to use in <code>InitializeSecurityContextW</cod
 <table class="detail wide_list">
 <tr class="list">
 <td class="visibility"><a href="legend.html"><img  src="public.gif" alt="Public" title="Public"></a></td>
-<td class="itemcode"><span id="DebugFn"></span><code><strong>DebugFn</strong>: <a href="SChannel.Utils.html#TDebugFn">TDebugFn</a>;</code></td>
+<td class="itemcode"><span id="DebugFn"></span><code><strong>DebugFn</strong>: <a href="SChannel.Utils.html#TDebugFn">TDebugFn</a> deprecated 'Use function arguments instead';</code></td>
 </tr>
 <tr><td colspan="2">
-<p>
-Callback function that reports some internal events. If not specified, default global function will be used that reports time and message via <code>OutputDebugString</code></p>
+<p class="hint_directive">Warning: this symbol is deprecated: Use function arguments instead</p><p>
+Callback function that reports some internal events. If not specified, default global function will be used that reports time and message via <code>OutputDebugString</code> <strong>DEPRECATED</strong> Use <code><a class="normal" href="SChannel.Utils.html#DoClientHandshake">DoClientHandshake</a></code> argument instead. Will be removed in future releases.</p>
 </td></tr>
 </table>
 <table class="detail wide_list">
@@ -113,7 +127,7 @@ Non-shared session credentials. It is used if <code><a class="normal" href="SCha
 </tr>
 <tr><td colspan="2">
 <p>
-Pointer to list of trusted certs. The object could be shared or personal to a socket. Base class is not MT-safe. If not empty, auto validation of certs is disabled (<code><a class="normal" href="SChannel.Utils.html#sfNoServerVerify">sfNoServerVerify</a></code> is included in <code>Flags</code> property) at first call to <code><a class="normal" href="SChannel.Utils.html#DoClientHandshake">DoClientHandshake</a></code>.</p>
+Pointer to list of trusted certs. The object could be shared or personal to a client but it has to be created and disposed manually. If not empty, auto validation of certs is disabled (<code><a class="normal" href="SChannel.Utils.html#sfNoServerVerify">sfNoServerVerify</a></code> is included in <code>Flags</code> property) at first call to <code><a class="normal" href="SChannel.Utils.html#DoClientHandshake">DoClientHandshake</a></code>.</p>
 </td></tr>
 </table>
 <table class="detail wide_list">

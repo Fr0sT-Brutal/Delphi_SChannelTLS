@@ -119,6 +119,8 @@ type
   );
   TSessionFlags = set of TSessionFlag;
 
+  // Logging method that is used by functions to report non-critical errors and
+  // handshake details.
   TDebugFn = procedure (const Msg: string) of object;
 
   // Class with stub debug logging function that reports messages via `OutputDebugString`
@@ -171,6 +173,8 @@ type
     // Callback function that reports some internal events. If not specified,
     // default global function will be used that reports time and message via
     // `OutputDebugString`
+    // **DEPRECATED** Use `DoClientHandshake` argument instead. Will be removed
+    // in future releases.
     DebugFn: TDebugFn deprecated 'Use function arguments instead';
     // Pointer to credentials shared between multiple sessions
     SharedCreds: ISharedSessionCreds;
@@ -1050,6 +1054,7 @@ end;
  Function to prepare all necessary handshake data. No transport level actions.
    @param SessionData - [IN/OUT] record with session data
    @param HandShakeData - [IN/OUT] record with handshake data
+   @param DebugLogFn - logging callback, could be @nil
  @raises ESSPIError on error
  Function actions and returning data depending on input stage:
   - `HandShakeData.Stage` = hssNotStarted. Generate client hello. @br

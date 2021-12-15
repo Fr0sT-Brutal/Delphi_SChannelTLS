@@ -24,8 +24,6 @@ uses
   SChannel.Utils;
 
 type
-  // Logging method
-  TLogFn = procedure (const Msg: string) of object;
   // Synchronous communication method.
   //   @param Buf - buffer with data
   //   @param BufLen - size of data in buffer
@@ -55,7 +53,7 @@ type
 
 // Synchronously perform full handshake process including communication with server.
 procedure PerformClientHandshake(var SessionData: TSessionData; const ServerName: string;
-  LogFn: TLogFn; SendFn: TSendFn; RecvFn: TRecvFn;
+  DebugLogFn: TDebugFn; SendFn: TSendFn; RecvFn: TRecvFn;
   out hContext: CtxtHandle; out ExtraData: TBytes);
 
 {$ENDIF MSWINDOWS}
@@ -64,16 +62,6 @@ implementation
 {$IFDEF MSWINDOWS}
 
 // ~~ Utils ~~
-
-// Empty default logging function - to avoid if Assigned checks
-type
-  TLogFnHoster = class
-    class procedure DefLogFn(const Msg: string);
-  end;
-
-class procedure TLogFnHoster.DefLogFn(const Msg: string);
-begin
-end;
 
 function CommError(ErrCode: DWORD; const Msg: string): EHandshakeCommError;
 begin
@@ -87,7 +75,7 @@ end;
 // Communication is done via two callback functions.
 //   @param SessionData - [IN/OUT] record with session data
 //   @param ServerName - name of domain to connect to
-//   @param LogFn - logging callback, could be @nil
+//   @param DebugLogFn - logging callback, could be @nil
 //   @param Data - any data with which `SendFn` and `RecvFn` will be called
 //   @param SendFn - data send callback
 //   @param RecvFn - data read callback
@@ -96,7 +84,7 @@ end;
 // @raises ESSPIError on SChannel-related failure,
 //         EHandshakeCommError on communication failure
 procedure PerformClientHandshake(var SessionData: TSessionData; const ServerName: string;
-  LogFn: TLogFn; SendFn: TSendFn; RecvFn: TRecvFn;
+  DebugLogFn: TDebugFn; SendFn: TSendFn; RecvFn: TRecvFn;
   out hContext: CtxtHandle; out ExtraData: TBytes);
 var
   HandShakeData: THandShakeData;
@@ -106,7 +94,7 @@ var
   procedure DoHandshakeStart;
   begin
     // Generate hello
-    DoClientHandshake(SessionData, HandShakeData);
+    DoClientHandshake(SessionData, HandShakeData, DebugLogFn);
     Assert(HandShakeData.Stage = hssSendCliHello);
 
     // Send hello to server
@@ -115,7 +103,7 @@ var
       if cbData < 0
         then raise CommError(Abs(cbData), S_Msg_HShStageW1Fail)
         else raise CommError(0, S_Msg_HShStageW1Incomplete);
-    LogFn(Format(S_Msg_HShStageW1Success, [cbData]));
+    Debug(DebugLogFn, Format(S_Msg_HShStageW1Success, [cbData]));
     g_pSSPI.FreeContextBuffer(HandShakeData.OutBuffers[0].pvBuffer); // Free output buffer.
     SetLength(HandShakeData.OutBuffers, 0);
     HandShakeData.Stage := hssReadSrvHello;
@@ -126,8 +114,6 @@ begin
   HandShakeData.ServerName := ServerName;
   hContext := Default(CtxtHandle);
   HandshakeBug := False;
-  if not Assigned(LogFn) then
-    LogFn := TLogFnHoster.DefLogFn;
 
   try try
     DoHandshakeStart;
@@ -142,19 +128,19 @@ begin
           Length(HandShakeData.IoBuffer) - HandShakeData.cbIoBuffer);
         if cbData <= 0 then
           raise CommError(Abs(cbData), S_Msg_HShStageRFail);
-        LogFn(Format(S_Msg_HShStageRSuccess, [cbData]));
+        Debug(DebugLogFn, Format(S_Msg_HShStageRSuccess, [cbData]));
         Inc(HandShakeData.cbIoBuffer, cbData);
       end;
 
       // Decode hello
       try
-        DoClientHandshake(SessionData, HandShakeData);
+        DoClientHandshake(SessionData, HandShakeData, DebugLogFn);
       except on E: ESSPIError do
         // Hide Windows handshake bug and restart the process for the first time
         if (HandShakeData.Stage = hssReadSrvHello) and IsWinHandshakeBug(E.SecStatus)
           and not HandshakeBug then
         begin
-          LogFn(Format(S_Msg_HandshakeBug, [E.Message]));
+          Debug(DebugLogFn, Format(S_Msg_HandshakeBug, [E.Message]));
           HandshakeBug := True;
           DeleteContext(HandShakeData.hContext);
           HandShakeData.Stage := hssNotStarted;
@@ -174,7 +160,7 @@ begin
             if cbData < 0
               then raise CommError(Abs(cbData), S_Msg_HShStageW2Fail)
               else raise CommError(0, S_Msg_HShStageW2Incomplete);
-          LogFn(Format(S_Msg_HShStageW2Success, [cbData]));
+          Debug(DebugLogFn, Format(S_Msg_HShStageW2Success, [cbData]));
           g_pSSPI.FreeContextBuffer(HandShakeData.OutBuffers[0].pvBuffer); // Free output buffer
           SetLength(HandShakeData.OutBuffers, 0);
         end;
@@ -187,8 +173,8 @@ begin
         else if HandShakeData.Stage = hssReadSrvHelloOK then
         begin
           if HandShakeData.cbIoBuffer > 0 then
-            LogFn(Format(S_Msg_HShExtraData, [HandShakeData.cbIoBuffer]));
-          LogFn(S_Msg_Established);
+            Debug(DebugLogFn, Format(S_Msg_HShExtraData, [HandShakeData.cbIoBuffer]));
+          Debug(DebugLogFn, S_Msg_Established);
           HandShakeData.Stage := hssDone; // useless
           // Return extra data if any received. 0-length will work as well
           ExtraData := Copy(HandShakeData.IoBuffer, 0, HandShakeData.cbIoBuffer);

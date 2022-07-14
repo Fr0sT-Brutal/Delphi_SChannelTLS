@@ -3,7 +3,7 @@
 { Some necessary basic API types missing in WinApi.Windows                     }
 {                                                                              }
 {******************************************************************************}
-unit JwaBaseTypes;
+unit SChannel.JwaBaseTypes;
 
 interface
 

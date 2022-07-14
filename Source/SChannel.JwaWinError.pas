@@ -44,7 +44,7 @@
 // removed include mode.
 
 // $Id: JwaWinError.pas,v 1.9 2007/09/05 11:58:53 dezipaitor Exp $
-unit JwaWinError;
+unit SChannel.JwaWinError;
 
 {$HPPEMIT ''}
 {$HPPEMIT '#include "WinError.h"'}

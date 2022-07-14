@@ -16,13 +16,13 @@
   License MIT
 }
 
-unit IcsSChannelSocket;
+unit SChannel.IcsWSocket;
 
 interface
 
 uses
   SysUtils, Classes, Windows, WinSock,
-  JwaWinError, JwaSspi,
+  SChannel.JwaWinError, SChannel.JwaSspi,
   OverbyteIcsWSocket, OverbyteIcsWSockBuf, OverbyteIcsLogger, OverbyteIcsUtils,
   SChannel.Utils;
 

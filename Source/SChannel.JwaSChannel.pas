@@ -4,12 +4,13 @@
 {                                                                              }
 {******************************************************************************}
 
-unit JwaSChannel;
+unit SChannel.JwaSChannel;
 
 interface
 
 uses
-  Windows, JwaBaseTypes, JwaWinCrypt;
+  Windows,
+  SChannel.JwaBaseTypes, SChannel.JwaWinCrypt;
 
 const
 // Protocols

@@ -20,7 +20,8 @@ interface
 
 uses
   Windows, SysUtils,
-  JwaBaseTypes, JwaWinError, JwaWinCrypt, JwaSspi, JwaSChannel;
+  SChannel.JwaBaseTypes, SChannel.JwaWinError, SChannel.JwaWinCrypt,
+  SChannel.JwaSspi, SChannel.JwaSChannel;
 
 const
   LogPrefix = '[SChannel]: '; // Just a suggested prefix for log output

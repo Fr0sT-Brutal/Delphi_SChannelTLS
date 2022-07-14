@@ -50,14 +50,15 @@
 {$DEFINE WINXP_UP}
 {$DEFINE WIN2003_UP}
 
-unit JwaWinCrypt;
+unit SChannel.JwaWinCrypt;
 
 {$WEAKPACKAGEUNIT}
 
 interface
 
 uses
-  Windows, JwaBaseTypes;
+  Windows,
+  SChannel.JwaBaseTypes;
 
 {$HPPEMIT ''}
 {$HPPEMIT '#include <WinCrypt.h>'}

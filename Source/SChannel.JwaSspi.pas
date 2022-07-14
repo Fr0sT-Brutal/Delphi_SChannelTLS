@@ -44,7 +44,7 @@
 // removed dynamic loading
 
 // $Id: JwaSspi.pas,v 1.13 2007/09/14 06:48:47 marquardt Exp $
-unit JwaSspi;
+unit SChannel.JwaSspi;
 
 {$HPPEMIT ''}
 {$HPPEMIT '#include "sspi.h"'}
@@ -55,7 +55,9 @@ unit JwaSspi;
 
 interface
 
-uses Windows, JwaBaseTypes;
+uses
+  Windows,
+  SChannel.JwaBaseTypes;
 
 //
 // Determine environment:

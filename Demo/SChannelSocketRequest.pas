@@ -11,7 +11,7 @@ interface
 
 uses
   Forms, Winapi.Windows, System.SysUtils, WinSock, Classes, StrUtils,
-  JwaWinError, JwaSspi, SChannel.Utils, SChannel.SyncHandshake;
+  SChannel.JwaWinError, SChannel.JwaSspi, SChannel.Utils, SChannel.SyncHandshake;
 
 type
   TReqResult = (resConnErr, resTLSErr, resOK);

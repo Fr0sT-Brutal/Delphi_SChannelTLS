@@ -8,9 +8,9 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, WinSock,
   Vcl.ExtCtrls, StrUtils, Vcl.CheckLst, TypInfo,
-  JwaWinError, JwaSspi, JwaWinCrypt, SChannel.Utils,
+  SChannel.JwaWinError, SChannel.JwaSspi, SChannel.JwaWinCrypt, SChannel.Utils,
   {$IFDEF ICS}
-  IcsSChannelSocket, OverbyteIcsWSocket, OverbyteIcsLogger, OverbyteIcsMimeUtils,
+  SChannel.IcsWSocket, OverbyteIcsWSocket, OverbyteIcsLogger, OverbyteIcsUtils,
   {$ENDIF}
   SChannelSocketRequest;
 

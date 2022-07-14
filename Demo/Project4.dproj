@@ -42,7 +42,7 @@
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<Manifest_File>None</Manifest_File>
 			<VerInfo_Locale>1049</VerInfo_Locale>
-			<DCC_UnitSearchPath>..\;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>..\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;$(DCC_Namespace)</DCC_Namespace>
 			<DCC_UsePackage>dsnap;rtl;dbrtl;xmlrtl;ibxpress;DbxCommonDriver;dbxcds;dbexpress;soaprtl;$(DCC_UsePackage)</DCC_UsePackage>
 			<Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>

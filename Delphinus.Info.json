@@ -1,0 +1,15 @@
+{
+    "id": "{E2F8E899-C42D-4EA9-96E8-DF73666708E1}",
+    "name": "SChannel",
+    "licenses":
+    [
+        {
+          "type": "MIT",
+          "file": "LICENSE"
+        }
+    ],
+    "platforms": "Win32;Win64",
+    "package_compiler_min": 23,
+    "compiler_min": 23,
+    "first_version": "1.0.0"    
+}

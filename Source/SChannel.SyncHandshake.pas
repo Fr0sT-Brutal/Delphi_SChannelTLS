@@ -112,7 +112,7 @@ var
 
 begin
   HandShakeData := Default(THandShakeData);
-  HandShakeData.ServerName := ServerName;
+  SessionData.ServerName := ServerName;
   hContext := Default(CtxtHandle);
   HandshakeBug := False;
 

@@ -77,10 +77,6 @@ type
   THandShakeData = record
     // Current stage
     Stage: THandShakeStage;
-    // Name of domain we're connecting to.
-    // IN at hssNotStarted
-    // **DEPRECATED** SessionData.ServerName is used instead
-    ServerName: string deprecated 'Assign SessionData.ServerName instead';
     // Handle of security context.
     // OUT after hssSendCliHello, IN at hssReadSrvHello*
     hContext: CtxtHandle;
@@ -171,12 +167,6 @@ type
     // **Warning**: `ISC_REQ_ALLOCATE_MEMORY` flag is supposed to be always enabled,
     // otherwise correct work is not guaranteed
     SSPIFlags: DWORD;
-    // Callback function that reports some internal events. If not specified,
-    // default global function will be used that reports time and message via
-    // `OutputDebugString`
-    // **DEPRECATED** Use `DoClientHandshake` argument instead. Will be removed
-    // in future releases.
-    DebugFn: TDebugFn deprecated 'Use function arguments instead';
     // Pointer to credentials shared between multiple sessions
     SharedCreds: ISharedSessionCreds;
     // Non-shared session credentials. It is used if `SharedCreds` is @nil
@@ -1125,16 +1115,6 @@ begin
   dwSSPIFlags := SessionData.SSPIFlags;
   if dwSSPIFlags = 0 then
     dwSSPIFlags := SSPI_FLAGS;
-
-  {$WARNINGS OFF}
-  // Old behavior - use SessionData's logFn. To be removed.
-  if not Assigned(DebugLogFn) then
-    DebugLogFn := SessionData.DebugFn;
-
-  // Old behavior - copy HandShakeData's server name to SessionData. To be removed.
-  if HandShakeData.ServerName <> '' then
-    SessionData.ServerName := HandShakeData.ServerName;
-  {$WARNINGS ON}
 
   // Check if manual cert validation is required. I haven't found an option to
   // force SChannel retry handshake stage without auto validation after it had

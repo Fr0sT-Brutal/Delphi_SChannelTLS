@@ -1,7 +1,13 @@
 Notable changes
 ===============
 
-## Current
+## 14.07.2022 - maintenance. Release 1.0.0.
+
+- [+] Project reorganized: units moved to .\Source; Jwa* units renamed adding SChannel namespace to avoid clashes; IcsSChannelSocket.pas renamed to SChannel.IcsWSocket.pas
+- [+] Add packages and Delphinus support files
+- [-] (API) SChannel.Utils.pas: remove deprecated THandShakeData.ServerName and TSessionData.DebugFn
+
+## 15.12.2021
 
 - [+] (API) TTrustedCerts, MT-safe; added .Contains(Host) method to check if there's any chance a cert for the host could be in the list. .Count method removed.
 - [+] (API) SChannel.Utils.pas: + CheckServerCert, returns result code allowing caller to determine why cert was considered valid

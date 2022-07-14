@@ -1,5 +1,5 @@
 Delphi SChannel (TLS with WinAPI)
----------------------------------
+=================================
 
 SChannel is Windows built-in implementation of TLS protocols. This allows supporting secure connections without any external library.
 
@@ -9,13 +9,31 @@ Repo contains:
   
 - [`SChannel.SyncHandshake.pas`](https://fr0st-brutal.github.io/Delphi_SChannelTLS/docs/SChannel.SyncHandshake.html) - sample of transport-agnostic synchronous TLS handshake using callback functions for real communication
 
-- `Jwa*.pas` - API declarations borrowed from JEDI project
+- `SChannel.Jwa*.pas` - API declarations borrowed from JEDI project
 
-- [`IcsSChannelSocket.pas`](https://fr0st-brutal.github.io/Delphi_SChannelTLS/docs/IcsSChannelSocket.html) - [ICS](http://www.overbyte.eu/frame_index.html) TWSocket descendant that performs TLS communication
+- [`SChannel.IcsWSocket.pas`](https://fr0st-brutal.github.io/Delphi_SChannelTLS/docs/SChannel.IcsWSocket.html) - [ICS](http://www.overbyte.eu/frame_index.html) TWSocket descendant that performs TLS communication
 
 - `Demo\` - demo project for performing any textual (mainly HTTPS) requests via secure connection
 
 - `Enable TLS 1.1 and 1.2 for W7.reg` - registry patch that enables TLS 1.1 and 1.2 on Windows 7 (these are actual protocol versions that are not enabled by default on W7)
+
+Installation
+------------
+
+There are no installable components - you can just download sources, add paths and use units. But if you prefer packages, there are two of them created with RAD XE2. Just open one of them in IDE and it should upgrade the package to current version.
+
+- `SChannel_XE2.dproj` contains all units except ICS socket. Use it if you have no ICS installed
+- `SChannel_XE2_ICS.dproj` contains all units including ICS socket in `SChannel.IcsWSocket.pas`. Requires ICS installed
+
+Both packages are configured to build units to `..\Bin\$(Config)\$(Platform)` to reduce mess and avoid recompiling SChannel units each time a project is built. So you can add `SChannel\Bin\Release\$(Platform)` to your Search path and `SChannel\Source` to Browsing path. In this case don't forget to build the package for all platforms you use. After that installation is complete.
+
+Installation via Delphinus
+--------------------------
+
+Installation via [Delphinus package manager](https://github.com/Memnarch/Delphinus) is also possible. However, it's an initial version that has some limitations:
+
+- Search path entry will point to sources folder
+- Package is not built
 
 Developer note
 --------------
